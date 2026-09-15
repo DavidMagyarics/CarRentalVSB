@@ -27,18 +27,21 @@ Stavy: `MVP` (hotovo), `Plánováno` (bude doplněno v dalších iteracích).
 | ID | Požadavek | Aktér | Stav |
 |---|---|---|---|
 | F1 | Zákazník si může zobrazit seznam dostupných aut (značka, model, rok, cena/den). | Zákazník | MVP |
-| F2 | Zákazník si může vytvořit rezervaci vybraného auta na zvolený termín (od–do). | Zákazník | MVP |
-| F3 | Systém při vytváření rezervace ověří, že se termín nepřekrývá s existující rezervací téhož auta. | Systém | MVP |
-| F4 | Zákazník zadává při rezervaci jméno a e-mail. | Zákazník | MVP |
+| F2 | Zákazník si může vytvořit rezervaci vybraného auta na zvolený termín (od–do); rezervace vzniká ve stavu `DRAFT`. | Zákazník | MVP |
+| F3 | Systém při vytváření a potvrzování rezervace ověří, že se termín nepřekrývá s jinou **potvrzenou** (`CONFIRMED`) rezervací téhož auta. | Systém | MVP |
+| F4 | Zákazník zadává při rezervaci jméno a e-mail; systém podle e-mailu najde nebo založí `User`. | Zákazník | MVP |
 | F5 | Registrace a přihlášení zákazníka (účet, historie rezervací). | Zákazník | Plánováno |
-| F6 | Zákazník si může svou rezervaci zobrazit a zrušit. | Zákazník | Plánováno |
+| F6 | Zákazník si může svou rezervaci zobrazit a zrušit. | Zákazník | Plánováno (backend `cancel` hotov, výpis „mých" rezervací čeká na F5) |
 | F7 | Správce se může přihlásit do administrace. | Admin | Plánováno |
 | F8 | Správce může přidat, upravit a odebrat auto z vozového parku. | Admin | Plánováno |
 | F9 | Správce vidí přehled všech rezervací a může rezervaci zrušit/potvrdit. | Admin | Plánováno |
 | F10 | Systém umožňuje filtrování aut podle kategorie, ceny a dostupnosti v termínu. | Zákazník | Plánováno |
 | F11 | Systém podporuje více poboček půjčovny (vyzvednutí/vrácení). | Zákazník | Plánováno |
-| F12 | Systém odešle zákazníkovi e-mailové potvrzení rezervace. | Systém | Plánováno |
+| F12 | Systém odešle zákazníkovi notifikaci o potvrzení rezervace přes Notification Service. | Systém | MVP (stub) |
 | F13 | Systém umožní (mock) platbu za rezervaci. | Zákazník | Plánováno |
+| F14 | Zákazník může potvrdit svou rezervaci (`DRAFT → CONFIRMED`); systém před potvrzením znovu ověří dostupnost. | Zákazník | MVP |
+| F15 | Zákazník může zrušit svou rezervaci (`→ CANCELLED`); potvrzenou rezervaci lze zrušit jen před začátkem termínu (domain-specific rule). | Zákazník | MVP |
+| F16 | Zákazník si může ověřit dostupnost auta v konkrétním termínu bez vytváření rezervace. | Zákazník | MVP |
 
 ## 4. Nefunkční požadavky
 

@@ -26,14 +26,35 @@ přehled pro účely dokumentace SI.
 }
 ```
 
+### Dostupnost
+
+| Metoda | Cesta | Popis | Odpovědi |
+|---|---|---|---|
+| GET | `/cars/{car_id}/availability?start_date=...&end_date=...` | Je auto v daném termínu volné? (na základě CONFIRMED rezervací) | 200, 404, 422 |
+
 ## Rezervace
+
+Rezervace má stav `DRAFT` → `CONFIRMED` / `CANCELLED` (viz
+[domenovy-model.md](domenovy-model.md) a [intent-and-change.md](intent-and-change.md)).
 
 | Metoda | Cesta | Popis | Odpovědi |
 |---|---|---|---|
 | GET | `/reservations/` | Seznam všech rezervací | 200 |
-| POST | `/reservations/` | Vytvoření rezervace | 201, 404 (auto neexistuje), 409 (termín obsazen), 422 (neplatná data) |
+| POST | `/reservations/` | Vytvoření rezervace (stav `DRAFT`) | 201, 404 (auto neexistuje), 409 (termín obsazen CONFIRMED rezervací), 422 (neplatná data) |
+| POST | `/reservations/{id}/confirm` | Potvrzení rezervace (`DRAFT → CONFIRMED`), odešle notifikaci | 200, 404, 409 (už není DRAFT, nebo termín mezitím obsadila jiná rezervace) |
+| POST | `/reservations/{id}/cancel` | Zrušení rezervace (`→ CANCELLED`) | 200, 404, 409 (už zrušena, nebo potvrzená rezervace už začala) |
+
+## Uživatelé
+
+| Metoda | Cesta | Popis | Odpovědi |
+|---|---|---|---|
+| GET | `/users/` | Seznam uživatelů (vznikají automaticky při vytvoření rezervace) | 200 |
+| GET | `/users/{id}` | Detail uživatele | 200, 404 |
 
 ### Schéma `ReservationCreate` (request)
+
+`customer_name`/`customer_email` slouží k nalezení nebo založení `User`
+záznamu (`get_or_create_user`) — bez nutnosti se předem registrovat.
 
 ```json
 {
@@ -51,8 +72,8 @@ přehled pro účely dokumentace SI.
 {
   "id": 1,
   "car_id": 1,
-  "customer_name": "Jan Novák",
-  "customer_email": "jan.novak@example.com",
+  "user_id": 1,
+  "status": "DRAFT",
   "start_date": "2026-10-01T00:00:00",
   "end_date": "2026-10-05T00:00:00",
   "created_at": "2026-09-15T14:48:01.489531"
@@ -70,6 +91,5 @@ u validačních chyb (422) `detail` obsahuje pole s popisem chybných vstupů.
 |---|---|---|
 | POST | `/auth/register`, `/auth/login` | Registrace a přihlášení uživatele |
 | GET | `/reservations/me` | Rezervace přihlášeného zákazníka |
-| DELETE | `/reservations/{id}` | Zrušení rezervace |
 | PUT/PATCH | `/cars/{id}` | Úprava auta (admin) |
 | DELETE | `/cars/{id}` | Odebrání auta (admin) |
