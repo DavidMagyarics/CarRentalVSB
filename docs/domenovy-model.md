@@ -1,10 +1,11 @@
 # Doménový / ER model
 
-## Aktuální stav (MVP)
+## Aktuální stav (C01)
 
 ```mermaid
 erDiagram
   CAR ||--o{ RESERVATION : "je rezervováno v"
+  USER ||--o{ RESERVATION : "vytváří"
 
   CAR {
     int id PK
@@ -15,21 +16,37 @@ erDiagram
     float daily_price
   }
 
+  USER {
+    int id PK
+    string name
+    string email
+  }
+
   RESERVATION {
     int id PK
     int car_id FK
-    string customer_name
-    string customer_email
+    int user_id FK
+    string status "DRAFT | CONFIRMED | CANCELLED"
     datetime start_date
     datetime end_date
     datetime created_at
   }
 ```
 
-**Pravidlo konzistence:** pro dané `car_id` se nesmí v databázi vyskytnout dvě
-rezervace s překrývajícím se intervalem `[start_date, end_date)`. Toto pravidlo
-je vynucováno na úrovni aplikace (`crud.is_car_available`), ne databázovým
-constraintem — viz [testovaci-strategie.md](testovaci-strategie.md).
+**Stavy rezervace:** `DRAFT → CONFIRMED → (terminál)`, `DRAFT → CANCELLED`,
+`CONFIRMED → CANCELLED` (jen před `start_date`, viz domain-specific rule v
+[intent-and-change.md](intent-and-change.md)).
+
+**Pravidlo konzistence (common business rule):** pro dané `car_id` se nesmí
+v databázi vyskytnout dvě rezervace ve stavu `CONFIRMED` s překrývajícím se
+intervalem `[start_date, end_date)`. Toto pravidlo je vynucováno na úrovni
+aplikace (`crud.is_car_available`), ne databázovým constraintem — viz
+[testovaci-strategie.md](testovaci-strategie.md) a zaznamenané riziko pod
+`Selected future pressure` v [intent-and-change.md](intent-and-change.md).
+
+`User` se v C01 zakládá automaticky podle e-mailu při vytvoření rezervace
+(bez registrace/přihlášení) — viz `Assumption` v
+[intent-and-change.md](intent-and-change.md).
 
 ## Cílový model (po dalších iteracích)
 

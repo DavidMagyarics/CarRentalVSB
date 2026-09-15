@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import models
 from .database import SessionLocal, engine
-from .routers import cars, reservations
+from .routers import cars, reservations, users
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -23,6 +23,7 @@ app.add_middleware(
 
 app.include_router(cars.router)
 app.include_router(reservations.router)
+app.include_router(users.router)
 
 
 @app.get("/")

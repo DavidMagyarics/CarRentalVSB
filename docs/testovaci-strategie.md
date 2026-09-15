@@ -20,7 +20,7 @@ Umístění: `backend/tests/`.
 | Soubor | Co ověřuje |
 |---|---|
 | `test_cars.py` | Vytvoření auta, výpis seznamu aut, 404 u neexistujícího auta. |
-| `test_reservations.py` | Vytvoření rezervace, 404 pro neexistující auto, odmítnutí překrývajícího se termínu (409), přijetí navazujícího (nepřekrývajícího se) termínu, validace `end_date > start_date` (422). |
+| `test_reservations.py` | Vytvoření rezervace ve stavu `DRAFT` (+ automatické založení `User`), confirm/cancel a jejich chybové stavy (404/409), common overlap rule (jen `CONFIRMED`), domain-specific rule pro zrušení po startu termínu, `GET /cars/{id}/availability`, validace `end_date > start_date` (422). Aktuálně 17 testů. |
 
 Testy běží nad izolovanou in-memory SQLite databází (`tests/conftest.py`),
 takže se nedotýkají souboru `carrental.db` používaného při běžném provozu

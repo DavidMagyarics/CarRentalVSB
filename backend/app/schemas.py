@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
+from .models import ReservationStatus
+
 
 class CarBase(BaseModel):
     brand: str
@@ -21,7 +23,15 @@ class Car(CarBase):
     id: int
 
 
-class ReservationBase(BaseModel):
+class User(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    email: EmailStr
+
+
+class ReservationCreate(BaseModel):
     car_id: int
     customer_name: str
     customer_email: EmailStr
@@ -37,12 +47,20 @@ class ReservationBase(BaseModel):
         return end_date
 
 
-class ReservationCreate(ReservationBase):
-    pass
-
-
-class Reservation(ReservationBase):
+class Reservation(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    car_id: int
+    user_id: int
+    status: ReservationStatus
+    start_date: datetime
+    end_date: datetime
     created_at: datetime
+
+
+class Availability(BaseModel):
+    car_id: int
+    start_date: datetime
+    end_date: datetime
+    available: bool

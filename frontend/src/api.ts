@@ -18,8 +18,15 @@ export interface ReservationInput {
   end_date: string
 }
 
-export interface Reservation extends ReservationInput {
+export type ReservationStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED'
+
+export interface Reservation {
   id: number
+  car_id: number
+  user_id: number
+  status: ReservationStatus
+  start_date: string
+  end_date: string
   created_at: string
 }
 
