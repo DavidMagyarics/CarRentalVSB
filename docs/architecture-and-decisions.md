@@ -2,36 +2,15 @@
 
 ## Přehled (C4 — Context)
 
-```mermaid
-flowchart TB
-  zakaznik(("Zákazník"))
-  admin(("Správce"))
-  app["CarRentalVSB\n(reservation system)"]
-  notif["Notification Service\n(externí boundary)"]
+![C4 Context diagram](diagrams/context.svg)
 
-  zakaznik -- "prohlíží auta, vytváří/potvrzuje/ruší rezervace (HTTPS)" --> app
-  admin -- "spravuje vozový park a rezervace (HTTPS)" --> app
-  app -- "send_confirmation(reservation, user)" --> notif
-```
+*Zdroj diagramu: [diagrams/context.puml](diagrams/context.puml) — PlantUML, obrázek se automaticky přegeneruje při každé změně zdroje (viz [.github/workflows/render-plantuml.yml](../.github/workflows/render-plantuml.yml)).*
 
 ## Kontejnery (C4 — Container)
 
-```mermaid
-flowchart LR
-  subgraph Klient["Prohlížeč"]
-    spa["Frontend SPA\nReact + TypeScript (Vite)"]
-  end
+![C4 Container diagram](diagrams/container.svg)
 
-  subgraph Server["Backend server"]
-    api["REST API\nPython / FastAPI"]
-    notif["NotificationService\n(boundary interface)"]
-    db[("Databáze\nSQLite (dev) / PostgreSQL (prod)")]
-  end
-
-  spa -- "HTTP/JSON (fetch)" --> api
-  api -- "SQLAlchemy ORM" --> db
-  api -- "on confirm" --> notif
-```
+*Zdroj diagramu: [diagrams/container.puml](diagrams/container.puml).*
 
 Podrobnější rozpad struktury repozitáře a vrstvení backendu je v
 [architektura.md](architektura.md) (vznikl v první iteraci projektu, obsah

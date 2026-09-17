@@ -2,25 +2,9 @@
 
 ## Diagram (cílový stav systému)
 
-```mermaid
-flowchart LR
-  actorZakaznik((Zákazník))
-  actorAdmin((Správce))
+![Use case diagram](diagrams/use-case.svg)
 
-  actorZakaznik --> UC1[Prohlížet nabídku aut]
-  actorZakaznik --> UC2[Vytvořit rezervaci]
-  actorZakaznik --> UC3[Potvrdit rezervaci]
-  actorZakaznik --> UC8[Zrušit rezervaci]
-  actorZakaznik --> UC4[Zaregistrovat se / přihlásit se]
-
-  actorAdmin --> UC5[Spravovat vozový park]
-  actorAdmin --> UC6[Spravovat rezervace]
-  actorAdmin --> UC4
-
-  UC2 -.include.-> UC7[Ověřit dostupnost auta]
-  UC3 -.include.-> UC7
-  UC3 -.include.-> UC9[Odeslat notifikaci]
-```
+*Zdroj diagramu: [diagrams/use-case.puml](diagrams/use-case.puml) — PlantUML, obrázek se automaticky přegeneruje při každé změně zdroje.*
 
 Legenda stavu: ✅ implementováno v MVP, ⏳ plánováno v dalších iteracích.
 

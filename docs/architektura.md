@@ -2,32 +2,15 @@
 
 ## Přehled (C4 — úroveň Context)
 
-```mermaid
-flowchart TB
-  zakaznik(("Zákazník"))
-  admin(("Správce"))
-  app["CarRentalVSB\n(webová aplikace)"]
+![C4 Context diagram](diagrams/context-v1.svg)
 
-  zakaznik -- "prohlíží auta, vytváří rezervace (HTTPS)" --> app
-  admin -- "spravuje vozový park a rezervace (HTTPS)" --> app
-```
+*Zdroj diagramu: [diagrams/context-v1.puml](diagrams/context-v1.puml) — PlantUML, obrázek se automaticky přegeneruje při každé změně zdroje.*
 
 ## Kontejnery (C4 — úroveň Container)
 
-```mermaid
-flowchart LR
-  subgraph Klient["Prohlížeč"]
-    spa["Frontend SPA\nReact + TypeScript (Vite)"]
-  end
+![C4 Container diagram](diagrams/container-v1.svg)
 
-  subgraph Server["Backend server"]
-    api["REST API\nPython / FastAPI"]
-    db[("Databáze\nSQLite (dev) / PostgreSQL (prod)")]
-  end
-
-  spa -- "HTTP/JSON (fetch)" --> api
-  api -- "SQLAlchemy ORM" --> db
-```
+*Zdroj diagramu: [diagrams/container-v1.puml](diagrams/container-v1.puml).*
 
 ## Zdůvodnění volby technologií
 

@@ -2,36 +2,9 @@
 
 ## Aktuální stav (C01)
 
-```mermaid
-erDiagram
-  CAR ||--o{ RESERVATION : "je rezervováno v"
-  USER ||--o{ RESERVATION : "vytváří"
+![ER diagram — aktuální stav](diagrams/er-aktualni.svg)
 
-  CAR {
-    int id PK
-    string brand
-    string model
-    int year
-    string license_plate
-    float daily_price
-  }
-
-  USER {
-    int id PK
-    string name
-    string email
-  }
-
-  RESERVATION {
-    int id PK
-    int car_id FK
-    int user_id FK
-    string status "DRAFT | CONFIRMED | CANCELLED"
-    datetime start_date
-    datetime end_date
-    datetime created_at
-  }
-```
+*Zdroj diagramu: [diagrams/er-aktualni.puml](diagrams/er-aktualni.puml) — PlantUML, obrázek se automaticky přegeneruje při každé změně zdroje.*
 
 **Stavy rezervace:** `DRAFT → CONFIRMED → (terminál)`, `DRAFT → CANCELLED`,
 `CONFIRMED → CANCELLED` (jen před `start_date`, viz domain-specific rule v
@@ -50,47 +23,9 @@ aplikace (`crud.is_car_available`), ne databázovým constraintem — viz
 
 ## Cílový model (po dalších iteracích)
 
-```mermaid
-erDiagram
-  USER ||--o{ RESERVATION : "vytváří"
-  CAR ||--o{ RESERVATION : "je rezervováno v"
-  BRANCH ||--o{ CAR : "patří pod"
-  CAR ||--o{ CAR_CATEGORY : "spadá do"
+![ER diagram — cílový model](diagrams/er-cilovy.svg)
 
-  USER {
-    int id PK
-    string email
-    string password_hash
-    string role
-  }
-
-  BRANCH {
-    int id PK
-    string name
-    string address
-  }
-
-  CAR {
-    int id PK
-    string brand
-    string model
-    int year
-    string license_plate
-    float daily_price
-    int branch_id FK
-    int category_id FK
-  }
-
-  RESERVATION {
-    int id PK
-    int car_id FK
-    int user_id FK
-    datetime start_date
-    datetime end_date
-    string status
-    datetime created_at
-  }
-```
+*Zdroj diagramu: [diagrams/er-cilovy.puml](diagrams/er-cilovy.puml).*
 
 Rozšíření oproti MVP: registrovaní uživatelé (`USER`) nahrazují prosté
 `customer_name`/`customer_email`, přibývá pobočka (`BRANCH`), kategorie vozu a

@@ -1,0 +1,11 @@
+@startuml context-v1
+left to right direction
+skinparam backgroundColor transparent
+
+actor "Zákazník" as zakaznik
+actor "Správce" as admin
+rectangle "CarRentalVSB\n(webová aplikace)" as app
+
+zakaznik --> app : prohlíží auta, vytváří rezervace (HTTPS)
+admin --> app : spravuje vozový park a rezervace (HTTPS)
+@enduml

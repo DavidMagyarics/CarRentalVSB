@@ -1,0 +1,13 @@
+@startuml context
+left to right direction
+skinparam backgroundColor transparent
+
+actor "Zákazník" as zakaznik
+actor "Správce" as admin
+rectangle "CarRentalVSB\n(reservation system)" as app
+rectangle "Notification Service\n(externí boundary)" as notif
+
+zakaznik --> app : prohlíží auta, vytváří/\npotvrzuje/ruší rezervace (HTTPS)
+admin --> app : spravuje vozový park\na rezervace (HTTPS)
+app --> notif : send_confirmation(reservation, user)
+@enduml

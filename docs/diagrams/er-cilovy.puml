@@ -1,0 +1,50 @@
+@startuml er-cilovy
+skinparam backgroundColor transparent
+
+entity "USER" as USER {
+  * id : int <<PK>>
+  --
+  email : string
+  password_hash : string
+  role : string
+}
+
+entity "BRANCH" as BRANCH {
+  * id : int <<PK>>
+  --
+  name : string
+  address : string
+}
+
+entity "CAR" as CAR {
+  * id : int <<PK>>
+  --
+  brand : string
+  model : string
+  year : int
+  license_plate : string
+  daily_price : float
+  branch_id : int <<FK>>
+  category_id : int <<FK>>
+}
+
+entity "CAR_CATEGORY" as CAR_CATEGORY {
+  * id : int <<PK>>
+}
+
+entity "RESERVATION" as RESERVATION {
+  * id : int <<PK>>
+  --
+  car_id : int <<FK>>
+  user_id : int <<FK>>
+  start_date : datetime
+  end_date : datetime
+  status : string
+  created_at : datetime
+}
+
+USER ||--o{ RESERVATION : "vytváří"
+CAR ||--o{ RESERVATION : "je rezervováno v"
+BRANCH ||--o{ CAR : "patří pod"
+CAR ||--o{ CAR_CATEGORY : "spadá do"
+@enduml

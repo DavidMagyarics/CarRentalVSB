@@ -1,0 +1,32 @@
+name: Render PlantUML diagrams
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/diagrams/**.puml"
+  workflow_dispatch: {}
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PlantUML
+        run: sudo apt-get update && sudo apt-get install -y plantuml
+
+      - name: Render diagrams to SVG
+        run: |
+          for f in docs/diagrams/*.puml; do
+            plantuml -tsvg "$f"
+          done
+
+      - name: Commit rendered diagrams
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: re-render PlantUML diagrams [skip ci]"
+          file_pattern: "docs/diagrams/*.svg"

@@ -1,0 +1,17 @@
+@startuml container
+skinparam backgroundColor transparent
+
+package "Prohlížeč" {
+  component "Frontend SPA\nReact + TypeScript (Vite)" as spa
+}
+
+package "Backend server" {
+  component "REST API\nPython / FastAPI" as api
+  component "NotificationService\n(boundary interface)" as notif
+  database "Databáze\nSQLite (dev) / PostgreSQL (prod)" as db
+}
+
+spa --> api : HTTP/JSON (fetch)
+api --> db : SQLAlchemy ORM
+api --> notif : on confirm
+@enduml

@@ -1,0 +1,31 @@
+@startuml use-case
+left to right direction
+skinparam backgroundColor transparent
+
+actor "Zákazník" as Zakaznik
+actor "Správce" as Admin
+
+usecase "Prohlížet nabídku aut" as UC1
+usecase "Vytvořit rezervaci" as UC2
+usecase "Potvrdit rezervaci" as UC3
+usecase "Zrušit rezervaci" as UC8
+usecase "Zaregistrovat se / přihlásit se" as UC4
+usecase "Spravovat vozový park" as UC5
+usecase "Spravovat rezervace" as UC6
+usecase "Ověřit dostupnost auta" as UC7
+usecase "Odeslat notifikaci" as UC9
+
+Zakaznik --> UC1
+Zakaznik --> UC2
+Zakaznik --> UC3
+Zakaznik --> UC8
+Zakaznik --> UC4
+
+Admin --> UC5
+Admin --> UC6
+Admin --> UC4
+
+UC2 ..> UC7 : <<include>>
+UC3 ..> UC7 : <<include>>
+UC3 ..> UC9 : <<include>>
+@enduml

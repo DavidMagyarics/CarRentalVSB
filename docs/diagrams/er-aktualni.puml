@@ -1,0 +1,34 @@
+@startuml er-aktualni
+skinparam backgroundColor transparent
+
+entity "CAR" as CAR {
+  * id : int <<PK>>
+  --
+  brand : string
+  model : string
+  year : int
+  license_plate : string
+  daily_price : float
+}
+
+entity "USER" as USER {
+  * id : int <<PK>>
+  --
+  name : string
+  email : string
+}
+
+entity "RESERVATION" as RESERVATION {
+  * id : int <<PK>>
+  --
+  car_id : int <<FK>>
+  user_id : int <<FK>>
+  status : string
+  start_date : datetime
+  end_date : datetime
+  created_at : datetime
+}
+
+CAR ||--o{ RESERVATION : "je rezervováno v"
+USER ||--o{ RESERVATION : "vytváří"
+@enduml
