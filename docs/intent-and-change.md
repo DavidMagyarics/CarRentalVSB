@@ -1,34 +1,34 @@
-# Project Frame
+# Rámec projektu
 
-## Reservation domain
+## Doména rezervací
 
-Rezervační systém půjčovny aut (car rental). Rezervovaným resource je
+Rezervační systém půjčovny aut (car rental). Rezervovaným zdrojem je
 konkrétní **auto** ve vozovém parku (identifikováno mj. SPZ).
 
-## Purpose
+## Účel
 
 Systém slouží zákazníkům půjčovny, kteří si chtějí online zkontrolovat
 dostupnost auta a vytvořit/potvrdit/zrušit rezervaci na konkrétní termín, a
 provozovateli půjčovny, který spravuje vozový park a přehled rezervací.
 
-## Users / Stakeholders
+## Uživatelé / zainteresované strany
 
 - **Zákazník** — prohlíží vozový park, vytváří, potvrzuje a ruší své rezervace.
 - **Správce půjčovny (Admin)** — spravuje vozový park a dohlíží na rezervace (plánováno v dalších iteracích).
 - **Notification Service** (externí systém) — informuje zákazníka o potvrzení rezervace.
 
-## Core concepts
+## Klíčové koncepty
 
-- **Reservation** — vazba mezi Resource, User a časovým slotem, se stavem.
-- **Resource** (Car) — konkrétní auto ve vozovém parku (značka, model, rok, SPZ, cena/den).
-- **User** — osoba, která rezervaci vytváří (jméno, e-mail).
+- **Reservation** (rezervace) — vazba mezi zdrojem, uživatelem a časovým slotem, se stavem.
+- **Resource / Car** (zdroj/auto) — konkrétní auto ve vozovém parku (značka, model, rok, SPZ, cena/den).
+- **User** (uživatel) — osoba, která rezervaci vytváří (jméno, e-mail).
 
-## Core operations
+## Klíčové operace
 
-- Create reservation
-- Confirm / approve reservation
-- Cancel reservation
-- Check availability
+- Vytvoření rezervace
+- Potvrzení rezervace
+- Zrušení rezervace
+- Ověření dostupnosti
 
 Implementováno jako REST API:
 
@@ -39,32 +39,32 @@ Implementováno jako REST API:
 | Cancel reservation | `POST /reservations/{id}/cancel` |
 | Check availability | `GET /cars/{car_id}/availability?start_date=...&end_date=...` |
 
-## Persistent state
+## Perzistentní stav
 
-**Car (Resource):** id, brand, model, year, license_plate, daily_price.
+**Car (auto):** id, brand, model, year, license_plate, daily_price.
 
-**User:** id, name, email.
+**User (uživatel):** id, name, email.
 
-**Reservation:** id, car_id (FK → Car), user_id (FK → User), status
+**Reservation (rezervace):** id, car_id (FK → Car), user_id (FK → User), status
 (DRAFT/CONFIRMED/CANCELLED), start_date, end_date, created_at.
 
-## State-changing operation
+## Operace měnící stav
 
 `DRAFT → CONFIRMED` přes `POST /reservations/{id}/confirm` (systém při tom
 znovu ověří dostupnost auta a odešle notifikaci zákazníkovi přes Notification
 Service). Dále `DRAFT → CANCELLED` a `CONFIRMED → CANCELLED` přes
 `POST /reservations/{id}/cancel`.
 
-## Common business rule
+## Obecné byznys pravidlo
 
-Confirmed reservations for the same resource must not overlap.
+Potvrzené (CONFIRMED) rezervace téhož zdroje (auta) se nesmí časově překrývat.
 
 Vynuceno v `crud.is_car_available`: kontroluje se pouze proti rezervacím ve
 stavu `CONFIRMED` daného auta. Kontrola běží jak při `create` (nelze vytvořit
 rezervaci na slot, který už je potvrzený jinou rezervací), tak při `confirm`
 (řeší souběh dvou DRAFT rezervací na stejný slot — potvrdit lze jen jednu).
 
-## Domain-specific business rule
+## Doménově specifické pravidlo
 
 **Potvrzenou (CONFIRMED) rezervaci lze zrušit pouze před začátkem termínu
 výpůjčky (`start_date` musí být v budoucnosti).** Jakmile výpůjčka podle
@@ -76,7 +76,7 @@ mimo půjčovnu.
 Implementováno v `crud.cancel_reservation`, otestováno v
 `test_cannot_cancel_confirmed_reservation_after_start_date`.
 
-## External / system boundary
+## Externí hranice systému
 
 **Notification Service** — při potvrzení rezervace (`confirm`) systém zavolá
 `NotificationService.send_confirmation(reservation, user)`
@@ -85,32 +85,32 @@ Implementováno v `crud.cancel_reservation`, otestováno v
 e-mailovou/SMS bránu. Rozhraní je navrženo tak, aby šlo implementaci vyměnit
 beze změny domain kódu — viz [architecture-and-decisions.md](architecture-and-decisions.md).
 
-## Assumption
+## Předpoklad
 
 Předpokládáme, že v této fázi stačí identifikovat zákazníka jménem a
 e-mailem bez přihlašování (autentizace) — systém si podle e-mailu
 uživatele sám najde nebo založí (`get_or_create_user`). Tento předpoklad
 padne, jakmile přibude registrace/přihlášení (F5/F7 v `docs/pozadavky.md`).
 
-## Unknown
+## Neznámá / otevřená otázka
 
 Nevíme zatím, jak přesně bude vypadat reálná integrace s Notification
 Service (jaký provider, synchronně vs. asynchronně/frontou, jak řešit jeho
 výpadek) — to je záměrně otevřené jako budoucí engineering spike (varianta
-B — Boundary failure).
+B — selhání hranice systému).
 
 ---
 
-## Selected future pressure
+## Zvolený budoucí tlak
 
-**Category:** Q — Quality / Scale
+**Kategorie:** Q — Kvalita / škálovatelnost
 
-**Concrete pressure:** 10× více souběžných rezervací (např. akční nabídka
+**Konkrétní tlak:** 10× více souběžných rezervací (např. akční nabídka
 nebo více poboček najednou generuje výrazně vyšší provoz na `POST
 /reservations/` a `POST /reservations/{id}/confirm` ve stejný čas na stejná
 auta).
 
-**Why it is relevant to our reservation system:** Kontrola dostupnosti
+**Proč je to relevantní pro náš rezervační systém:** Kontrola dostupnosti
 (`is_car_available`) a přechod DRAFT → CONFIRMED aktuálně běží jako
 read-then-write nad SQLite bez explicitního zamykání řádku ani transakční
 izolace nastavené na úrovni aplikace. Při 10× vyšší souběžnosti hrozí race

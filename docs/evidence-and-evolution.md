@@ -1,15 +1,15 @@
-# C01 Engineering Spike
+# C01 – Inženýrský spike (experiment)
 
 **Zvolená varianta:** A — Persistence
 
-## Question / unknown
+## Otázka / neznámá
 
 Uloží se doménová data (Car, User, Reservation včetně jejich stavu
 DRAFT/CONFIRMED/CANCELLED a vzájemných vazeb) skutečně trvale do databáze
 tak, aby přežila restart backendového procesu — a ne jen v paměti běžícího
 serveru?
 
-## What we did
+## Co jsme udělali
 
 1. Rozšířili jsme datový model o entitu `User` a `ReservationStatus`
    (`backend/app/models.py`) a doplnili operace `confirm`/`cancel`/
@@ -47,7 +47,7 @@ $ pytest -q
 17 passed
 ```
 
-## Observed result
+## Pozorovaný výsledek
 
 Rezervace vytvořená a potvrzená v procesu 1 byla po jeho tvrdém ukončení
 čitelná v procesu 2 (jiný proces, jiný port, žádné sdílení paměti) — včetně
@@ -55,7 +55,7 @@ správného stavu `CONFIRMED` a navázaného `User` záznamu. Data tedy skutečn
 persistují v `carrental.db`, nejsou jen v paměti běžícího serveru. Celá
 sada 17 automatizovaných testů (`pytest`) prochází nad touto podobou domény.
 
-## Decision / what changes because of the result
+## Rozhodnutí / co se mění na základě výsledku
 
 - Zůstáváme u SQLAlchemy + SQLite pro vývoj a školní účely — persistence
   funguje spolehlivě a jednoduše, není důvod ji teď měnit.

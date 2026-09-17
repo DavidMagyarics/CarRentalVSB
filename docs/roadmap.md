@@ -11,7 +11,7 @@ odpovídající požadavek v [pozadavky.md](pozadavky.md).
 - [x] Backend testy (unit/integrační)
 - [x] Dokumentace SI (SRS, use case, architektura, doménový model, API, test strategie)
 
-## Týden 1b — SWI C01: Start the Engineering Project ✅
+## Týden 1b — SWI C01: Zahájení inženýrského projektu ✅
 
 - [x] `User` entita, stavy rezervace `DRAFT/CONFIRMED/CANCELLED` (F2, F4)
 - [x] Operace confirm/cancel/check availability (F14–F16)

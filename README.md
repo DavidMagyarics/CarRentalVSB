@@ -19,7 +19,7 @@ přírůstků jsou v [docs/roadmap.md](docs/roadmap.md).
 
 Repozitář: [github.com/DavidMagyarics/CarRentalVSB](https://github.com/DavidMagyarics/CarRentalVSB)
 
-## Tech stack
+## Technologie
 
 - **Backend:** Python, FastAPI, SQLAlchemy, SQLite
 - **Frontend:** React, TypeScript, Vite
@@ -80,9 +80,9 @@ npm run dev
 Aplikace poběží na `http://localhost:5173` a očekává backend na
 `http://localhost:8000` (lze změnit v `.env` podle `.env.example`).
 
-## CP1 walking skeleton
+## CP1 – průchozí kostra systému (walking skeleton)
 
-End-to-end cesta, která bude skutečně runnable (frontend → backend → DB →
+Cesta od začátku do konce, která bude skutečně spustitelná (frontend → backend → DB →
 automatizovaná kontrola) po C03 / před C04:
 
 ```
