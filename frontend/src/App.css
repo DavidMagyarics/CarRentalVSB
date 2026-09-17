@@ -115,3 +115,95 @@ button {
 .error {
   color: #c0392b;
 }
+
+.hint {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.availability-ok {
+  color: #1e7e34;
+  font-size: 0.9rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.tabs button {
+  background: #e2e5eb;
+  color: #333;
+}
+
+.tabs button.active {
+  background: #1a73e8;
+  color: white;
+}
+
+.reservation-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reservation-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.reservation-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.reservation-info .dates {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.reservation-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.reservation-actions .secondary {
+  background: #999;
+}
+
+.status-badge {
+  display: inline-block;
+  width: fit-content;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-draft {
+  background: #fff3cd;
+  color: #8a6d00;
+}
+
+.status-confirmed {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+
+.status-cancelled {
+  background: #f1f1f1;
+  color: #777;
+}

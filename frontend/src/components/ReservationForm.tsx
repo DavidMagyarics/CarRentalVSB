@@ -1,12 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Car } from '../api'
-import { createReservation } from '../api'
+import { checkAvailability, createReservation } from '../api'
 
 interface Props {
   car: Car
   onDone: () => void
   onCancel: () => void
 }
+
+type AvailabilityState =
+  | { status: 'idle' }
+  | { status: 'checking' }
+  | { status: 'available' }
+  | { status: 'unavailable' }
+  | { status: 'error'; message: string }
 
 export default function ReservationForm({ car, onDone, onCancel }: Props) {
   const [customerName, setCustomerName] = useState('')
@@ -15,6 +22,46 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
   const [endDate, setEndDate] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [availability, setAvailability] = useState<AvailabilityState>({ status: 'idle' })
+
+  useEffect(() => {
+    if (!startDate || !endDate) {
+      setAvailability({ status: 'idle' })
+      return
+    }
+    if (new Date(endDate) <= new Date(startDate)) {
+      setAvailability({ status: 'error', message: 'Datum "do" musí být po datu "od"' })
+      return
+    }
+
+    let cancelled = false
+    setAvailability({ status: 'checking' })
+    const timeout = setTimeout(() => {
+      checkAvailability(
+        car.id,
+        new Date(startDate).toISOString(),
+        new Date(endDate).toISOString(),
+      )
+        .then((result) => {
+          if (!cancelled) {
+            setAvailability({ status: result.available ? 'available' : 'unavailable' })
+          }
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setAvailability({
+              status: 'error',
+              message: err instanceof Error ? err.message : 'Kontrolu dostupnosti se nepodařilo provést',
+            })
+          }
+        })
+    }, 300)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timeout)
+    }
+  }, [car.id, startDate, endDate])
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -83,10 +130,22 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
         </label>
       </div>
 
+      {availability.status === 'checking' && <p className="hint">Kontroluji dostupnost…</p>}
+      {availability.status === 'available' && (
+        <p className="availability-ok">Termín je dostupný</p>
+      )}
+      {availability.status === 'unavailable' && (
+        <p className="error">Auto je v tomto termínu již obsazené</p>
+      )}
+      {availability.status === 'error' && <p className="error">{availability.message}</p>}
+
       {error && <p className="error">{error}</p>}
 
       <div className="form-actions">
-        <button type="submit" disabled={submitting}>
+        <button
+          type="submit"
+          disabled={submitting || availability.status === 'unavailable'}
+        >
           {submitting ? 'Odesílám…' : 'Potvrdit rezervaci'}
         </button>
         <button type="button" onClick={onCancel} disabled={submitting}>
