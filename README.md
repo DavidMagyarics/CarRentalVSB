@@ -104,3 +104,4 @@ notification on confirmation as part of the automated check.
 This README and the documentation in `docs/` are updated continuously as
 features are added — they reflect the current state of the project, not just
 the initial assignment.
+.
