@@ -25,6 +25,24 @@ jobs:
             plantuml -tsvg "$f"
           done
 
+      - name: Force solid white background (PlantUML SVG output has none)
+        run: |
+          python3 - <<'PY'
+          import glob, re
+
+          for path in glob.glob("docs/diagrams/*.svg"):
+              with open(path, "r", encoding="utf-8") as f:
+                  content = f.read()
+              content = re.sub(
+                  r"(<svg[^>]*>)",
+                  r'\1<rect width="100%" height="100%" fill="white"/>',
+                  content,
+                  count=1,
+              )
+              with open(path, "w", encoding="utf-8") as f:
+                  f.write(content)
+          PY
+
       - name: Commit rendered diagrams
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
