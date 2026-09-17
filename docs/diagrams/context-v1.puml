@@ -1,6 +1,6 @@
 @startuml context-v1
 left to right direction
-skinparam backgroundColor transparent
+skinparam backgroundColor white
 
 actor "Zákazník" as zakaznik
 actor "Správce" as admin

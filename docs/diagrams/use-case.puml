@@ -1,6 +1,6 @@
 @startuml use-case
 left to right direction
-skinparam backgroundColor transparent
+skinparam backgroundColor white
 
 actor "Zákazník" as Zakaznik
 actor "Správce" as Admin

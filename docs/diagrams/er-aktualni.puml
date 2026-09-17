@@ -1,5 +1,5 @@
 @startuml er-aktualni
-skinparam backgroundColor transparent
+skinparam backgroundColor white
 
 entity "CAR" as CAR {
   * id : int <<PK>>

@@ -1,5 +1,5 @@
 @startuml container
-skinparam backgroundColor transparent
+skinparam backgroundColor white
 
 package "Prohlížeč" {
   component "Frontend SPA\nReact + TypeScript (Vite)" as spa
