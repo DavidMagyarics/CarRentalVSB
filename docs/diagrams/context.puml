@@ -2,12 +2,12 @@
 left to right direction
 skinparam backgroundColor white
 
-actor "Zákazník" as zakaznik
-actor "Správce" as admin
+actor "Customer" as customer
+actor "Admin" as admin
 rectangle "CarRentalVSB\n(reservation system)" as app
-rectangle "Notification Service\n(externí boundary)" as notif
+rectangle "Notification Service\n(external boundary)" as notif
 
-zakaznik --> app : prohlíží auta, vytváří/\npotvrzuje/ruší rezervace (HTTPS)
-admin --> app : spravuje vozový park\na rezervace (HTTPS)
+customer --> app : browses cars, creates/\nconfirms/cancels reservations (HTTPS)
+admin --> app : manages fleet\nand reservations (HTTPS)
 app --> notif : send_confirmation(reservation, user)
 @enduml

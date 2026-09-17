@@ -1,54 +1,56 @@
-# Architektura a rozhodnutí
+# Architecture and Decisions
 
-## Přehled (C4 — Context)
+## Overview (C4 — Context)
 
 ![C4 Context diagram](diagrams/context.svg)
 
-*Zdroj diagramu: [diagrams/context.puml](diagrams/context.puml) — PlantUML, obrázek se automaticky přegeneruje při každé změně zdroje (viz [.github/workflows/render-plantuml.yml](../.github/workflows/render-plantuml.yml)).*
+*Diagram source: [diagrams/context.puml](diagrams/context.puml) — PlantUML, the image is automatically re-rendered on every source change (see [.github/workflows/render-plantuml.yml](../.github/workflows/render-plantuml.yml)).*
 
-## Kontejnery (C4 — Container)
+## Containers (C4 — Container)
 
 ![C4 Container diagram](diagrams/container.svg)
 
-*Zdroj diagramu: [diagrams/container.puml](diagrams/container.puml).*
+*Diagram source: [diagrams/container.puml](diagrams/container.puml).*
 
-Podrobnější rozpad struktury repozitáře a vrstvení backendu je v
-[architektura.md](architektura.md) (vznikl v první iteraci projektu, obsah
-zůstává platný). Tento dokument navíc obsahuje log rozhodnutí, popis boundary
-a zvolenou future pressure vyžadovanou zadáním C01.
+A more detailed breakdown of the repository structure and backend layering is
+in [architecture.md](architecture.md) (written in the first iteration of the
+project, its content remains valid). This document additionally contains the
+decision log, the boundary description and the future pressure selected for
+the C01 assignment.
 
-## Externí hranice systému: Notification Service
+## External / system boundary: Notification Service
 
-Doména na Notification Service závisí přes malé rozhraní
-`NotificationService` (`backend/app/notification.py`):
+The domain depends on the Notification Service through a small
+`NotificationService` interface (`backend/app/notification.py`):
 
 ```python
 class NotificationService(Protocol):
     def send_confirmation(self, reservation, user) -> bool: ...
 ```
 
-Pro vývoj je zapojena `LoggingNotificationService`, která odeslání simuluje a
-zaloguje. Reálná integrace (e-mail/SMS provider) se zapojí implementací
-stejného rozhraní beze změny domain kódu v `crud.py`/routerech. Chování při
-selhání této služby (timeout, 5xx, retry) zatím není řešeno — je to
-zaznamenané jako `Unknown` v [intent-and-change.md](intent-and-change.md) a
-kandidát na budoucí spike varianty B (Boundary failure).
+For development, `LoggingNotificationService` is wired in, which simulates
+sending and logs it. A real integration (email/SMS provider) plugs in by
+implementing the same interface without changing the domain code in
+`crud.py`/routers. Behavior on failure of this service (timeout, 5xx, retry)
+is not handled yet — it's recorded as an `Unknown` in
+[intent-and-change.md](intent-and-change.md) and is a candidate for a future
+variant-B spike (boundary failure).
 
-## Log rozhodnutí
+## Decision log
 
-| # | Rozhodnutí | Zdůvodnění |
+| # | Decision | Rationale |
 |---|---|---|
-| D1 | Backend: FastAPI + SQLAlchemy + SQLite (dev) | Automatická OpenAPI dokumentace, typová validace přes Pydantic, nulová konfigurace DB pro školní projekt; snadný přechod na PostgreSQL beze změny ORM kódu. |
-| D2 | Frontend: React + TypeScript (Vite) | Komponentový model odpovídá doménovým konceptům (seznam aut, formulář rezervace); rychlý dev server. |
-| D3 | Reservation má explicitní stav (`DRAFT`/`CONFIRMED`/`CANCELLED`) místo rovnou "hotové" rezervace | Zadání C01 vyžaduje smysluplné stavy a operace confirm/cancel; DRAFT navíc umožňuje zákazníkovi rozmyslet se bez okamžitého zablokování slotu ostatním. |
-| D4 | Obecné pravidlo o překryvu se vztahuje jen na `CONFIRMED` rezervace, ne na `DRAFT` | Dvě DRAFT rezervace na stejný slot mohou koexistovat (nikdo ještě nic nezávazně nezabral); závaznost vzniká až potvrzením — viz `crud.is_car_available`. |
-| D5 | User se zakládá/najde automaticky podle e-mailu při vytvoření rezervace (`get_or_create_user`), bez přihlašování | V C01 ještě neřešíme autentizaci (F5/F7 jsou `Plánováno`); potřebujeme ale reálnou `User` entitu v datovém modelu podle zadání. |
-| D6 | Notification Service je hranice systému implementovaná jako lokální rozhraní + logging stub, ne reálná HTTP integrace | Cílem C01 je mít definovanou a použitou hranici systému v kódu; reálná integrace a ošetření výpadků je budoucí práce (viz budoucí tlak a otevřená otázka výše). |
+| D1 | Backend: FastAPI + SQLAlchemy + SQLite (dev) | Automatic OpenAPI docs, type validation via Pydantic, zero DB configuration for a school project; easy migration to PostgreSQL without ORM code changes. |
+| D2 | Frontend: React + TypeScript (Vite) | Component model matches the domain concepts (car list, reservation form); fast dev server. |
+| D3 | Reservation has an explicit state (`DRAFT`/`CONFIRMED`/`CANCELLED`) instead of being "done" right away | The C01 assignment requires meaningful states and confirm/cancel operations; DRAFT also lets the customer reconsider without immediately blocking the slot for others. |
+| D4 | The common overlap rule only applies to `CONFIRMED` reservations, not `DRAFT` | Two DRAFT reservations for the same slot can coexist (nobody has bindingly claimed it yet); it becomes binding only on confirmation — see `crud.is_car_available`. |
+| D5 | The User is created/found automatically by email when a reservation is made (`get_or_create_user`), without login | In C01 we don't yet handle authentication (F5/F7 are `Planned`); but we need a real `User` entity in the data model per the assignment. |
+| D6 | The Notification Service is a system boundary implemented as a local interface + logging stub, not a real HTTP integration | The goal of C01 is to have a defined and used system boundary in the code; the real integration and failure handling is future work (see the future pressure and open question above). |
 
-## Zvolený budoucí tlak
+## Selected future pressure
 
-Viz [intent-and-change.md](intent-and-change.md#zvolený-budoucí-tlak) —
-**Kategorie: Q (Kvalita/škálovatelnost)**, konkrétně 10× vyšší souběžnost při
-potvrzování rezervací a riziko race condition v `is_car_available` /
-`confirm_reservation` nad SQLite bez transakčního zamykání. V C01 se
-neimplementuje, jen se eviduje jako známé riziko pro budoucí iteraci.
+See [intent-and-change.md](intent-and-change.md#selected-future-pressure) —
+**Category: Q (Quality/Scale)**, specifically 10x higher concurrency when
+confirming reservations and the race-condition risk in `is_car_available` /
+`confirm_reservation` over SQLite without transactional locking. It is not
+implemented in C01, only recorded as a known risk for a future iteration.

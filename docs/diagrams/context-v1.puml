@@ -2,10 +2,10 @@
 left to right direction
 skinparam backgroundColor white
 
-actor "Zákazník" as zakaznik
-actor "Správce" as admin
-rectangle "CarRentalVSB\n(webová aplikace)" as app
+actor "Customer" as customer
+actor "Admin" as admin
+rectangle "CarRentalVSB\n(web application)" as app
 
-zakaznik --> app : prohlíží auta, vytváří rezervace (HTTPS)
-admin --> app : spravuje vozový park a rezervace (HTTPS)
+customer --> app : browses cars, creates reservations (HTTPS)
+admin --> app : manages fleet and reservations (HTTPS)
 @enduml

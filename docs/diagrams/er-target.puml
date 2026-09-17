@@ -1,4 +1,4 @@
-@startuml er-cilovy
+@startuml er-target
 skinparam backgroundColor white
 
 entity "USER" as USER {
@@ -43,8 +43,8 @@ entity "RESERVATION" as RESERVATION {
   created_at : datetime
 }
 
-USER ||--o{ RESERVATION : "vytváří"
-CAR ||--o{ RESERVATION : "je rezervováno v"
-BRANCH ||--o{ CAR : "patří pod"
-CAR ||--o{ CAR_CATEGORY : "spadá do"
+USER ||--o{ RESERVATION : "creates"
+CAR ||--o{ RESERVATION : "is reserved in"
+BRANCH ||--o{ CAR : "belongs to"
+CAR ||--o{ CAR_CATEGORY : "belongs to category"
 @enduml

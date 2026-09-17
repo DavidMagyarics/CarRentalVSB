@@ -1,50 +1,50 @@
-# Roadmapa / iterativní vývoj
+# Roadmap / iterative development
 
-Projekt se buduje po týdenních přírůstcích. U každé položky je odkaz na
-odpovídající požadavek v [pozadavky.md](pozadavky.md).
+The project is built in weekly increments. Each item links to the
+corresponding requirement in [requirements.md](requirements.md).
 
-## Týden 1 — MVP: základní rezervace ✅
+## Week 1 — MVP: basic reservation ✅
 
-- [x] Datový model `Car`, `Reservation` (F1–F4)
-- [x] API: výpis aut, vytvoření rezervace s kontrolou kolize termínu (F3)
-- [x] Frontend: seznam aut + formulář rezervace
-- [x] Backend testy (unit/integrační)
-- [x] Dokumentace SI (SRS, use case, architektura, doménový model, API, test strategie)
+- [x] Data model `Car`, `Reservation` (F1–F4)
+- [x] API: list cars, create reservation with date-overlap check (F3)
+- [x] Frontend: car list + reservation form
+- [x] Backend tests (unit/integration)
+- [x] SWI documentation (SRS, use cases, architecture, domain model, API, test strategy)
 
-## Týden 1b — SWI C01: Zahájení inženýrského projektu ✅
+## Week 1b — SWI C01: Start the Engineering Project ✅
 
-- [x] `User` entita, stavy rezervace `DRAFT/CONFIRMED/CANCELLED` (F2, F4)
-- [x] Operace confirm/cancel/check availability (F14–F16)
-- [x] Common business rule jen nad `CONFIRMED` rezervacemi (F3)
-- [x] Domain-specific rule: nelze zrušit potvrzenou rezervaci po startu termínu (F15)
-- [x] Notification Service boundary (stub) při potvrzení (F12)
+- [x] `User` entity, reservation states `DRAFT/CONFIRMED/CANCELLED` (F2, F4)
+- [x] Confirm/cancel/check availability operations (F14–F16)
+- [x] Common business rule only over `CONFIRMED` reservations (F3)
+- [x] Domain-specific rule: cannot cancel a confirmed reservation after the rental period has started (F15)
+- [x] Notification Service boundary (stub) on confirmation (F12)
 - [x] Project Frame, architecture-and-decisions, evidence-and-evolution (`docs/`)
-- [x] Persistence engineering spike (restart procesu, data přežila)
-- [x] CP1 walking skeleton definován v README
+- [x] Persistence engineering spike (process restart, data survived)
+- [x] CP1 walking skeleton defined in README
 
-## Týden 2 — návrh (příklad, uprav dle zadání cvičícího)
+## Week 2 — planned (example, adjust to your instructor's assignment)
 
-- [ ] Frontend UI pro potvrzení/zrušení rezervace a kontrolu dostupnosti
-- [ ] Frontend testy komponent (Vitest)
+- [ ] Frontend UI for confirming/cancelling a reservation and checking availability
+- [ ] Frontend component tests (Vitest)
 
-## Týden 3 — návrh
+## Week 3 — planned
 
-- [ ] Registrace a přihlášení zákazníka (F5, F7)
-- [ ] Navázání rezervací na přihlášeného uživatele místo jméno/e-mail
+- [ ] Customer registration and login (F5, F7)
+- [ ] Link reservations to the logged-in user instead of name/email
 
-## Týden 4 — návrh
+## Week 4 — planned
 
-- [ ] Administrace vozového parku (F8) — přidání/úprava/odebrání auta
-- [ ] Administrace rezervací (F9) — přehled, potvrzení/zrušení
+- [ ] Fleet administration (F8) — add/edit/remove a car
+- [ ] Reservation administration (F9) — overview, confirm/cancel
 
-## Týden 5+ — návrh
+## Week 5+ — planned
 
-- [ ] Filtrování aut podle dostupnosti/ceny/kategorie (F10)
-- [ ] Pobočky (F11)
-- [ ] E-mailové potvrzení rezervace (F12)
+- [ ] Filtering cars by availability/price/category (F10)
+- [ ] Branches (F11)
+- [ ] Email reservation confirmation (F12)
 - [ ] CI pipeline (GitHub Actions)
-- [ ] Dockerizace (N9)
+- [ ] Dockerization (N9)
 
-> Poznámka: konkrétní obsah jednotlivých týdnů uprav podle skutečného zadání
-> cvičení / termínů odevzdání. Tento soubor slouží i jako podklad pro
-> průběžné hodnocení postupu v předmětu.
+> Note: adjust the specific content of each week to your instructor's actual
+> assignment / submission deadlines. This file also serves as the basis for
+> ongoing progress evaluation in the course.

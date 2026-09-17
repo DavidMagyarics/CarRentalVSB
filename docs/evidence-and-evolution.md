@@ -1,32 +1,32 @@
-# C01 – Inženýrský spike (experiment)
+# C01 Engineering Spike
 
-**Zvolená varianta:** A — Persistence
+**Chosen variant:** A — Persistence
 
-## Otázka / neznámá
+## Question / unknown
 
-Uloží se doménová data (Car, User, Reservation včetně jejich stavu
-DRAFT/CONFIRMED/CANCELLED a vzájemných vazeb) skutečně trvale do databáze
-tak, aby přežila restart backendového procesu — a ne jen v paměti běžícího
-serveru?
+Is the domain data (Car, User, Reservation including its
+DRAFT/CONFIRMED/CANCELLED state and their relationships) actually persisted
+to the database so it survives a backend process restart — and not just kept
+in the memory of the running server?
 
-## Co jsme udělali
+## What we did
 
-1. Rozšířili jsme datový model o entitu `User` a `ReservationStatus`
-   (`backend/app/models.py`) a doplnili operace `confirm`/`cancel`/
-   `check availability` (`backend/app/crud.py`, `backend/app/routers/`).
-2. Smazali jsme soubor databáze (`carrental.db`) pro čistý start.
-3. Spustili jsme backend jako proces 1 (`uvicorn app.main:app --port 8010`).
-4. Přes `curl` jsme vytvořili rezervaci (`POST /reservations/`) a potvrdili
-   ji (`POST /reservations/1/confirm`).
-5. Proces 1 jsme tvrdě ukončili (`Stop-Process`).
-6. Spustili jsme **nový, nezávislý proces** (proces 2,
-   `uvicorn app.main:app --port 8011`) nad stejným souborem `carrental.db`.
-7. Přes `curl` jsme na procesu 2 zavolali `GET /reservations/` a
-   `GET /users/` — bez jakéhokoliv nového zápisu.
-8. Zopakovali jsme celou automatizovanou testovací sadu (`pytest`).
+1. We extended the data model with a `User` entity and `ReservationStatus`
+   (`backend/app/models.py`) and added `confirm`/`cancel`/
+   `check availability` operations (`backend/app/crud.py`, `backend/app/routers/`).
+2. We deleted the database file (`carrental.db`) for a clean start.
+3. We started the backend as process 1 (`uvicorn app.main:app --port 8010`).
+4. Via `curl` we created a reservation (`POST /reservations/`) and confirmed
+   it (`POST /reservations/1/confirm`).
+5. We hard-killed process 1 (`Stop-Process`).
+6. We started a **new, independent process** (process 2,
+   `uvicorn app.main:app --port 8011`) over the same `carrental.db` file.
+7. Via `curl` we called `GET /reservations/` and `GET /users/` on process 2 —
+   without any new write.
+8. We re-ran the whole automated test suite (`pytest`).
 
-Přesné příkazy a výstupy (zkráceno, plné znění v historii repa / terminálu
-při review):
+Exact commands and output (abridged, full record in the repo/terminal history
+at review time):
 
 ```
 $ curl -X POST http://localhost:8010/reservations/ -d '{...car_id:1, spike@example.com, 2027-05-01..2027-05-05}'
@@ -35,7 +35,7 @@ $ curl -X POST http://localhost:8010/reservations/ -d '{...car_id:1, spike@examp
 $ curl -X POST http://localhost:8010/reservations/1/confirm
 {"id":1,"car_id":1,"user_id":1,"status":"CONFIRMED", ...}
 
-# proces 1 ukončen, proces 2 nastartován nad stejným carrental.db
+# process 1 killed, process 2 started over the same carrental.db
 
 $ curl http://localhost:8011/reservations/
 [{"id":1,"car_id":1,"user_id":1,"status":"CONFIRMED", ...}]
@@ -47,25 +47,28 @@ $ pytest -q
 17 passed
 ```
 
-## Pozorovaný výsledek
+## Observed result
 
-Rezervace vytvořená a potvrzená v procesu 1 byla po jeho tvrdém ukončení
-čitelná v procesu 2 (jiný proces, jiný port, žádné sdílení paměti) — včetně
-správného stavu `CONFIRMED` a navázaného `User` záznamu. Data tedy skutečně
-persistují v `carrental.db`, nejsou jen v paměti běžícího serveru. Celá
-sada 17 automatizovaných testů (`pytest`) prochází nad touto podobou domény.
+The reservation created and confirmed in process 1 was readable in process 2
+after process 1 was hard-killed (a different process, a different port, no
+shared memory) — including the correct `CONFIRMED` status and the linked
+`User` record. So the data really does persist in `carrental.db`, it isn't
+just in the memory of the running server. The full suite of 17 automated
+tests (`pytest`) passes against this shape of the domain.
 
-## Rozhodnutí / co se mění na základě výsledku
+## Decision / what changes because of the result
 
-- Zůstáváme u SQLAlchemy + SQLite pro vývoj a školní účely — persistence
-  funguje spolehlivě a jednoduše, není důvod ji teď měnit.
-- Pro CP1 walking skeleton (viz README) budeme stavět na stejném
-  `POST /reservations/` toku, protože je ověřeně funkční end-to-end včetně
-  perzistence.
-- Riziko souběhu při vyšší zátěži (viz `Selected future pressure` v
-  `intent-and-change.md`) SQLite/aplikační zámek zatím neřeší — je to
-  vědomě odložené, ne přehlédnuté: až přejdeme na PostgreSQL, doplníme
-  transakční zamykání nebo databázový constraint proti překryvu.
-- Boundary vůči Notification Service (viz `architecture-and-decisions.md`)
-  je zapojen jako stub; jeho reálné selhání (timeout/5xx) je kandidát na
-  příští spike (varianta B).
+- We're staying with SQLAlchemy + SQLite for development and school purposes
+  — persistence works reliably and simply, there's no reason to change it
+  now.
+- For the CP1 walking skeleton (see README) we'll build on the same
+  `POST /reservations/` flow, since it's proven to work end-to-end including
+  persistence.
+- The risk of concurrency under higher load (see `Selected future pressure`
+  in `intent-and-change.md`) is not addressed by SQLite/an application lock
+  yet — this is a conscious deferral, not an oversight: once we move to
+  PostgreSQL we'll add transactional locking or a database constraint against
+  overlap.
+- The boundary to the Notification Service (see `architecture-and-decisions.md`)
+  is wired in as a stub; its real failure modes (timeout/5xx) are a candidate
+  for the next spike (variant B).

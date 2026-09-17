@@ -1,4 +1,4 @@
-@startuml er-aktualni
+@startuml er-current
 skinparam backgroundColor white
 
 entity "CAR" as CAR {
@@ -29,6 +29,6 @@ entity "RESERVATION" as RESERVATION {
   created_at : datetime
 }
 
-CAR ||--o{ RESERVATION : "je rezervováno v"
-USER ||--o{ RESERVATION : "vytváří"
+CAR ||--o{ RESERVATION : "is reserved in"
+USER ||--o{ RESERVATION : "creates"
 @enduml

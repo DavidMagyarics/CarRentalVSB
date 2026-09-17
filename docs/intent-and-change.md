@@ -1,122 +1,124 @@
-# Rámec projektu
+# Project Frame
 
-## Doména rezervací
+## Reservation domain
 
-Rezervační systém půjčovny aut (car rental). Rezervovaným zdrojem je
-konkrétní **auto** ve vozovém parku (identifikováno mj. SPZ).
+Car rental reservation system. The reserved resource is a specific **car**
+in the fleet (identified among other things by its license plate).
 
-## Účel
+## Purpose
 
-Systém slouží zákazníkům půjčovny, kteří si chtějí online zkontrolovat
-dostupnost auta a vytvořit/potvrdit/zrušit rezervaci na konkrétní termín, a
-provozovateli půjčovny, který spravuje vozový park a přehled rezervací.
+The system serves rental customers who want to check car availability online
+and create/confirm/cancel a reservation for a specific date range, and the
+rental operator who manages the fleet and the reservation overview.
 
-## Uživatelé / zainteresované strany
+## Users / Stakeholders
 
-- **Zákazník** — prohlíží vozový park, vytváří, potvrzuje a ruší své rezervace.
-- **Správce půjčovny (Admin)** — spravuje vozový park a dohlíží na rezervace (plánováno v dalších iteracích).
-- **Notification Service** (externí systém) — informuje zákazníka o potvrzení rezervace.
+- **Customer** — browses the fleet, creates, confirms and cancels their reservations.
+- **Rental Admin** — manages the fleet and oversees reservations (planned in later iterations).
+- **Notification Service** (external system) — informs the customer when a reservation is confirmed.
 
-## Klíčové koncepty
+## Core concepts
 
-- **Reservation** (rezervace) — vazba mezi zdrojem, uživatelem a časovým slotem, se stavem.
-- **Resource / Car** (zdroj/auto) — konkrétní auto ve vozovém parku (značka, model, rok, SPZ, cena/den).
-- **User** (uživatel) — osoba, která rezervaci vytváří (jméno, e-mail).
+- **Reservation** — a link between a resource, a user and a time slot, with a status.
+- **Resource / Car** — a specific car in the fleet (brand, model, year, license plate, price/day).
+- **User** — the person who creates the reservation (name, email).
 
-## Klíčové operace
+## Core operations
 
-- Vytvoření rezervace
-- Potvrzení rezervace
-- Zrušení rezervace
-- Ověření dostupnosti
+- Create reservation
+- Confirm reservation
+- Cancel reservation
+- Check availability
 
-Implementováno jako REST API:
+Implemented as a REST API:
 
-| Operace | Endpoint |
+| Operation | Endpoint |
 |---|---|
 | Create reservation | `POST /reservations/` |
 | Confirm reservation | `POST /reservations/{id}/confirm` |
 | Cancel reservation | `POST /reservations/{id}/cancel` |
 | Check availability | `GET /cars/{car_id}/availability?start_date=...&end_date=...` |
 
-## Perzistentní stav
+## Persistent state
 
-**Car (auto):** id, brand, model, year, license_plate, daily_price.
+**Car (resource):** id, brand, model, year, license_plate, daily_price.
 
-**User (uživatel):** id, name, email.
+**User:** id, name, email.
 
-**Reservation (rezervace):** id, car_id (FK → Car), user_id (FK → User), status
+**Reservation:** id, car_id (FK → Car), user_id (FK → User), status
 (DRAFT/CONFIRMED/CANCELLED), start_date, end_date, created_at.
 
-## Operace měnící stav
+## State-changing operation
 
-`DRAFT → CONFIRMED` přes `POST /reservations/{id}/confirm` (systém při tom
-znovu ověří dostupnost auta a odešle notifikaci zákazníkovi přes Notification
-Service). Dále `DRAFT → CANCELLED` a `CONFIRMED → CANCELLED` přes
-`POST /reservations/{id}/cancel`.
+`DRAFT → CONFIRMED` via `POST /reservations/{id}/confirm` (the system
+re-checks car availability and sends a confirmation notification to the
+customer through the Notification Service). Also `DRAFT → CANCELLED` and
+`CONFIRMED → CANCELLED` via `POST /reservations/{id}/cancel`.
 
-## Obecné byznys pravidlo
+## Common business rule
 
-Potvrzené (CONFIRMED) rezervace téhož zdroje (auta) se nesmí časově překrývat.
+Confirmed reservations for the same resource must not overlap.
 
-Vynuceno v `crud.is_car_available`: kontroluje se pouze proti rezervacím ve
-stavu `CONFIRMED` daného auta. Kontrola běží jak při `create` (nelze vytvořit
-rezervaci na slot, který už je potvrzený jinou rezervací), tak při `confirm`
-(řeší souběh dvou DRAFT rezervací na stejný slot — potvrdit lze jen jednu).
+Enforced in `crud.is_car_available`: it only checks against reservations in
+`CONFIRMED` state for that car. The check runs both on `create` (you can't
+create a reservation on a slot already confirmed by another reservation) and
+on `confirm` (resolves a race between two DRAFT reservations on the same
+slot — only one can be confirmed).
 
-## Doménově specifické pravidlo
+## Domain-specific business rule
 
-**Potvrzenou (CONFIRMED) rezervaci lze zrušit pouze před začátkem termínu
-výpůjčky (`start_date` musí být v budoucnosti).** Jakmile výpůjčka podle
-`start_date` již začala, zákazník ji přes systém zrušit nemůže — musí se to
-řešit provozně (fyzické vrácení/reklamace), ne automatickým zrušením
-rezervace, aby nedocházelo k tomu, že „zmizí“ záznam o autě, které je fakticky
-mimo půjčovnu.
+**A confirmed (CONFIRMED) reservation can only be cancelled before the rental
+period starts (`start_date` must be in the future).** Once the rental period
+has started according to `start_date`, the customer can no longer cancel it
+through the system — it has to be handled operationally (physical return /
+complaint), not by automatically cancelling the reservation, so that the
+record of a car that is actually out of the lot doesn't just "disappear".
 
-Implementováno v `crud.cancel_reservation`, otestováno v
+Implemented in `crud.cancel_reservation`, tested in
 `test_cannot_cancel_confirmed_reservation_after_start_date`.
 
-## Externí hranice systému
+## External / system boundary
 
-**Notification Service** — při potvrzení rezervace (`confirm`) systém zavolá
-`NotificationService.send_confirmation(reservation, user)`
-(`backend/app/notification.py`). Pro vývoj je zapojena `LoggingNotificationService`
-(simuluje úspěšné odeslání a zaloguje ho); v produkci by šlo o reálnou
-e-mailovou/SMS bránu. Rozhraní je navrženo tak, aby šlo implementaci vyměnit
-beze změny domain kódu — viz [architecture-and-decisions.md](architecture-and-decisions.md).
+**Notification Service** — when a reservation is confirmed (`confirm`), the
+system calls `NotificationService.send_confirmation(reservation, user)`
+(`backend/app/notification.py`). For development, `LoggingNotificationService`
+is wired in (simulates a successful send and logs it); in production this
+would be a real email/SMS gateway. The interface is designed so the
+implementation can be swapped without changing the domain code — see
+[architecture-and-decisions.md](architecture-and-decisions.md).
 
-## Předpoklad
+## Assumption
 
-Předpokládáme, že v této fázi stačí identifikovat zákazníka jménem a
-e-mailem bez přihlašování (autentizace) — systém si podle e-mailu
-uživatele sám najde nebo založí (`get_or_create_user`). Tento předpoklad
-padne, jakmile přibude registrace/přihlášení (F5/F7 v `docs/pozadavky.md`).
+We assume that at this stage it's enough to identify the customer by name
+and email without login (authentication) — the system finds or creates the
+`User` by email itself (`get_or_create_user`). This assumption goes away once
+registration/login is added (F5/F7 in `docs/requirements.md`).
 
-## Neznámá / otevřená otázka
+## Unknown
 
-Nevíme zatím, jak přesně bude vypadat reálná integrace s Notification
-Service (jaký provider, synchronně vs. asynchronně/frontou, jak řešit jeho
-výpadek) — to je záměrně otevřené jako budoucí engineering spike (varianta
-B — selhání hranice systému).
+We don't yet know exactly what the real integration with the Notification
+Service will look like (which provider, sync vs. async/queue, how to handle
+an outage) — this is intentionally left open as a future engineering spike
+(variant B — boundary failure).
 
 ---
 
-## Zvolený budoucí tlak
+## Selected future pressure
 
-**Kategorie:** Q — Kvalita / škálovatelnost
+**Category:** Q — Quality / Scale
 
-**Konkrétní tlak:** 10× více souběžných rezervací (např. akční nabídka
-nebo více poboček najednou generuje výrazně vyšší provoz na `POST
-/reservations/` a `POST /reservations/{id}/confirm` ve stejný čas na stejná
-auta).
+**Concrete pressure:** 10x more concurrent reservations (e.g. a promotion or
+several branches at once generating significantly higher traffic on `POST
+/reservations/` and `POST /reservations/{id}/confirm` at the same time for
+the same cars).
 
-**Proč je to relevantní pro náš rezervační systém:** Kontrola dostupnosti
-(`is_car_available`) a přechod DRAFT → CONFIRMED aktuálně běží jako
-read-then-write nad SQLite bez explicitního zamykání řádku ani transakční
-izolace nastavené na úrovni aplikace. Při 10× vyšší souběžnosti hrozí race
-condition — dvě potvrzení téhož slotu projdou téměř současně a poruší
-`common business rule` (dvě CONFIRMED rezervace se překryjí). Tato pressure
-zatím **není** v C01 řešena implementačně, jen zaznamenaná jako známé riziko
-pro budoucí iteraci (bude vyžadovat buď databázový unique/exclusion
-constraint, nebo transakci se `SELECT ... FOR UPDATE` po přechodu na
-PostgreSQL).
+**Why it is relevant to our reservation system:** The availability check
+(`is_car_available`) and the DRAFT → CONFIRMED transition currently run as
+read-then-write over SQLite without explicit row locking or application-level
+transaction isolation. At 10x concurrency there's a race-condition risk — two
+confirmations for the same slot could go through almost simultaneously and
+violate the `common business rule` (two CONFIRMED reservations overlapping).
+This pressure is **not** addressed implementation-wise in C01, it's just
+recorded as a known risk for a future iteration (will require either a
+database unique/exclusion constraint, or a transaction with
+`SELECT ... FOR UPDATE` after moving to PostgreSQL).

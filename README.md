@@ -1,75 +1,75 @@
 # CarRentalVSB
 
-Rezervační systém půjčovny aut — seminární projekt z předmětu **Softwarové
-inženýrství** (SWI), VŠB. Zákazník si prohlédne vozový park, vytvoří
-rezervaci, potvrdí ji nebo zruší; systém hlídá, aby se potvrzené rezervace na
-jednom autě nekřížily.
+Car rental reservation system — a seminar project for the **Software
+Engineering** (SWI) course at VSB. A customer browses the fleet, creates a
+reservation, confirms or cancels it; the system makes sure confirmed
+reservations on the same car never overlap.
 
-Projekt se vyvíjí iterativně, týden po týdnu — aktuální rozsah a plán dalších
-přírůstků jsou v [docs/roadmap.md](docs/roadmap.md).
+The project is built iteratively, week by week — the current scope and the
+plan for upcoming increments are in [docs/roadmap.md](docs/roadmap.md).
 
-## Tým
+## Team
 
-| Jméno |
+| Name |
 |---|
 | David Magyarics |
 | Filip Fajtl |
 | Daniel Holík |
 | František Hanák |
 
-Repozitář: [github.com/DavidMagyarics/CarRentalVSB](https://github.com/DavidMagyarics/CarRentalVSB)
+Repository: [github.com/DavidMagyarics/CarRentalVSB](https://github.com/DavidMagyarics/CarRentalVSB)
 
-## Technologie
+## Tech stack
 
 - **Backend:** Python, FastAPI, SQLAlchemy, SQLite
 - **Frontend:** React, TypeScript, Vite
-- **Testy:** pytest (backend)
+- **Tests:** pytest (backend)
 
-## Struktura repozitáře
+## Repository structure
 
 ```
 backend/    FastAPI REST API
 frontend/   React SPA
-docs/       Dokumentace SI (požadavky, use case, architektura, ...)
+docs/       SWI documentation (requirements, use cases, architecture, ...)
 ```
 
-## Dokumentace
+## Documentation
 
-| Dokument | Obsah |
+| Document | Contents |
 |---|---|
 | [docs/intent-and-change.md](docs/intent-and-change.md) | **Project Frame** (SWI C01) + selected future pressure |
-| [docs/architecture-and-decisions.md](docs/architecture-and-decisions.md) | Architektura (C4), decision log, boundary, future pressure (SWI C01) |
-| [docs/evidence-and-evolution.md](docs/evidence-and-evolution.md) | **C01 Engineering Spike** — evidence a rozhodnutí |
-| [docs/pozadavky.md](docs/pozadavky.md) | Specifikace požadavků (SRS) |
-| [docs/pripady-uziti.md](docs/pripady-uziti.md) | Use case diagram a specifikace |
-| [docs/architektura.md](docs/architektura.md) | Detailní architektura, struktura repa, volba technologií |
-| [docs/domenovy-model.md](docs/domenovy-model.md) | ER / doménový model |
-| [docs/api-navrh.md](docs/api-navrh.md) | Návrh REST API |
-| [docs/testovaci-strategie.md](docs/testovaci-strategie.md) | Testovací strategie |
-| [docs/roadmap.md](docs/roadmap.md) | Plán vývoje po týdnech |
+| [docs/architecture-and-decisions.md](docs/architecture-and-decisions.md) | Architecture (C4), decision log, boundary, future pressure (SWI C01) |
+| [docs/evidence-and-evolution.md](docs/evidence-and-evolution.md) | **C01 Engineering Spike** — evidence and decision |
+| [docs/requirements.md](docs/requirements.md) | Requirements specification (SRS) |
+| [docs/use-cases.md](docs/use-cases.md) | Use case diagram and specification |
+| [docs/architecture.md](docs/architecture.md) | Detailed architecture, repository structure, technology choices |
+| [docs/domain-model.md](docs/domain-model.md) | ER / domain model |
+| [docs/api-design.md](docs/api-design.md) | REST API design |
+| [docs/testing-strategy.md](docs/testing-strategy.md) | Testing strategy |
+| [docs/roadmap.md](docs/roadmap.md) | Weekly development plan |
 
-## Spuštění backendu
+## Running the backend
 
 ```bash
 cd backend
 python -m venv .venv
-.venv\Scripts\activate        # Windows (na Linux/Mac: source .venv/bin/activate)
+.venv\Scripts\activate        # Windows (on Linux/Mac: source .venv/bin/activate)
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-API poběží na `http://localhost:8000`, interaktivní dokumentace na
-`http://localhost:8000/docs`. Při prvním spuštění se vytvoří SQLite databáze
-`carrental.db` s pár ukázkovými auty.
+The API runs on `http://localhost:8000`, interactive docs at
+`http://localhost:8000/docs`. On first run it creates the SQLite database
+`carrental.db` with a few sample cars.
 
-### Testy
+### Tests
 
 ```bash
 cd backend
 pytest -v
 ```
 
-## Spuštění frontendu
+## Running the frontend
 
 ```bash
 cd frontend
@@ -77,29 +77,30 @@ npm install
 npm run dev
 ```
 
-Aplikace poběží na `http://localhost:5173` a očekává backend na
-`http://localhost:8000` (lze změnit v `.env` podle `.env.example`).
+The app runs on `http://localhost:5173` and expects the backend at
+`http://localhost:8000` (configurable via `.env`, see `.env.example`).
 
-## CP1 – průchozí kostra systému (walking skeleton)
+## CP1 walking skeleton
 
-Cesta od začátku do konce, která bude skutečně spustitelná (frontend → backend → DB →
-automatizovaná kontrola) po C03 / před C04:
+An end-to-end path that will actually be runnable (frontend → backend → DB →
+automated check) after C03 / before C04:
 
 ```
 POST /reservations
-→ validate      (auto existuje, end_date > start_date, termín není obsazen CONFIRMED rezervací)
-→ persist       (Reservation vznikne ve stavu DRAFT, User se najde/založí podle e-mailu)
+→ validate      (car exists, end_date > start_date, slot not taken by a CONFIRMED reservation)
+→ persist       (Reservation is created in DRAFT state, User is found/created by email)
 → return reservation ID  (+ status, car_id, user_id)
-→ automated check  (pytest: GET /reservations/ vrátí danou rezervaci se stejnými daty)
+→ automated check  (pytest: GET /reservations/ returns the reservation with the same data)
 ```
 
-Backendová část tohoto toku je v C01 už implementovaná a otestovaná (viz
-[docs/evidence-and-evolution.md](docs/evidence-and-evolution.md) — persistence
-spike ověřil, že přežije i restart procesu). Do CP1 zbývá propojit celý tok i
-přes frontend formulář a přidat notifikaci při potvrzení jako součást
-automatizované kontroly.
+The backend part of this flow is already implemented and tested in C01 (see
+[docs/evidence-and-evolution.md](docs/evidence-and-evolution.md) — the
+persistence spike confirmed it survives a process restart). What remains for
+CP1 is wiring up the whole flow through the frontend form and adding a
+notification on confirmation as part of the automated check.
 
-## Poznámka k odevzdání
+## Submission note
 
-Tento README a dokumentace v `docs/` jsou aktualizovány průběžně s tím, jak
-přibývají funkce — odrážejí aktuální stav projektu, ne jen počáteční zadání.
+This README and the documentation in `docs/` are updated continuously as
+features are added — they reflect the current state of the project, not just
+the initial assignment.

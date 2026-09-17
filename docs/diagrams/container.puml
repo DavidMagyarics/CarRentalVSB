@@ -1,14 +1,14 @@
 @startuml container
 skinparam backgroundColor white
 
-package "Prohlížeč" {
+package "Browser" {
   component "Frontend SPA\nReact + TypeScript (Vite)" as spa
 }
 
 package "Backend server" {
   component "REST API\nPython / FastAPI" as api
   component "NotificationService\n(boundary interface)" as notif
-  database "Databáze\nSQLite (dev) / PostgreSQL (prod)" as db
+  database "Database\nSQLite (dev) / PostgreSQL (prod)" as db
 }
 
 spa --> api : HTTP/JSON (fetch)
