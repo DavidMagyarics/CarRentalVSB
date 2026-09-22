@@ -31,6 +31,7 @@ def create_car(client, admin_token, license_plate="9ZZ0001", **overrides):
         "year": 2024,
         "license_plate": license_plate,
         "daily_price": 1200,
+        "hourly_price": 100,
         "category": "SEDAN",
         "transmission": "AUTOMATIC",
         "fuel_type": "PETROL",

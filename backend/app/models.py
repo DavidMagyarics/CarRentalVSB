@@ -38,6 +38,11 @@ class FuelType(str, enum.Enum):
     HYBRID = "HYBRID"
 
 
+class PaymentMethod(str, enum.Enum):
+    CASH = "CASH"
+    CARD = "CARD"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -61,11 +66,13 @@ class Car(Base):
     year = Column(Integer, nullable=False)
     license_plate = Column(String, unique=True, nullable=False)
     daily_price = Column(Float, nullable=False)
+    hourly_price = Column(Float, nullable=False)
     category = Column(Enum(CarCategory), nullable=False, default=CarCategory.SEDAN)
     transmission = Column(Enum(Transmission), nullable=False, default=Transmission.MANUAL)
     fuel_type = Column(Enum(FuelType), nullable=False, default=FuelType.PETROL)
     seats = Column(Integer, nullable=False, default=5)
     description = Column(Text, nullable=True)
+    image_url = Column(String, nullable=True)
 
     reservations = relationship(
         "Reservation", back_populates="car", cascade="all, delete-orphan"
@@ -83,6 +90,8 @@ class Reservation(Base):
     )
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=False)
+    total_price = Column(Float, nullable=False)
+    payment_method = Column(Enum(PaymentMethod), nullable=False, default=PaymentMethod.CASH)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
     car = relationship("Car", back_populates="reservations")

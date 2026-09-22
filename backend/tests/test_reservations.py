@@ -1,8 +1,18 @@
 from tests.helpers import auth_headers, create_car, make_admin, register
 
 
-def make_reservation_payload(car_id, start="2026-01-10T00:00:00", end="2026-01-15T00:00:00"):
-    return {"car_id": car_id, "start_date": start, "end_date": end}
+def make_reservation_payload(
+    car_id,
+    start="2026-01-10T00:00:00",
+    end="2026-01-15T00:00:00",
+    payment_method="CASH",
+):
+    return {
+        "car_id": car_id,
+        "start_date": start,
+        "end_date": end,
+        "payment_method": payment_method,
+    }
 
 
 def _customer(client, email="jan.novak@example.com"):
@@ -17,7 +27,7 @@ def test_create_reservation_starts_as_draft(client):
 
     response = client.post(
         "/reservations/",
-        json=make_reservation_payload(car["id"]),
+        json=make_reservation_payload(car["id"], payment_method="CARD"),
         headers=auth_headers(token),
     )
 
@@ -28,6 +38,8 @@ def test_create_reservation_starts_as_draft(client):
     assert reservation["user_id"] == user["id"]
     assert reservation["car"]["brand"] == "Škoda"
     assert reservation["user"]["email"] == "jan.novak@example.com"
+    assert reservation["payment_method"] == "CARD"
+    assert reservation["total_price"] > 0
 
 
 def test_create_reservation_requires_login(client):
@@ -49,7 +61,9 @@ def test_reservation_for_unknown_car_returns_404(client):
     assert response.status_code == 404
 
 
-def test_confirm_reservation(client):
+def test_customer_cannot_confirm_own_reservation(client):
+    """Confirming is an admin-only action — a customer's request is not
+    automatically binding just because they created it."""
     admin = make_admin(client)
     car = create_car(client, admin["access_token"])
     token, _ = _customer(client)
@@ -61,34 +75,30 @@ def test_confirm_reservation(client):
         f"/reservations/{reservation['id']}/confirm", headers=auth_headers(token)
     )
 
-    assert response.status_code == 200
-    assert response.json()["status"] == "CONFIRMED"
+    assert response.status_code == 403
+
+
+def test_confirming_without_login_is_rejected(client):
+    admin = make_admin(client)
+    car = create_car(client, admin["access_token"])
+    token, _ = _customer(client)
+    reservation = client.post(
+        "/reservations/", json=make_reservation_payload(car["id"]), headers=auth_headers(token)
+    ).json()
+
+    response = client.post(f"/reservations/{reservation['id']}/confirm")
+
+    assert response.status_code == 401
 
 
 def test_confirming_unknown_reservation_returns_404(client):
-    token, _ = _customer(client)
-
-    response = client.post("/reservations/999/confirm", headers=auth_headers(token))
-
-    assert response.status_code == 404
-
-
-def test_cannot_confirm_someone_elses_reservation(client):
     admin = make_admin(client)
-    car = create_car(client, admin["access_token"])
-    owner_token, _ = _customer(client)
-    reservation = client.post(
-        "/reservations/",
-        json=make_reservation_payload(car["id"]),
-        headers=auth_headers(owner_token),
-    ).json()
-    other_token, _ = _customer(client, email="other@example.com")
 
     response = client.post(
-        f"/reservations/{reservation['id']}/confirm", headers=auth_headers(other_token)
+        "/reservations/999/confirm", headers=auth_headers(admin["access_token"])
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 404
 
 
 def test_admin_can_confirm_any_reservation(client):
@@ -107,6 +117,7 @@ def test_admin_can_confirm_any_reservation(client):
     )
 
     assert response.status_code == 200
+    assert response.json()["status"] == "CONFIRMED"
 
 
 def test_confirming_already_confirmed_reservation_fails(client):
@@ -116,10 +127,12 @@ def test_confirming_already_confirmed_reservation_fails(client):
     reservation = client.post(
         "/reservations/", json=make_reservation_payload(car["id"]), headers=auth_headers(token)
     ).json()
-    client.post(f"/reservations/{reservation['id']}/confirm", headers=auth_headers(token))
+    client.post(
+        f"/reservations/{reservation['id']}/confirm", headers=auth_headers(admin["access_token"])
+    )
 
     response = client.post(
-        f"/reservations/{reservation['id']}/confirm", headers=auth_headers(token)
+        f"/reservations/{reservation['id']}/confirm", headers=auth_headers(admin["access_token"])
     )
 
     assert response.status_code == 409
@@ -142,11 +155,13 @@ def test_two_drafts_for_same_slot_can_coexist_but_only_one_can_be_confirmed(clie
     assert second["status"] == "DRAFT"
 
     assert (
-        client.post(f"/reservations/{first['id']}/confirm", headers=auth_headers(token_a)).status_code
+        client.post(
+            f"/reservations/{first['id']}/confirm", headers=auth_headers(admin["access_token"])
+        ).status_code
         == 200
     )
     response = client.post(
-        f"/reservations/{second['id']}/confirm", headers=auth_headers(token_b)
+        f"/reservations/{second['id']}/confirm", headers=auth_headers(admin["access_token"])
     )
 
     assert response.status_code == 409
@@ -166,7 +181,9 @@ def test_create_rejects_slot_already_confirmed(client):
     reservation = client.post(
         "/reservations/", json=first, headers=auth_headers(token)
     ).json()
-    client.post(f"/reservations/{reservation['id']}/confirm", headers=auth_headers(token))
+    client.post(
+        f"/reservations/{reservation['id']}/confirm", headers=auth_headers(admin["access_token"])
+    )
 
     response = client.post(
         "/reservations/", json=overlapping, headers=auth_headers(token)
@@ -190,11 +207,15 @@ def test_non_overlapping_confirmed_reservations_are_accepted(client):
     r2 = client.post("/reservations/", json=second, headers=auth_headers(token)).json()
 
     assert (
-        client.post(f"/reservations/{r1['id']}/confirm", headers=auth_headers(token)).status_code
+        client.post(
+            f"/reservations/{r1['id']}/confirm", headers=auth_headers(admin["access_token"])
+        ).status_code
         == 200
     )
     assert (
-        client.post(f"/reservations/{r2['id']}/confirm", headers=auth_headers(token)).status_code
+        client.post(
+            f"/reservations/{r2['id']}/confirm", headers=auth_headers(admin["access_token"])
+        ).status_code
         == 200
     )
 
@@ -238,7 +259,9 @@ def test_cancel_confirmed_reservation_before_start_date(client):
     reservation = client.post(
         "/reservations/", json=payload, headers=auth_headers(token)
     ).json()
-    client.post(f"/reservations/{reservation['id']}/confirm", headers=auth_headers(token))
+    client.post(
+        f"/reservations/{reservation['id']}/confirm", headers=auth_headers(admin["access_token"])
+    )
 
     response = client.post(
         f"/reservations/{reservation['id']}/cancel", headers=auth_headers(token)
@@ -260,7 +283,9 @@ def test_cannot_cancel_confirmed_reservation_after_start_date(client):
     reservation = client.post(
         "/reservations/", json=payload, headers=auth_headers(token)
     ).json()
-    client.post(f"/reservations/{reservation['id']}/confirm", headers=auth_headers(token))
+    client.post(
+        f"/reservations/{reservation['id']}/confirm", headers=auth_headers(admin["access_token"])
+    )
 
     response = client.post(
         f"/reservations/{reservation['id']}/cancel", headers=auth_headers(token)
@@ -302,7 +327,9 @@ def test_availability_reflects_confirmed_reservations_only(client):
     ).json()
     assert still_available["available"] is True
 
-    client.post(f"/reservations/{reservation['id']}/confirm", headers=auth_headers(token))
+    client.post(
+        f"/reservations/{reservation['id']}/confirm", headers=auth_headers(admin["access_token"])
+    )
 
     now_unavailable = client.get(
         f"/cars/{car['id']}/availability",
@@ -355,3 +382,54 @@ def test_admin_sees_all_reservations(client):
 
     assert response.status_code == 200
     assert len(response.json()) == 1
+
+
+def test_price_for_short_booking_uses_hourly_rate(client):
+    admin = make_admin(client)
+    car = create_car(client, admin["access_token"], daily_price=1000, hourly_price=100)
+    token, _ = _customer(client)
+
+    response = client.post(
+        "/reservations/",
+        json=make_reservation_payload(
+            car["id"], start="2026-09-01T08:00:00", end="2026-09-01T10:00:00"
+        ),
+        headers=auth_headers(token),
+    )
+
+    assert response.status_code == 201
+    assert response.json()["total_price"] == 200
+
+
+def test_price_is_capped_at_daily_rate_for_a_long_partial_day(client):
+    admin = make_admin(client)
+    car = create_car(client, admin["access_token"], daily_price=1000, hourly_price=100)
+    token, _ = _customer(client)
+
+    response = client.post(
+        "/reservations/",
+        json=make_reservation_payload(
+            car["id"], start="2026-09-01T08:00:00", end="2026-09-01T22:00:00"
+        ),
+        headers=auth_headers(token),
+    )
+
+    assert response.status_code == 201
+    assert response.json()["total_price"] == 1000
+
+
+def test_price_for_multi_day_booking_combines_day_and_hourly_rate(client):
+    admin = make_admin(client)
+    car = create_car(client, admin["access_token"], daily_price=1000, hourly_price=100)
+    token, _ = _customer(client)
+
+    response = client.post(
+        "/reservations/",
+        json=make_reservation_payload(
+            car["id"], start="2026-09-01T08:00:00", end="2026-09-03T11:00:00"
+        ),
+        headers=auth_headers(token),
+    )
+
+    assert response.status_code == 201
+    assert response.json()["total_price"] == 2300

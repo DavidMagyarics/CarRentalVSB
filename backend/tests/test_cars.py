@@ -28,6 +28,7 @@ def test_create_car_requires_login(client):
             "year": 2020,
             "license_plate": "Z1",
             "daily_price": 100,
+            "hourly_price": 10,
         },
     )
     assert response.status_code == 401
@@ -43,6 +44,7 @@ def test_create_car_forbidden_for_customer(client):
             "year": 2020,
             "license_plate": "Z2",
             "daily_price": 100,
+            "hourly_price": 10,
         },
         headers=auth_headers(user["access_token"]),
     )

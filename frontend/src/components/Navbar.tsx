@@ -13,7 +13,7 @@ export default function Navbar({ tab, onTabChange, onAuthOpen }: Props) {
   return (
     <header className="navbar">
       <div className="navbar-inner">
-        <div className="navbar-brand">
+        <button type="button" className="navbar-brand" onClick={() => onTabChange('cars')}>
           <span className="navbar-logo" aria-hidden="true">
             <svg viewBox="0 0 32 20" width="28" height="18">
               <path
@@ -25,7 +25,7 @@ export default function Navbar({ tab, onTabChange, onAuthOpen }: Props) {
             </svg>
           </span>
           CarRental<span className="navbar-brand-accent">VSB</span>
-        </div>
+        </button>
 
         <nav className="navbar-tabs">
           <button

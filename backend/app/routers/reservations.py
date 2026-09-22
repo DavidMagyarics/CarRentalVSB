@@ -47,19 +47,21 @@ def create_reservation(
             detail="Auto je v požadovaném termínu již potvrzenou rezervací obsazeno",
         )
 
-    return crud.create_reservation(db, current_user.id, reservation)
+    return crud.create_reservation(db, current_user.id, car, reservation)
 
 
 @router.post("/{reservation_id}/confirm", response_model=schemas.Reservation)
 def confirm_reservation(
     reservation_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    _admin: models.User = Depends(require_admin),
 ):
+    """Confirming is an admin-only action: a customer's DRAFT reservation is
+    a request, not a done deal — staff verifies it (availability, payment)
+    before it becomes binding. See docs/intent-and-change.md."""
     existing = crud.get_reservation(db, reservation_id)
     if existing is None:
         raise HTTPException(status_code=404, detail="Rezervace nenalezena")
-    _ensure_owner_or_admin(existing, current_user)
 
     try:
         reservation = crud.confirm_reservation(db, reservation_id)

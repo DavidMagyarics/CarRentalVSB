@@ -1,3 +1,4 @@
+import math
 from datetime import UTC, datetime
 
 from sqlalchemy import and_
@@ -8,6 +9,16 @@ from . import auth, models, schemas
 
 class DomainError(Exception):
     """Raised when an operation violates a domain/business rule."""
+
+
+def calculate_price(car: models.Car, start_date: datetime, end_date: datetime) -> float:
+    """Whole days cost the daily rate; the leftover hours are billed at the
+    hourly rate but never more than another full day — so booking close to
+    a full day (or several) is never worse than booking it by the hour."""
+    total_hours = math.ceil((end_date - start_date).total_seconds() / 3600)
+    full_days, remaining_hours = divmod(total_hours, 24)
+    remaining_price = min(remaining_hours * car.hourly_price, car.daily_price) if remaining_hours else 0
+    return full_days * car.daily_price + remaining_price
 
 
 def get_cars(
@@ -146,7 +157,7 @@ def get_reservation(db: Session, reservation_id: int) -> models.Reservation | No
 
 
 def create_reservation(
-    db: Session, user_id: int, reservation: schemas.ReservationCreate
+    db: Session, user_id: int, car: models.Car, reservation: schemas.ReservationCreate
 ) -> models.Reservation:
     db_reservation = models.Reservation(
         car_id=reservation.car_id,
@@ -154,6 +165,8 @@ def create_reservation(
         start_date=reservation.start_date,
         end_date=reservation.end_date,
         status=models.ReservationStatus.DRAFT,
+        total_price=calculate_price(car, reservation.start_date, reservation.end_date),
+        payment_method=reservation.payment_method,
     )
     db.add(db_reservation)
     db.commit()

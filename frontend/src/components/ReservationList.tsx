@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import type { Reservation } from '../api'
-import { cancelReservation, confirmReservation } from '../api'
+import { cancelReservation } from '../api'
 import { useAuth } from '../auth/AuthContext'
-import { STATUS_LABELS } from '../constants'
+import { PAYMENT_METHOD_LABELS, STATUS_LABELS } from '../constants'
 import { useToast } from './Toast'
 
 interface Props {
@@ -10,28 +10,20 @@ interface Props {
   onChanged: () => void
 }
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString('cs-CZ')
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString('cs-CZ', {
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 export default function ReservationList({ reservations, onChanged }: Props) {
   const { token } = useAuth()
   const { show } = useToast()
   const [pendingId, setPendingId] = useState<number | null>(null)
-
-  async function handleConfirm(id: number) {
-    if (!token) return
-    setPendingId(id)
-    try {
-      await confirmReservation(token, id)
-      show('Rezervace byla potvrzena.', 'success')
-      onChanged()
-    } catch (err) {
-      show(err instanceof Error ? err.message : 'Potvrzení se nezdařilo', 'error')
-    } finally {
-      setPendingId(null)
-    }
-  }
 
   async function handleCancel(id: number) {
     if (!token) return
@@ -60,7 +52,11 @@ export default function ReservationList({ reservations, onChanged }: Props) {
               {reservation.car.brand} {reservation.car.model}
             </strong>
             <div className="dates">
-              {formatDate(reservation.start_date)} – {formatDate(reservation.end_date)}
+              {formatDateTime(reservation.start_date)} – {formatDateTime(reservation.end_date)}
+            </div>
+            <div className="reservation-price">
+              {reservation.total_price.toLocaleString('cs-CZ')} Kč ·{' '}
+              {PAYMENT_METHOD_LABELS[reservation.payment_method]}
             </div>
             <span className={`status-badge status-${reservation.status.toLowerCase()}`}>
               {STATUS_LABELS[reservation.status]}
@@ -68,15 +64,6 @@ export default function ReservationList({ reservations, onChanged }: Props) {
           </div>
 
           <div className="reservation-actions">
-            {reservation.status === 'DRAFT' && (
-              <button
-                type="button"
-                onClick={() => handleConfirm(reservation.id)}
-                disabled={pendingId === reservation.id}
-              >
-                Potvrdit
-              </button>
-            )}
             {reservation.status !== 'CANCELLED' && (
               <button
                 type="button"

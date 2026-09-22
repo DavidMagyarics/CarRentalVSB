@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from .models import CarCategory, FuelType, ReservationStatus, Transmission, UserRole
+from .models import CarCategory, FuelType, PaymentMethod, ReservationStatus, Transmission, UserRole
 
 
 class CarBase(BaseModel):
@@ -11,11 +11,13 @@ class CarBase(BaseModel):
     year: int
     license_plate: str
     daily_price: float
+    hourly_price: float
     category: CarCategory = CarCategory.SEDAN
     transmission: Transmission = Transmission.MANUAL
     fuel_type: FuelType = FuelType.PETROL
     seats: int = Field(default=5, ge=1, le=9)
     description: str | None = None
+    image_url: str | None = None
 
 
 class CarCreate(CarBase):
@@ -28,11 +30,13 @@ class CarUpdate(BaseModel):
     year: int | None = None
     license_plate: str | None = None
     daily_price: float | None = None
+    hourly_price: float | None = None
     category: CarCategory | None = None
     transmission: Transmission | None = None
     fuel_type: FuelType | None = None
     seats: int | None = Field(default=None, ge=1, le=9)
     description: str | None = None
+    image_url: str | None = None
 
 
 class Car(CarBase):
@@ -71,6 +75,7 @@ class ReservationCreate(BaseModel):
     car_id: int
     start_date: datetime
     end_date: datetime
+    payment_method: PaymentMethod
 
     @field_validator("end_date")
     @classmethod
@@ -90,6 +95,8 @@ class Reservation(BaseModel):
     status: ReservationStatus
     start_date: datetime
     end_date: datetime
+    total_price: float
+    payment_method: PaymentMethod
     created_at: datetime
     car: Car
     user: User
