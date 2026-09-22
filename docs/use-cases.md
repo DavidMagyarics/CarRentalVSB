@@ -29,6 +29,12 @@ Status legend: ✅ implemented in MVP, ⏳ planned in later iterations.
 | Alternative flow A2 | `end_date` <= `start_date` → the system returns validation error 422. |
 | Result | A new reservation exists in the database in `DRAFT` state, linked to the given car, user and date range. |
 
+### Activity diagram — Make Reservation
+
+![Activity diagram — Make Reservation](diagrams/activity-make-reservation.svg)
+
+*Diagram source: [diagrams/activity-make-reservation.puml](diagrams/activity-make-reservation.puml) — PlantUML, the image is automatically re-rendered on every source change.*
+
 ## UC7 — Check car availability ✅
 
 | | |

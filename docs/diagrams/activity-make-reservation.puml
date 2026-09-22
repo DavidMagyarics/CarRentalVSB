@@ -1,0 +1,43 @@
+@startuml activity-make-reservation
+skinparam backgroundColor white
+
+start
+
+partition Customer {
+  :Open the app;
+  :Browse the list of cars;
+  :Select a car;
+  :Enter name, email,\nstart date and end date;
+  :Submit reservation request;
+}
+
+partition System {
+  if (Car exists?) then (yes)
+  else (no)
+    :Show "car not found" error (404);
+    stop
+  endif
+
+  if (end_date > start_date?) then (yes)
+  else (no)
+    :Show validation error (422);
+    stop
+  endif
+
+  if (Car available for\nthe requested dates?) then (yes)
+  else (no)
+    :Show "slot already taken" error (409);
+    stop
+  endif
+
+  :Find or create User by email;
+  :Create Reservation\nin DRAFT state;
+  :Return reservation\n(id, status, car_id, user_id);
+}
+
+partition Customer {
+  :See reservation confirmation;
+}
+
+stop
+@enduml
