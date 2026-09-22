@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { Car } from '../api'
 import { checkAvailability, createReservation } from '../api'
+import { useAuth } from '../auth/AuthContext'
+import { useToast } from './Toast'
 
 interface Props {
   car: Car
@@ -16,8 +18,8 @@ type AvailabilityState =
   | { status: 'error'; message: string }
 
 export default function ReservationForm({ car, onDone, onCancel }: Props) {
-  const [customerName, setCustomerName] = useState('')
-  const [customerEmail, setCustomerEmail] = useState('')
+  const { token } = useAuth()
+  const { show } = useToast()
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -51,7 +53,8 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
           if (!cancelled) {
             setAvailability({
               status: 'error',
-              message: err instanceof Error ? err.message : 'Kontrolu dostupnosti se nepodařilo provést',
+              message:
+                err instanceof Error ? err.message : 'Kontrolu dostupnosti se nepodařilo provést',
             })
           }
         })
@@ -65,19 +68,21 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
+    if (!token) return
     setError(null)
     setSubmitting(true)
     try {
-      await createReservation({
+      await createReservation(token, {
         car_id: car.id,
-        customer_name: customerName,
-        customer_email: customerEmail,
         start_date: new Date(startDate).toISOString(),
         end_date: new Date(endDate).toISOString(),
       })
+      show('Rezervace byla úspěšně vytvořena.', 'success')
       onDone()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Neznámá chyba')
+      const message = err instanceof Error ? err.message : 'Neznámá chyba'
+      setError(message)
+      show(message, 'error')
     } finally {
       setSubmitting(false)
     }
@@ -85,29 +90,12 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
 
   return (
     <form className="reservation-form" onSubmit={handleSubmit}>
-      <h3>
-        Rezervace: {car.brand} {car.model}
-      </h3>
-
-      <label>
-        Jméno a příjmení
-        <input
-          type="text"
-          required
-          value={customerName}
-          onChange={(e) => setCustomerName(e.target.value)}
-        />
-      </label>
-
-      <label>
-        E-mail
-        <input
-          type="email"
-          required
-          value={customerEmail}
-          onChange={(e) => setCustomerEmail(e.target.value)}
-        />
-      </label>
+      <div className="reservation-form-summary">
+        <strong>
+          {car.brand} {car.model}
+        </strong>
+        <span>{car.daily_price.toLocaleString('cs-CZ')} Kč / den</span>
+      </div>
 
       <div className="date-row">
         <label>
@@ -142,13 +130,10 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
       {error && <p className="error">{error}</p>}
 
       <div className="form-actions">
-        <button
-          type="submit"
-          disabled={submitting || availability.status === 'unavailable'}
-        >
+        <button type="submit" disabled={submitting || availability.status === 'unavailable'}>
           {submitting ? 'Odesílám…' : 'Potvrdit rezervaci'}
         </button>
-        <button type="button" onClick={onCancel} disabled={submitting}>
+        <button type="button" className="secondary" onClick={onCancel} disabled={submitting}>
           Zrušit
         </button>
       </div>

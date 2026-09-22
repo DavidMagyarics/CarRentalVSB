@@ -1,66 +1,54 @@
 import { useState } from 'react'
-import type { Car, Reservation } from '../api'
+import type { Reservation } from '../api'
 import { cancelReservation, confirmReservation } from '../api'
+import { useAuth } from '../auth/AuthContext'
+import { STATUS_LABELS } from '../constants'
+import { useToast } from './Toast'
 
 interface Props {
   reservations: Reservation[]
-  cars: Car[]
   onChanged: () => void
-}
-
-const STATUS_LABELS: Record<Reservation['status'], string> = {
-  DRAFT: 'Čeká na potvrzení',
-  CONFIRMED: 'Potvrzeno',
-  CANCELLED: 'Zrušeno',
 }
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('cs-CZ')
 }
 
-export default function ReservationList({ reservations, cars, onChanged }: Props) {
+export default function ReservationList({ reservations, onChanged }: Props) {
+  const { token } = useAuth()
+  const { show } = useToast()
   const [pendingId, setPendingId] = useState<number | null>(null)
-  const [errors, setErrors] = useState<Record<number, string>>({})
-
-  function carLabel(carId: number) {
-    const car = cars.find((c) => c.id === carId)
-    return car ? `${car.brand} ${car.model} (${car.license_plate})` : `Auto #${carId}`
-  }
 
   async function handleConfirm(id: number) {
+    if (!token) return
     setPendingId(id)
-    setErrors((prev) => ({ ...prev, [id]: '' }))
     try {
-      await confirmReservation(id)
+      await confirmReservation(token, id)
+      show('Rezervace byla potvrzena.', 'success')
       onChanged()
     } catch (err) {
-      setErrors((prev) => ({
-        ...prev,
-        [id]: err instanceof Error ? err.message : 'Potvrzení se nezdařilo',
-      }))
+      show(err instanceof Error ? err.message : 'Potvrzení se nezdařilo', 'error')
     } finally {
       setPendingId(null)
     }
   }
 
   async function handleCancel(id: number) {
+    if (!token) return
     setPendingId(id)
-    setErrors((prev) => ({ ...prev, [id]: '' }))
     try {
-      await cancelReservation(id)
+      await cancelReservation(token, id)
+      show('Rezervace byla zrušena.', 'success')
       onChanged()
     } catch (err) {
-      setErrors((prev) => ({
-        ...prev,
-        [id]: err instanceof Error ? err.message : 'Zrušení se nezdařilo',
-      }))
+      show(err instanceof Error ? err.message : 'Zrušení se nezdařilo', 'error')
     } finally {
       setPendingId(null)
     }
   }
 
   if (reservations.length === 0) {
-    return <p>Zatím nemáte žádné rezervace.</p>
+    return <p className="empty-state">Zatím nemáte žádné rezervace.</p>
   }
 
   return (
@@ -68,7 +56,9 @@ export default function ReservationList({ reservations, cars, onChanged }: Props
       {reservations.map((reservation) => (
         <li key={reservation.id} className="reservation-card">
           <div className="reservation-info">
-            <strong>{carLabel(reservation.car_id)}</strong>
+            <strong>
+              {reservation.car.brand} {reservation.car.model}
+            </strong>
             <div className="dates">
               {formatDate(reservation.start_date)} – {formatDate(reservation.end_date)}
             </div>
@@ -98,8 +88,6 @@ export default function ReservationList({ reservations, cars, onChanged }: Props
               </button>
             )}
           </div>
-
-          {errors[reservation.id] && <p className="error">{errors[reservation.id]}</p>}
         </li>
       ))}
     </ul>
