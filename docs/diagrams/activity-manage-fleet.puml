@@ -1,0 +1,27 @@
+@startuml activity-manage-fleet
+skinparam backgroundColor white
+
+|Admin|
+start
+:Open "Fleet administration";
+
+if (Which action?) then (Add)
+  :Fill new car form\n(brand, model, year, plate,\nprices, category, ...);
+  |System|
+  :Create Car;
+elseif (Edit) then
+  :Pick a car;
+  :Edit form fields;
+  |System|
+  :Update Car;
+else (Delete)
+  :Pick a car;
+  :Confirm deletion;
+  |System|
+  :Delete Car;
+endif
+
+|Admin|
+:See updated fleet list;
+stop
+@enduml

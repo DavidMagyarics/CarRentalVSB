@@ -1,0 +1,22 @@
+@startuml activity-browse-cars
+skinparam backgroundColor white
+
+|Customer|
+start
+:Open the app;
+
+|System|
+:List all cars;
+
+|Customer|
+:See car grid\n(photo, price/day, price/hour, specs);
+if (Apply a filter?\n(category, transmission,\nfuel type, price range)) then (yes)
+  |System|
+  :Query cars matching\nthe selected filters;
+else (no)
+endif
+
+|Customer|
+:See (updated) car grid;
+stop
+@enduml

@@ -1,0 +1,14 @@
+@startuml activity-contact-support
+skinparam backgroundColor white
+
+|Customer|
+start
+:Click the support button\n(bottom-right, any page);
+:See contact panel\n(phone, e-mail, office hours);
+if (Click phone or e-mail?) then (yes)
+  :Open the native phone/mail app\n(tel: / mailto: link);
+else (no)
+endif
+:Close the panel;
+stop
+@enduml

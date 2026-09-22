@@ -1,0 +1,14 @@
+@startuml activity-view-all-reservations
+skinparam backgroundColor white
+
+|Admin|
+start
+:Open "All reservations";
+
+|System|
+:Fetch all reservations\n(every customer);
+
+|Admin|
+:See table — car, customer\nname & e-mail, dates, price,\npayment method, status;
+stop
+@enduml

@@ -5,27 +5,33 @@ skinparam backgroundColor white
 actor "Customer" as Customer
 actor "Admin" as Admin
 
-usecase "Browse car offers" as UC1
-usecase "Create reservation" as UC2
-usecase "Confirm reservation" as UC3
-usecase "Cancel reservation" as UC8
-usecase "Register / log in" as UC4
-usecase "Manage fleet" as UC5
-usecase "Manage reservations" as UC6
-usecase "Check car availability" as UC7
-usecase "Send notification" as UC9
+usecase "Register" as UC1
+usecase "Log in" as UC2
+usecase "Browse & filter cars" as UC3
+usecase "Create reservation" as UC4
+usecase "Check availability" as UC4a
+usecase "Cancel reservation" as UC5
+usecase "View my reservations" as UC6
+usecase "Contact support" as UC7
+usecase "Confirm reservation" as UC8
+usecase "Send notification" as UC8a
+usecase "Manage fleet" as UC9
+usecase "View all reservations" as UC10
 
 Customer --> UC1
 Customer --> UC2
 Customer --> UC3
-Customer --> UC8
 Customer --> UC4
+Customer --> UC5
+Customer --> UC6
+Customer --> UC7
 
+Admin --> UC2
 Admin --> UC5
-Admin --> UC6
-Admin --> UC4
+Admin --> UC8
+Admin --> UC9
+Admin --> UC10
 
-UC2 ..> UC7 : <<include>>
-UC3 ..> UC7 : <<include>>
-UC3 ..> UC9 : <<include>>
+UC4 ..> UC4a : <<include>>
+UC8 ..> UC8a : <<include>>
 @enduml

@@ -1,0 +1,24 @@
+@startuml activity-cancel-reservation
+skinparam backgroundColor white
+
+|User|
+start
+:Open "My reservations"\n(or "All reservations" as admin);
+:Click "Cancel" on a reservation;
+
+|System|
+if (Reservation already\nCANCELLED?) then (yes)
+  :Prepare "already cancelled"\nerror (409);
+else (no)
+  if (CONFIRMED and the rental\nperiod already started?) then (yes)
+    :Prepare "cannot cancel a\nstarted rental" error (409);
+  else (no)
+    :Set status to CANCELLED;
+    :Prepare success result;
+  endif
+endif
+
+|User|
+:See result\n(cancelled, or error message);
+stop
+@enduml

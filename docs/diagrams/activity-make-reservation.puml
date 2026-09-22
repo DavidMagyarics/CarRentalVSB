@@ -3,30 +3,34 @@ skinparam backgroundColor white
 
 |Customer|
 start
-:Open the app;
-:Browse the list of cars;
+:Browse cars;
 :Select a car;
-:Enter name, email,\nstart date and end date;
-:Submit reservation request;
+:Click "Reserve";
+:Enter pickup and return\ndate & time;
 
-|System|
-if (Car exists?) then (yes)
-  if (end_date > start_date?) then (yes)
-    if (Car available for\nthe requested dates?) then (yes)
-      :Find or create User by email;
-      :Create Reservation\nin DRAFT state;
-      :Prepare reservation result\n(id, status, car_id, user_id);
+if (Within opening hours?\n(Mon-Fri, 08:00-20:00)) then (yes)
+  |System|
+  if (Car available for\nthe requested times?) then (yes)
+    |Customer|
+    :Choose payment method\n(Cash / Card);
+    if (Card?) then (yes)
+      :Fill mock card details\n(never sent to the server);
     else (no)
-      :Prepare "slot already taken"\nerror (409);
     endif
+    :Submit reservation;
+
+    |System|
+    :Calculate total price\n(daily rate per full 24h block +\nhourly rate for the rest, capped\nat one more day's rate);
+    :Create Reservation\n(status DRAFT, payment_method,\ntotal_price);
+    :Prepare success result;
   else (no)
-    :Prepare validation error (422);
+    :Prepare "slot already\ntaken" error (409);
   endif
 else (no)
-  :Prepare "car not found"\nerror (404);
+  :Prepare opening-hours\nerror;
 endif
 
 |Customer|
-:See result\n(confirmation or error message);
+:See result\n(confirmation awaiting admin\napproval, or error message);
 stop
 @enduml

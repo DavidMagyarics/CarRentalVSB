@@ -1,0 +1,25 @@
+@startuml activity-confirm-reservation
+skinparam backgroundColor white
+
+|Admin|
+start
+:Open "All reservations";
+:Click "Confirm" on a\nDRAFT reservation;
+
+|System|
+if (Reservation still DRAFT?) then (yes)
+  if (Car still available for\nthat time range?) then (yes)
+    :Set status to CONFIRMED;
+    :Send confirmation notification\n(log, or e-mail if SMTP is\nconfigured — NotificationService);
+    :Prepare success result;
+  else (no)
+    :Prepare "slot taken in the\nmeantime" error (409);
+  endif
+else (no)
+  :Prepare "not a pending\nrequest" error (409);
+endif
+
+|Admin|
+:See result\n(confirmed, or error message);
+stop
+@enduml
