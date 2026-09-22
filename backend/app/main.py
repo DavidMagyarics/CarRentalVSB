@@ -2,6 +2,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import logging  # noqa: E402
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+
 from datetime import UTC, datetime, timedelta  # noqa: E402
 
 from fastapi import FastAPI  # noqa: E402
