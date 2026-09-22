@@ -30,6 +30,8 @@ def client():
             db.close()
 
     app.dependency_overrides[get_db] = override_get_db
-    yield TestClient(app)
+    test_client = TestClient(app)
+    test_client.session_factory = TestingSessionLocal
+    yield test_client
     app.dependency_overrides.clear()
     Base.metadata.drop_all(bind=engine)

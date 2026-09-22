@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from .models import ReservationStatus
+from .models import CarCategory, FuelType, ReservationStatus, Transmission, UserRole
 
 
 class CarBase(BaseModel):
@@ -11,10 +11,28 @@ class CarBase(BaseModel):
     year: int
     license_plate: str
     daily_price: float
+    category: CarCategory = CarCategory.SEDAN
+    transmission: Transmission = Transmission.MANUAL
+    fuel_type: FuelType = FuelType.PETROL
+    seats: int = Field(default=5, ge=1, le=9)
+    description: str | None = None
 
 
 class CarCreate(CarBase):
     pass
+
+
+class CarUpdate(BaseModel):
+    brand: str | None = None
+    model: str | None = None
+    year: int | None = None
+    license_plate: str | None = None
+    daily_price: float | None = None
+    category: CarCategory | None = None
+    transmission: Transmission | None = None
+    fuel_type: FuelType | None = None
+    seats: int | None = Field(default=None, ge=1, le=9)
+    description: str | None = None
 
 
 class Car(CarBase):
@@ -23,18 +41,34 @@ class Car(CarBase):
     id: int
 
 
+class UserRegister(BaseModel):
+    name: str
+    email: EmailStr
+    password: str = Field(min_length=6)
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
 class User(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     name: str
     email: EmailStr
+    role: UserRole
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: User
 
 
 class ReservationCreate(BaseModel):
     car_id: int
-    customer_name: str
-    customer_email: EmailStr
     start_date: datetime
     end_date: datetime
 
@@ -57,6 +91,8 @@ class Reservation(BaseModel):
     start_date: datetime
     end_date: datetime
     created_at: datetime
+    car: Car
+    user: User
 
 
 class Availability(BaseModel):
