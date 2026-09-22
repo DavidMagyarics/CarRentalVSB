@@ -1,0 +1,21 @@
+@startuml activity-login
+skinparam backgroundColor white
+
+|Customer|
+start
+:Open the app;
+:Click "Log in";
+:Enter e-mail and password;
+:Submit login;
+
+|System|
+if (E-mail and password match?) then (yes)
+  :Issue JWT access token;
+else (no)
+  :Prepare "invalid credentials"\nerror (401);
+endif
+
+|Customer|
+:See result\n(logged in, or error message);
+stop
+@enduml

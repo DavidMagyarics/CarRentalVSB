@@ -1,0 +1,23 @@
+@startuml activity-register
+skinparam backgroundColor white
+
+|Customer|
+start
+:Open the app;
+:Click "Create account";
+:Enter name, e-mail and password;
+:Submit registration;
+
+|System|
+if (E-mail already registered?) then (no)
+  :Hash password (bcrypt);
+  :Create User (role CUSTOMER);
+  :Issue JWT access token;
+else (yes)
+  :Prepare "e-mail already\nregistered" error (409);
+endif
+
+|Customer|
+:See result\n(logged in, or error message);
+stop
+@enduml

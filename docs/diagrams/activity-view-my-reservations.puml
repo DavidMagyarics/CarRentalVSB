@@ -1,0 +1,14 @@
+@startuml activity-view-my-reservations
+skinparam backgroundColor white
+
+|Customer|
+start
+:Open "My reservations";
+
+|System|
+:Fetch reservations\nfor the logged-in user;
+
+|Customer|
+:See list — car thumbnail,\ndates, price, payment method,\nstatus;
+stop
+@enduml

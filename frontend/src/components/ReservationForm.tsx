@@ -23,6 +23,24 @@ function nowLocalInputValue(): string {
   return now.toISOString().slice(0, 16)
 }
 
+// The lot only operates Mon–Fri, 08:00–20:00 — someone has to physically be
+// there to hand over or receive the car, so pickup and return both have to
+// fall inside opening hours.
+const OPENING_HOUR = 8
+const CLOSING_HOUR = 20
+
+function isWithinBusinessHours(datetimeLocalValue: string): boolean {
+  if (!datetimeLocalValue) return true
+  const d = new Date(datetimeLocalValue)
+  const day = d.getDay() // 0 = Sunday, 6 = Saturday
+  if (day === 0 || day === 6) return false
+  const hour = d.getHours()
+  const minute = d.getMinutes()
+  if (hour < OPENING_HOUR) return false
+  if (hour > CLOSING_HOUR || (hour === CLOSING_HOUR && minute > 0)) return false
+  return true
+}
+
 export default function ReservationForm({ car, onDone, onCancel }: Props) {
   const { token } = useAuth()
   const { show } = useToast()
@@ -37,6 +55,9 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
   const [availability, setAvailability] = useState<AvailabilityState>({ status: 'idle' })
 
   const validRange = Boolean(startDate) && Boolean(endDate) && new Date(endDate) > new Date(startDate)
+  const pickupOutsideHours = Boolean(startDate) && !isWithinBusinessHours(startDate)
+  const returnOutsideHours = Boolean(endDate) && !isWithinBusinessHours(endDate)
+  const hasBlockingError = pickupOutsideHours || returnOutsideHours
   const estimatedPrice = validRange
     ? calculatePrice(car.daily_price, car.hourly_price, new Date(startDate), new Date(endDate))
     : null
@@ -49,6 +70,10 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
     }
     if (new Date(endDate) <= new Date(startDate)) {
       setAvailability({ status: 'error', message: 'Termín "vrácení" musí být po termínu "vyzvednutí"' })
+      return
+    }
+    if (!isWithinBusinessHours(startDate) || !isWithinBusinessHours(endDate)) {
+      setAvailability({ status: 'idle' })
       return
     }
 
@@ -142,19 +167,35 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
       </div>
 
       <p className="hint">
-        Denní sazba platí za každých 24 hodin od vyzvednutí — auto vracíte přesně v čas, který
-        zvolíte jako "Vrácení". Kratší výpůjčky se počítají po hodinách, ale nikdy nepřesáhnou
-        cenu za celý den.
+        Půjčovna je otevřená Po–Pá {OPENING_HOUR}:00–{CLOSING_HOUR}:00 — auto je možné vyzvednout i
+        vrátit jen v této době, protože ho musí někdo fyzicky předat/převzít. Denní sazba platí za
+        každých 24 hodin od vyzvednutí, kratší výpůjčky se počítají po hodinách, ale nikdy
+        nepřesáhnou cenu za celý den.
       </p>
 
-      {availability.status === 'checking' && <p className="hint">Kontroluji dostupnost…</p>}
-      {availability.status === 'available' && (
+      {pickupOutsideHours && (
+        <p className="error">
+          Vyzvednutí je možné jen v pracovní dny (Po–Pá) mezi {OPENING_HOUR}:00 a {CLOSING_HOUR}:00.
+        </p>
+      )}
+      {returnOutsideHours && (
+        <p className="error">
+          Vrácení je možné jen v pracovní dny (Po–Pá) mezi {OPENING_HOUR}:00 a {CLOSING_HOUR}:00.
+        </p>
+      )}
+
+      {!hasBlockingError && availability.status === 'checking' && (
+        <p className="hint">Kontroluji dostupnost…</p>
+      )}
+      {!hasBlockingError && availability.status === 'available' && (
         <p className="availability-ok">Termín je dostupný</p>
       )}
-      {availability.status === 'unavailable' && (
+      {!hasBlockingError && availability.status === 'unavailable' && (
         <p className="error">Auto je v tomto termínu již obsazené</p>
       )}
-      {availability.status === 'error' && <p className="error">{availability.message}</p>}
+      {!hasBlockingError && availability.status === 'error' && (
+        <p className="error">{availability.message}</p>
+      )}
 
       {estimatedPrice !== null && (
         <div className="price-estimate">
@@ -233,7 +274,10 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
       {error && <p className="error">{error}</p>}
 
       <div className="form-actions">
-        <button type="submit" disabled={submitting || availability.status === 'unavailable'}>
+        <button
+          type="submit"
+          disabled={submitting || availability.status === 'unavailable' || hasBlockingError}
+        >
           {submitting
             ? 'Odesílám…'
             : paymentMethod === 'CARD'
