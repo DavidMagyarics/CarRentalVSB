@@ -17,6 +17,7 @@ const EMPTY_FORM: CarInput = {
   fuel_type: 'PETROL',
   seats: 5,
   description: '',
+  image_url: '',
 }
 
 export default function AdminCars() {
@@ -59,6 +60,7 @@ export default function AdminCars() {
       fuel_type: car.fuel_type,
       seats: car.seats,
       description: car.description ?? '',
+      image_url: car.image_url ?? '',
     })
     setError(null)
     setEditing(car)
@@ -265,6 +267,17 @@ export default function AdminCars() {
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
             </label>
+
+            <label>
+              URL fotky (nepovinné)
+              <input
+                type="text"
+                placeholder="/cars/moje-auto.jpg nebo https://…"
+                value={form.image_url ?? ''}
+                onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+              />
+            </label>
+            <p className="hint">Bez fotky se zobrazí ilustrace podle kategorie.</p>
 
             {error && <p className="error">{error}</p>}
 

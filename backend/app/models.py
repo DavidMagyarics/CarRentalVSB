@@ -66,6 +66,7 @@ class Car(Base):
     fuel_type = Column(Enum(FuelType), nullable=False, default=FuelType.PETROL)
     seats = Column(Integer, nullable=False, default=5)
     description = Column(Text, nullable=True)
+    image_url = Column(String, nullable=True)
 
     reservations = relationship(
         "Reservation", back_populates="car", cascade="all, delete-orphan"

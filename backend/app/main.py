@@ -52,6 +52,7 @@ def _seed_demo_data() -> None:
                 fuel_type=models.FuelType.PETROL,
                 seats=5,
                 description="Prostorný rodinný sedan s nízkou spotřebou a velkým kufrem.",
+                image_url="/cars/skoda-octavia.jpg",
             ),
             models.Car(
                 brand="Škoda",
@@ -64,6 +65,7 @@ def _seed_demo_data() -> None:
                 fuel_type=models.FuelType.PETROL,
                 seats=5,
                 description="Nejlevnější volba do města, snadné parkování.",
+                image_url="/cars/skoda-fabia.jpg",
             ),
             models.Car(
                 brand="Volkswagen",
@@ -76,6 +78,7 @@ def _seed_demo_data() -> None:
                 fuel_type=models.FuelType.DIESEL,
                 seats=5,
                 description="Vyvážený hatchback pro město i dálnici.",
+                image_url="/cars/volkswagen-golf.jpg",
             ),
             models.Car(
                 brand="Škoda",
@@ -88,6 +91,7 @@ def _seed_demo_data() -> None:
                 fuel_type=models.FuelType.DIESEL,
                 seats=7,
                 description="Prostorné SUV až pro 7 osob, ideální na rodinnou dovolenou.",
+                image_url="/cars/skoda-kodiaq.jpg",
             ),
             models.Car(
                 brand="Tesla",
@@ -100,6 +104,7 @@ def _seed_demo_data() -> None:
                 fuel_type=models.FuelType.ELECTRIC,
                 seats=5,
                 description="Plně elektrický sedan s autopilotem a nulovými emisemi.",
+                image_url="/cars/tesla-model-3.jpg",
             ),
             models.Car(
                 brand="Ford",
@@ -112,6 +117,7 @@ def _seed_demo_data() -> None:
                 fuel_type=models.FuelType.DIESEL,
                 seats=9,
                 description="Devítimístný van na stěhování i firemní výlety.",
+                image_url="/cars/ford-transit.jpg",
             ),
             models.Car(
                 brand="Porsche",
@@ -124,6 +130,7 @@ def _seed_demo_data() -> None:
                 fuel_type=models.FuelType.PETROL,
                 seats=2,
                 description="Sportovní ikona pro zvláštní příležitosti.",
+                image_url="/cars/porsche-911.jpg",
             ),
             models.Car(
                 brand="Toyota",
@@ -136,6 +143,7 @@ def _seed_demo_data() -> None:
                 fuel_type=models.FuelType.HYBRID,
                 seats=5,
                 description="Spolehlivý hybrid s minimální spotřebou paliva.",
+                image_url="/cars/toyota-corolla.jpg",
             ),
             models.Car(
                 brand="Jeep",
@@ -148,6 +156,7 @@ def _seed_demo_data() -> None:
                 fuel_type=models.FuelType.PETROL,
                 seats=5,
                 description="Terénní SUV pro výlety mimo silnice.",
+                image_url="/cars/jeep-wrangler.jpg",
             ),
             models.Car(
                 brand="Mini",
@@ -160,6 +169,7 @@ def _seed_demo_data() -> None:
                 fuel_type=models.FuelType.PETROL,
                 seats=4,
                 description="Stylový maloauto s výrazným charakterem.",
+                image_url="/cars/mini-cooper.jpg",
             ),
         ]
         db.add_all(demo_cars)

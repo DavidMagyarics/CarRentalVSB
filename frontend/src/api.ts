@@ -19,6 +19,7 @@ export interface Car {
   fuel_type: FuelType
   seats: number
   description: string | null
+  image_url: string | null
 }
 
 export interface CarInput {
@@ -32,6 +33,7 @@ export interface CarInput {
   fuel_type: FuelType
   seats: number
   description?: string | null
+  image_url?: string | null
 }
 
 export interface CarFilters {

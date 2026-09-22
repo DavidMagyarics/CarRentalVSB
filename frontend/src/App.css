@@ -308,6 +308,28 @@ label {
     var(--color-bg-soft);
 }
 
+.car-card-art-photo {
+  padding: 0;
+  height: 170px;
+  overflow: hidden;
+}
+
+.car-card-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(1.05) contrast(1.03);
+}
+
+.car-card-art-photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 10, 12, 0) 55%, rgba(23, 23, 28, 0.9) 100%);
+  pointer-events: none;
+}
+
 .car-card-illustration {
   width: 100%;
   height: auto;

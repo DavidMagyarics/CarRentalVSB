@@ -16,6 +16,7 @@ class CarBase(BaseModel):
     fuel_type: FuelType = FuelType.PETROL
     seats: int = Field(default=5, ge=1, le=9)
     description: str | None = None
+    image_url: str | None = None
 
 
 class CarCreate(CarBase):
@@ -33,6 +34,7 @@ class CarUpdate(BaseModel):
     fuel_type: FuelType | None = None
     seats: int | None = Field(default=None, ge=1, le=9)
     description: str | None = None
+    image_url: str | None = None
 
 
 class Car(CarBase):

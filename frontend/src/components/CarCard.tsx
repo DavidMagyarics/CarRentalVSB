@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Car } from '../api'
 import { CATEGORY_LABELS, FUEL_LABELS, TRANSMISSION_LABELS } from '../constants'
 import CarIllustration from './CarIllustration'
@@ -8,10 +9,23 @@ interface Props {
 }
 
 export default function CarCard({ car, onReserve }: Props) {
+  const [photoFailed, setPhotoFailed] = useState(false)
+  const showPhoto = Boolean(car.image_url) && !photoFailed
+
   return (
     <article className={`car-card car-art-${car.category.toLowerCase()}`}>
-      <div className="car-card-art">
-        <CarIllustration category={car.category} className="car-card-illustration" />
+      <div className={`car-card-art${showPhoto ? ' car-card-art-photo' : ''}`}>
+        {showPhoto ? (
+          <img
+            src={car.image_url ?? undefined}
+            alt={`${car.brand} ${car.model}`}
+            className="car-card-photo"
+            loading="lazy"
+            onError={() => setPhotoFailed(true)}
+          />
+        ) : (
+          <CarIllustration category={car.category} className="car-card-illustration" />
+        )}
         <span className="car-card-badge">{CATEGORY_LABELS[car.category]}</span>
       </div>
 
