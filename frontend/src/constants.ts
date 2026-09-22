@@ -1,4 +1,4 @@
-import type { CarCategory, FuelType, ReservationStatus, Transmission } from './api'
+import type { CarCategory, FuelType, PaymentMethod, ReservationStatus, Transmission } from './api'
 
 export const CATEGORY_LABELS: Record<CarCategory, string> = {
   SEDAN: 'Sedan',
@@ -21,7 +21,12 @@ export const FUEL_LABELS: Record<FuelType, string> = {
 }
 
 export const STATUS_LABELS: Record<ReservationStatus, string> = {
-  DRAFT: 'Čeká na potvrzení',
+  DRAFT: 'Čeká na schválení administrátorem',
   CONFIRMED: 'Potvrzeno',
   CANCELLED: 'Zrušeno',
+}
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  CASH: 'Hotově',
+  CARD: 'Kartou',
 }

@@ -47,8 +47,13 @@ export default function CarCard({ car, onReserve }: Props) {
 
         <div className="car-card-footer">
           <div className="car-card-price">
-            <strong>{car.daily_price.toLocaleString('cs-CZ')} Kč</strong>
-            <span> / den</span>
+            <div className="car-card-price-daily">
+              <strong>{car.daily_price.toLocaleString('cs-CZ')} Kč</strong>
+              <span> / den</span>
+            </div>
+            <div className="car-card-price-hourly">
+              {car.hourly_price.toLocaleString('cs-CZ')} Kč / h
+            </div>
           </div>
           <button type="button" onClick={() => onReserve(car)}>
             Rezervovat

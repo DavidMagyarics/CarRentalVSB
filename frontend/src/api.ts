@@ -6,6 +6,7 @@ export type Transmission = 'MANUAL' | 'AUTOMATIC'
 export type FuelType = 'PETROL' | 'DIESEL' | 'ELECTRIC' | 'HYBRID'
 export type UserRole = 'CUSTOMER' | 'ADMIN'
 export type ReservationStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED'
+export type PaymentMethod = 'CASH' | 'CARD'
 
 export interface Car {
   id: number
@@ -14,6 +15,7 @@ export interface Car {
   year: number
   license_plate: string
   daily_price: number
+  hourly_price: number
   category: CarCategory
   transmission: Transmission
   fuel_type: FuelType
@@ -28,6 +30,7 @@ export interface CarInput {
   year: number
   license_plate: string
   daily_price: number
+  hourly_price: number
   category: CarCategory
   transmission: Transmission
   fuel_type: FuelType
@@ -62,6 +65,7 @@ export interface ReservationInput {
   car_id: number
   start_date: string
   end_date: string
+  payment_method: PaymentMethod
 }
 
 export interface Reservation {
@@ -71,6 +75,8 @@ export interface Reservation {
   status: ReservationStatus
   start_date: string
   end_date: string
+  total_price: number
+  payment_method: PaymentMethod
   created_at: string
   car: Car
   user: User

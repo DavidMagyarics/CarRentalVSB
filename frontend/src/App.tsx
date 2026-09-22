@@ -13,6 +13,7 @@ import AdminCars from './components/AdminCars'
 import AdminReservations from './components/AdminReservations'
 import AuthForms from './components/AuthForms'
 import Modal from './components/Modal'
+import SupportWidget from './components/SupportWidget'
 import './App.css'
 
 export type Tab = 'cars' | 'my-reservations' | 'admin-cars' | 'admin-reservations'
@@ -180,6 +181,8 @@ function AppContent() {
           />
         </Modal>
       )}
+
+      <SupportWidget />
     </div>
   )
 }

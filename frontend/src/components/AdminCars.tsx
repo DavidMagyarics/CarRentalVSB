@@ -12,6 +12,7 @@ const EMPTY_FORM: CarInput = {
   year: new Date().getFullYear(),
   license_plate: '',
   daily_price: 0,
+  hourly_price: 0,
   category: 'SEDAN',
   transmission: 'MANUAL',
   fuel_type: 'PETROL',
@@ -55,6 +56,7 @@ export default function AdminCars() {
       year: car.year,
       license_plate: car.license_plate,
       daily_price: car.daily_price,
+      hourly_price: car.hourly_price,
       category: car.category,
       transmission: car.transmission,
       fuel_type: car.fuel_type,
@@ -125,7 +127,7 @@ export default function AdminCars() {
               <tr>
                 <th>Auto</th>
                 <th>Kategorie</th>
-                <th>Cena/den</th>
+                <th>Cena</th>
                 <th>SPZ</th>
                 <th />
               </tr>
@@ -137,7 +139,11 @@ export default function AdminCars() {
                     {car.brand} {car.model} ({car.year})
                   </td>
                   <td>{CATEGORY_LABELS[car.category]}</td>
-                  <td>{car.daily_price.toLocaleString('cs-CZ')} Kč</td>
+                  <td>
+                    {car.daily_price.toLocaleString('cs-CZ')} Kč/den
+                    <br />
+                    <span className="text-muted">{car.hourly_price.toLocaleString('cs-CZ')} Kč/h</span>
+                  </td>
                   <td>{car.license_plate}</td>
                   <td className="admin-table-actions">
                     <button type="button" onClick={() => openEdit(car)}>
@@ -199,6 +205,16 @@ export default function AdminCars() {
                   min={0}
                   value={form.daily_price}
                   onChange={(e) => setForm({ ...form, daily_price: Number(e.target.value) })}
+                />
+              </label>
+              <label>
+                Cena/hodina (Kč)
+                <input
+                  type="number"
+                  required
+                  min={0}
+                  value={form.hourly_price}
+                  onChange={(e) => setForm({ ...form, hourly_price: Number(e.target.value) })}
                 />
               </label>
               <label>

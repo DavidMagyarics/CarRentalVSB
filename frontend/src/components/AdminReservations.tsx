@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Reservation } from '../api'
 import { cancelReservation, confirmReservation } from '../api'
 import { useAuth } from '../auth/AuthContext'
-import { STATUS_LABELS } from '../constants'
+import { PAYMENT_METHOD_LABELS, STATUS_LABELS } from '../constants'
 import { useToast } from './Toast'
 
 interface Props {
@@ -10,8 +10,14 @@ interface Props {
   onChanged: () => void
 }
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString('cs-CZ')
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString('cs-CZ', {
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 export default function AdminReservations({ reservations, onChanged }: Props) {
@@ -49,6 +55,7 @@ export default function AdminReservations({ reservations, onChanged }: Props) {
             <th>Auto</th>
             <th>Zákazník</th>
             <th>Termín</th>
+            <th>Cena</th>
             <th>Stav</th>
             <th />
           </tr>
@@ -65,7 +72,12 @@ export default function AdminReservations({ reservations, onChanged }: Props) {
                 <span className="text-muted">{reservation.user.email}</span>
               </td>
               <td>
-                {formatDate(reservation.start_date)} – {formatDate(reservation.end_date)}
+                {formatDateTime(reservation.start_date)} – {formatDateTime(reservation.end_date)}
+              </td>
+              <td>
+                {reservation.total_price.toLocaleString('cs-CZ')} Kč
+                <br />
+                <span className="text-muted">{PAYMENT_METHOD_LABELS[reservation.payment_method]}</span>
               </td>
               <td>
                 <span className={`status-badge status-${reservation.status.toLowerCase()}`}>
