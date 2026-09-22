@@ -144,8 +144,7 @@ label {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(10, 10, 12, 0.85);
-  backdrop-filter: blur(10px);
+  background: rgba(9, 9, 11, 0.96);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -458,8 +457,7 @@ label {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(5, 5, 6, 0.7);
-  backdrop-filter: blur(3px);
+  background: rgba(5, 5, 6, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
