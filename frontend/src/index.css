@@ -1,8 +1,12 @@
 :root {
-  color-scheme: light;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Manrope', system-ui, 'Segoe UI', Roboto, sans-serif;
 }

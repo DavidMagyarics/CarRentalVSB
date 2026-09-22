@@ -1,7 +1,7 @@
 import enum
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -13,12 +13,39 @@ class ReservationStatus(str, enum.Enum):
     CANCELLED = "CANCELLED"
 
 
+class UserRole(str, enum.Enum):
+    CUSTOMER = "CUSTOMER"
+    ADMIN = "ADMIN"
+
+
+class CarCategory(str, enum.Enum):
+    SEDAN = "SEDAN"
+    SUV = "SUV"
+    HATCHBACK = "HATCHBACK"
+    VAN = "VAN"
+    SPORTS = "SPORTS"
+
+
+class Transmission(str, enum.Enum):
+    MANUAL = "MANUAL"
+    AUTOMATIC = "AUTOMATIC"
+
+
+class FuelType(str, enum.Enum):
+    PETROL = "PETROL"
+    DIESEL = "DIESEL"
+    ELECTRIC = "ELECTRIC"
+    HYBRID = "HYBRID"
+
+
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    role = Column(Enum(UserRole), nullable=False, default=UserRole.CUSTOMER)
 
     reservations = relationship("Reservation", back_populates="user")
 
@@ -34,6 +61,11 @@ class Car(Base):
     year = Column(Integer, nullable=False)
     license_plate = Column(String, unique=True, nullable=False)
     daily_price = Column(Float, nullable=False)
+    category = Column(Enum(CarCategory), nullable=False, default=CarCategory.SEDAN)
+    transmission = Column(Enum(Transmission), nullable=False, default=Transmission.MANUAL)
+    fuel_type = Column(Enum(FuelType), nullable=False, default=FuelType.PETROL)
+    seats = Column(Integer, nullable=False, default=5)
+    description = Column(Text, nullable=True)
 
     reservations = relationship(
         "Reservation", back_populates="car", cascade="all, delete-orphan"
