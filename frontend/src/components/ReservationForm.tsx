@@ -23,6 +23,16 @@ function nowLocalInputValue(): string {
   return now.toISOString().slice(0, 16)
 }
 
+// The lot needs a person to physically receive the car, so returns are only
+// accepted up to closing time — regardless of how many days it was rented for.
+const RETURN_CUTOFF_HOUR = 20
+
+function isAfterReturnCutoff(datetimeLocalValue: string): boolean {
+  if (!datetimeLocalValue) return false
+  const d = new Date(datetimeLocalValue)
+  return d.getHours() > RETURN_CUTOFF_HOUR || (d.getHours() === RETURN_CUTOFF_HOUR && d.getMinutes() > 0)
+}
+
 export default function ReservationForm({ car, onDone, onCancel }: Props) {
   const { token } = useAuth()
   const { show } = useToast()
@@ -37,6 +47,7 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
   const [availability, setAvailability] = useState<AvailabilityState>({ status: 'idle' })
 
   const validRange = Boolean(startDate) && Boolean(endDate) && new Date(endDate) > new Date(startDate)
+  const returnAfterCutoff = isAfterReturnCutoff(endDate)
   const estimatedPrice = validRange
     ? calculatePrice(car.daily_price, car.hourly_price, new Date(startDate), new Date(endDate))
     : null
@@ -143,9 +154,16 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
 
       <p className="hint">
         Denní sazba platí za každých 24 hodin od vyzvednutí — auto vracíte přesně v čas, který
-        zvolíte jako "Vrácení". Kratší výpůjčky se počítají po hodinách, ale nikdy nepřesáhnou
+        zvolíte jako "Vrácení" (nejpozději však do {RETURN_CUTOFF_HOUR}:00, kdy ho musí někdo z
+        půjčovny fyzicky převzít). Kratší výpůjčky se počítají po hodinách, ale nikdy nepřesáhnou
         cenu za celý den.
       </p>
+
+      {returnAfterCutoff && (
+        <p className="error">
+          Auto je možné vrátit nejpozději do {RETURN_CUTOFF_HOUR}:00 — zvolte prosím dřívější čas.
+        </p>
+      )}
 
       {availability.status === 'checking' && <p className="hint">Kontroluji dostupnost…</p>}
       {availability.status === 'available' && (
@@ -233,7 +251,10 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
       {error && <p className="error">{error}</p>}
 
       <div className="form-actions">
-        <button type="submit" disabled={submitting || availability.status === 'unavailable'}>
+        <button
+          type="submit"
+          disabled={submitting || availability.status === 'unavailable' || returnAfterCutoff}
+        >
           {submitting
             ? 'Odesílám…'
             : paymentMethod === 'CARD'

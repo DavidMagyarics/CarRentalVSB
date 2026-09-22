@@ -3,6 +3,7 @@ import type { Reservation } from '../api'
 import { cancelReservation } from '../api'
 import { useAuth } from '../auth/AuthContext'
 import { PAYMENT_METHOD_LABELS, STATUS_LABELS } from '../constants'
+import CarThumbnail from './CarThumbnail'
 import { useToast } from './Toast'
 
 interface Props {
@@ -47,6 +48,7 @@ export default function ReservationList({ reservations, onChanged }: Props) {
     <ul className="reservation-list">
       {reservations.map((reservation) => (
         <li key={reservation.id} className="reservation-card">
+          <CarThumbnail car={reservation.car} />
           <div className="reservation-info">
             <strong>
               {reservation.car.brand} {reservation.car.model}
