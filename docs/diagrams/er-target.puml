@@ -4,9 +4,10 @@ skinparam backgroundColor white
 entity "USER" as USER {
   * id : int <<PK>>
   --
+  name : string
   email : string
   password_hash : string
-  role : string
+  role : string "CUSTOMER | ADMIN"
 }
 
 entity "BRANCH" as BRANCH {
@@ -24,12 +25,18 @@ entity "CAR" as CAR {
   year : int
   license_plate : string
   daily_price : float
+  hourly_price : float
+  seats : int
+  description : string
+  image_url : string
   branch_id : int <<FK>>
   category_id : int <<FK>>
 }
 
 entity "CAR_CATEGORY" as CAR_CATEGORY {
   * id : int <<PK>>
+  --
+  name : string
 }
 
 entity "RESERVATION" as RESERVATION {
@@ -39,12 +46,25 @@ entity "RESERVATION" as RESERVATION {
   user_id : int <<FK>>
   start_date : datetime
   end_date : datetime
-  status : string
+  status : string "DRAFT | CONFIRMED | CANCELLED"
+  total_price : float
+  payment_method : string "CASH | CARD"
   created_at : datetime
+}
+
+entity "PAYMENT" as PAYMENT {
+  * id : int <<PK>>
+  --
+  reservation_id : int <<FK>>
+  provider_transaction_id : string
+  amount : float
+  status : string "PENDING | PAID | FAILED"
+  paid_at : datetime
 }
 
 USER ||--o{ RESERVATION : "creates"
 CAR ||--o{ RESERVATION : "is reserved in"
 BRANCH ||--o{ CAR : "belongs to"
 CAR ||--o{ CAR_CATEGORY : "belongs to category"
+RESERVATION ||--o| PAYMENT : "settled by"
 @enduml

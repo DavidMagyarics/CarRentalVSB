@@ -9,6 +9,13 @@ entity "CAR" as CAR {
   year : int
   license_plate : string
   daily_price : float
+  hourly_price : float
+  category : string
+  transmission : string
+  fuel_type : string
+  seats : int
+  description : string
+  image_url : string
 }
 
 entity "USER" as USER {
@@ -16,6 +23,8 @@ entity "USER" as USER {
   --
   name : string
   email : string
+  password_hash : string
+  role : string "CUSTOMER | ADMIN"
 }
 
 entity "RESERVATION" as RESERVATION {
@@ -23,9 +32,11 @@ entity "RESERVATION" as RESERVATION {
   --
   car_id : int <<FK>>
   user_id : int <<FK>>
-  status : string
+  status : string "DRAFT | CONFIRMED | CANCELLED"
   start_date : datetime
   end_date : datetime
+  total_price : float
+  payment_method : string "CASH | CARD"
   created_at : datetime
 }
 

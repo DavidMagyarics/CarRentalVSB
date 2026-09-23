@@ -13,40 +13,46 @@ rental operator who manages the fleet and the reservation overview.
 
 ## Users / Stakeholders
 
-- **Customer** — browses the fleet, creates, confirms and cancels their reservations.
-- **Rental Admin** — manages the fleet and oversees reservations (planned in later iterations).
+- **Customer** — registers/logs in, browses and filters the fleet, creates and cancels their own reservations, chooses a payment method.
+- **Rental Admin** — logs in with the same mechanism (role-gated), manages the fleet (add/edit/remove cars), and is the only actor who can confirm a reservation.
 - **Notification Service** (external system) — informs the customer when a reservation is confirmed.
 
 ## Core concepts
 
-- **Reservation** — a link between a resource, a user and a time slot, with a status.
-- **Resource / Car** — a specific car in the fleet (brand, model, year, license plate, price/day).
-- **User** — the person who creates the reservation (name, email).
+- **Reservation** — a link between a resource, a user and a time slot, with a status, a server-computed price and a payment method.
+- **Resource / Car** — a specific car in the fleet (brand, model, year, license plate, daily and hourly price, category, transmission, fuel type, seats, optional photo).
+- **User** — a registered account (name, email, hashed password, role: `CUSTOMER` or `ADMIN`) authenticated via JWT.
 
 ## Core operations
 
-- Create reservation
-- Confirm reservation
-- Cancel reservation
-- Check availability
+- Register / Log in
+- Browse & filter cars
+- Create reservation (includes: check availability, choose payment method)
+- Confirm reservation (**admin-only**)
+- Cancel reservation (owner or admin)
+- Manage fleet (**admin-only**)
 
-Implemented as a REST API:
+Implemented as a REST API — see [api-design.md](api-design.md) for the full
+endpoint list; the reservation-lifecycle ones:
 
 | Operation | Endpoint |
 |---|---|
 | Create reservation | `POST /reservations/` |
-| Confirm reservation | `POST /reservations/{id}/confirm` |
+| Confirm reservation | `POST /reservations/{id}/confirm` (admin) |
 | Cancel reservation | `POST /reservations/{id}/cancel` |
 | Check availability | `GET /cars/{car_id}/availability?start_date=...&end_date=...` |
 
 ## Persistent state
 
-**Car (resource):** id, brand, model, year, license_plate, daily_price.
+**Car (resource):** id, brand, model, year, license_plate, daily_price,
+hourly_price, category, transmission, fuel_type, seats, description,
+image_url.
 
-**User:** id, name, email.
+**User:** id, name, email, password_hash, role.
 
 **Reservation:** id, car_id (FK → Car), user_id (FK → User), status
-(DRAFT/CONFIRMED/CANCELLED), start_date, end_date, created_at.
+(DRAFT/CONFIRMED/CANCELLED), start_date, end_date, total_price,
+payment_method, created_at.
 
 ## State-changing operation
 
@@ -65,41 +71,63 @@ create a reservation on a slot already confirmed by another reservation) and
 on `confirm` (resolves a race between two DRAFT reservations on the same
 slot — only one can be confirmed).
 
-## Domain-specific business rule
+## Domain-specific business rules
 
-**A confirmed (CONFIRMED) reservation can only be cancelled before the rental
-period starts (`start_date` must be in the future).** Once the rental period
-has started according to `start_date`, the customer can no longer cancel it
-through the system — it has to be handled operationally (physical return /
-complaint), not by automatically cancelling the reservation, so that the
-record of a car that is actually out of the lot doesn't just "disappear".
+**1. A confirmed (CONFIRMED) reservation can only be cancelled before the
+rental period starts (`start_date` must be in the future).** Once the rental
+period has started according to `start_date`, the customer can no longer
+cancel it through the system — it has to be handled operationally (physical
+return / complaint), not by automatically cancelling the reservation, so
+that the record of a car that is actually out of the lot doesn't just
+"disappear".
 
 Implemented in `crud.cancel_reservation`, tested in
 `test_cannot_cancel_confirmed_reservation_after_start_date`.
+
+**2. Confirming a reservation is admin-only — a customer cannot approve
+their own request.** A `DRAFT` reservation is the customer's *request*, not
+a done deal; someone at the rental has to verify it (availability, payment)
+before it becomes binding. This mirrors how the physical handover works: the
+system shouldn't let a booking become real without a person at the counter
+agreeing to it.
+
+Implemented as a `require_admin` dependency on `POST
+/reservations/{id}/confirm` (`routers/reservations.py`), tested in
+`test_customer_cannot_confirm_own_reservation` and
+`test_admin_can_confirm_any_reservation`.
+
+**3. The rental only operates Mon–Fri, 08:00–20:00 — pickup and return must
+both fall inside those hours,** because staff has to physically hand over
+and receive the car. Enforced client-side in `ReservationForm.tsx`
+(`isWithinBusinessHours`); not yet re-validated server-side (see N12 in
+`requirements.md` — the backend doesn't track the customer's timezone, so a
+naive server-side check would be wrong rather than merely redundant).
 
 ## External / system boundary
 
 **Notification Service** — when a reservation is confirmed (`confirm`), the
 system calls `NotificationService.send_confirmation(reservation, user)`
-(`backend/app/notification.py`). For development, `LoggingNotificationService`
-is wired in (simulates a successful send and logs it); in production this
-would be a real email/SMS gateway. The interface is designed so the
-implementation can be swapped without changing the domain code — see
+(`backend/app/notification.py`). Two implementations exist behind the same
+interface: `LoggingNotificationService` (default — logs it, no real send)
+and `EmailNotificationService` (real SMTP send via `smtplib`, no extra
+dependency). Which one is used is decided once, at startup, based on whether
+`SMTP_HOST` is set (see `backend/.env.example`) — swapping the real
+implementation in required no domain-code change, exactly as designed in
 [architecture-and-decisions.md](architecture-and-decisions.md).
 
 ## Assumption
 
-We assume that at this stage it's enough to identify the customer by name
-and email without login (authentication) — the system finds or creates the
-`User` by email itself (`get_or_create_user`). This assumption goes away once
-registration/login is added (F5/F7 in `docs/requirements.md`).
+Authentication is stateless JWT bearer tokens with no server-side session
+store or refresh-token flow — acceptable for a seminar project's scope and
+lifetime, but a real deployment would want token expiry/refresh and
+revocation, neither of which exist yet.
 
 ## Unknown
 
-We don't yet know exactly what the real integration with the Notification
-Service will look like (which provider, sync vs. async/queue, how to handle
-an outage) — this is intentionally left open as a future engineering spike
-(variant B — boundary failure).
+We don't yet know exactly how the opening-hours rule (domain rule 3 above)
+should be enforced server-side once customers might be in different
+timezones — today it's a client-only check. This is intentionally left open
+as a candidate for a future engineering spike.
 
 ---
 
