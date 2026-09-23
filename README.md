@@ -1,9 +1,12 @@
 # CarRentalVSB
 
 Car rental reservation system — a seminar project for the **Software
-Engineering** (SWI) course at VSB. A customer browses the fleet, creates a
-reservation, confirms or cancels it; the system makes sure confirmed
-reservations on the same car never overlap.
+Engineering** (SWI) course at VSB. A customer registers, browses and filters
+the fleet, and books a car for a specific pickup/return date & time with a
+chosen payment method; an admin reviews and approves (or cancels) requests
+and manages the fleet. The system makes sure confirmed reservations on the
+same car never overlap, and only bills for the time actually booked (hourly
+rate, capped at the daily rate).
 
 The project is built iteratively, week by week — the current scope and the
 plan for upcoming increments are in [docs/roadmap.md](docs/roadmap.md).
@@ -21,9 +24,9 @@ Repository: [github.com/DavidMagyarics/CarRentalVSB](https://github.com/DavidMag
 
 ## Tech stack
 
-- **Backend:** Python, FastAPI, SQLAlchemy, SQLite
+- **Backend:** Python, FastAPI, SQLAlchemy, SQLite, JWT auth (PyJWT + bcrypt)
 - **Frontend:** React, TypeScript, Vite
-- **Tests:** pytest (backend)
+- **Tests:** pytest (backend, 40 tests)
 
 ## Repository structure
 
@@ -37,11 +40,11 @@ docs/       SWI documentation (requirements, use cases, architecture, ...)
 
 | Document | Contents |
 |---|---|
-| [docs/intent-and-change.md](docs/intent-and-change.md) | **Project Frame** (SWI C01) + selected future pressure |
+| [docs/intent-and-change.md](docs/intent-and-change.md) | **Project Frame** (SWI C01) + domain rules + selected future pressure |
 | [docs/architecture-and-decisions.md](docs/architecture-and-decisions.md) | Architecture (C4), decision log, boundary, future pressure (SWI C01) |
 | [docs/evidence-and-evolution.md](docs/evidence-and-evolution.md) | **C01 Engineering Spike** — evidence and decision |
 | [docs/requirements.md](docs/requirements.md) | Requirements specification (SRS) |
-| [docs/use-cases.md](docs/use-cases.md) | Use case diagram and specification |
+| [docs/use-cases.md](docs/use-cases.md) | Complete use case diagram + one activity diagram per use case |
 | [docs/architecture.md](docs/architecture.md) | Detailed architecture, repository structure, technology choices |
 | [docs/domain-model.md](docs/domain-model.md) | ER / domain model |
 | [docs/api-design.md](docs/api-design.md) | REST API design |
@@ -60,7 +63,14 @@ uvicorn app.main:app --reload
 
 The API runs on `http://localhost:8000`, interactive docs at
 `http://localhost:8000/docs`. On first run it creates the SQLite database
-`carrental.db` with a few sample cars.
+`carrental.db` with sample cars, a demo admin and a demo customer with a
+couple of sample reservations (see **Demo accounts** below).
+
+Real e-mail sending is optional — without any configuration, reservation
+confirmations are just logged to the console. To send real e-mails, copy
+`backend/.env.example` to `backend/.env` and fill in SMTP credentials (see
+the comments in that file for a step-by-step Gmail example); no code change
+is needed either way.
 
 ### Tests
 
@@ -80,28 +90,41 @@ npm run dev
 The app runs on `http://localhost:5173` and expects the backend at
 `http://localhost:8000` (configurable via `.env`, see `.env.example`).
 
-## CP1 walking skeleton
+## Demo accounts
 
-An end-to-end path that will actually be runnable (frontend → backend → DB →
-automated check) after C03 / before C04:
+Seeded automatically on first backend run:
+
+| Role | E-mail | Password |
+|---|---|---|
+| Admin | `admin@carrentalvsb.cz` | `admin123` |
+| Customer | `jan.novak@example.com` | `heslo123` |
+
+The admin account unlocks the "Fleet administration" and "All reservations"
+tabs, where reservations get confirmed (see the domain-specific rule in
+[docs/intent-and-change.md](docs/intent-and-change.md) — a customer cannot
+confirm their own reservation).
+
+## Walking skeleton
+
+The end-to-end path proven by the C01 persistence spike and now fully wired
+through the real frontend, not just the API:
 
 ```
-POST /reservations
-→ validate      (car exists, end_date > start_date, slot not taken by a CONFIRMED reservation)
-→ persist       (Reservation is created in DRAFT state, User is found/created by email)
-→ return reservation ID  (+ status, car_id, user_id)
-→ automated check  (pytest: GET /reservations/ returns the reservation with the same data)
+Customer logs in → browses & filters cars → picks pickup/return date & time
+→ system checks opening hours + availability → customer chooses a payment
+method → POST /reservations (price computed server-side, state DRAFT)
+→ admin reviews it under "All reservations" → confirms it
+→ system re-checks availability, sets state CONFIRMED, sends a notification
+→ customer sees the confirmed reservation under "My reservations"
 ```
 
-The backend part of this flow is already implemented and tested in C01 (see
-[docs/evidence-and-evolution.md](docs/evidence-and-evolution.md) — the
-persistence spike confirmed it survives a process restart). What remains for
-CP1 is wiring up the whole flow through the frontend form and adding a
-notification on confirmation as part of the automated check.
+See [docs/evidence-and-evolution.md](docs/evidence-and-evolution.md) for the
+original persistence spike (data survives a process restart) and
+[docs/use-cases.md](docs/use-cases.md) for the activity diagram of every step
+above.
 
 ## Submission note
 
 This README and the documentation in `docs/` are updated continuously as
 features are added — they reflect the current state of the project, not just
 the initial assignment.
-..

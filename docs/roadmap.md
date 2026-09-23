@@ -22,28 +22,42 @@ corresponding requirement in [requirements.md](requirements.md).
 - [x] Persistence engineering spike (process restart, data survived)
 - [x] CP1 walking skeleton defined in README
 
-## Week 2 — planned (example, adjust to your instructor's assignment)
+## Week 2 — Frontend interactions ✅
 
-- [ ] Frontend UI for confirming/cancelling a reservation and checking availability
-- [ ] Frontend component tests (Vitest)
+- [x] Frontend UI for confirming/cancelling a reservation and checking availability
+- [ ] Frontend component tests (Vitest) — still planned
 
-## Week 3 — planned
+## Week 3 — Accounts and roles ✅
 
-- [ ] Customer registration and login (F5, F7)
-- [ ] Link reservations to the logged-in user instead of name/email
+- [x] Customer registration and login (F5, F7), JWT bearer tokens
+- [x] Reservations tied to the logged-in user instead of name/email (F4)
+- [x] Confirming a reservation moved to admin-only (domain-specific rule, see `intent-and-change.md`)
 
-## Week 4 — planned
+## Week 4 — Administration ✅
 
-- [ ] Fleet administration (F8) — add/edit/remove a car
-- [ ] Reservation administration (F9) — overview, confirm/cancel
+- [x] Fleet administration (F8) — add/edit/remove a car
+- [x] Reservation administration (F9) — overview, confirm/cancel any reservation
 
-## Week 5+ — planned
+## Week 5 — Full system rebuild ✅
 
-- [ ] Filtering cars by availability/price/category (F10)
+- [x] Filtering cars by category/transmission/fuel/price (F10)
+- [x] Hourly + daily pricing with a capped-remainder formula (F17)
+- [x] Mock payment method (Cash/Card) at booking time (F13)
+- [x] Opening-hours rule (Mon–Fri 08:00–20:00) for pickup/return (F18)
+- [x] Real car photos (Wikimedia Commons, self-hosted) with an SVG-illustration fallback
+- [x] Support contact widget (F19)
+- [x] Optional real e-mail notifications via SMTP env vars, same boundary interface (F12)
+- [x] Full black/orange visual redesign
+- [x] Complete use case diagram + one activity diagram per use case
+
+## Week 6+ — planned
+
 - [ ] Branches (F11)
-- [ ] Email reservation confirmation (F12)
-- [ ] CI pipeline (GitHub Actions)
+- [ ] Real payment provider integration, replacing the mock `payment_method` flag
+- [ ] Server-side opening-hours validation once the app tracks customer timezone (N12)
+- [ ] CI pipeline (GitHub Actions) running `pytest` and `npm run build` on every pull request
 - [ ] Dockerization (N9)
+- [ ] Frontend component tests (Vitest) and an E2E test (Playwright)
 
 > Note: adjust the specific content of each week to your instructor's actual
 > assignment / submission deadlines. This file also serves as the basis for

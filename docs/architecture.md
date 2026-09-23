@@ -1,5 +1,12 @@
 # System Architecture
 
+> This document was written in the first iteration (pre-auth MVP) and is
+> kept as a historical snapshot of the initial architecture reasoning — the
+> technology choices and layering below still hold. For the current C4
+> diagrams (with the Notification Service boundary), the decision log and
+> everything added since (auth, admin, pricing), see
+> [architecture-and-decisions.md](architecture-and-decisions.md).
+
 ## Overview (C4 — Context level)
 
 ![C4 Context diagram](diagrams/context-v1.svg)
@@ -29,29 +36,35 @@ CarRentalVSB/
 │   ├── app/
 │   │   ├── main.py          # FastAPI app entry point, CORS, data seeding
 │   │   ├── database.py      # SQLAlchemy engine/session
-│   │   ├── models.py        # ORM models (Car, Reservation)
+│   │   ├── models.py        # ORM models (User, Car, Reservation)
 │   │   ├── schemas.py       # Pydantic schemas (request/response)
-│   │   ├── crud.py          # database logic (incl. availability check)
-│   │   └── routers/         # API endpoints by domain
+│   │   ├── crud.py          # database logic (availability, pricing, auth helpers)
+│   │   ├── auth.py          # password hashing (bcrypt) + JWT issue/verify
+│   │   ├── deps.py          # FastAPI dependencies: get_current_user, require_admin
+│   │   ├── notification.py  # NotificationService boundary (logging / e-mail)
+│   │   └── routers/         # API endpoints by domain (auth, cars, reservations, users)
 │   ├── tests/                # pytest tests (unit/integration)
+│   ├── .env.example          # SMTP / secret key configuration template
 │   └── requirements.txt
 ├── frontend/
+│   ├── public/cars/           # self-hosted car photos + CREDITS.md
 │   └── src/
-│       ├── api.ts            # HTTP client for the backend
-│       ├── components/       # CarList, ReservationForm
-│       └── App.tsx
+│       ├── api.ts             # HTTP client for the backend
+│       ├── pricing.ts         # client-side mirror of the server price formula
+│       ├── auth/               # AuthContext (JWT in localStorage)
+│       └── components/         # CarCard, CarFilters, ReservationForm, AdminCars, ...
 └── docs/                      # this (SWI) documentation
 ```
 
 ## Backend layering
 
 The backend is split into three layers, which makes it easier to test and to
-extend later (e.g. with authentication or new entities):
+extend:
 
-1. **Router (API layer)** — accepts HTTP requests, validates input via Pydantic schemas, returns HTTP responses and error codes.
-2. **CRUD (domain/data logic)** — holds the rules over the data, e.g. `is_car_available`, testable in isolation.
+1. **Router (API layer)** — accepts HTTP requests, validates input via Pydantic schemas, applies auth/role dependencies (`deps.py`), returns HTTP responses and error codes.
+2. **CRUD (domain/data logic)** — holds the rules over the data, e.g. `is_car_available`, `calculate_price`, testable in isolation.
 3. **Model (persistence)** — SQLAlchemy ORM models mapped to database tables.
 
-This structure is deliberately simple given the scope of the MVP; later
-iterations (see [roadmap.md](roadmap.md)) will add an authentication/
-authorization layer.
+`auth.py` (password hashing, JWT) and `notification.py` (the external
+boundary) sit alongside this as small, focused modules rather than being
+folded into `crud.py` — each has a single reason to change.

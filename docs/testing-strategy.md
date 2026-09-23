@@ -15,12 +15,14 @@ domain logic lives (car availability check, date validation):
 
 ## What is tested (MVP)
 
-Location: `backend/tests/`.
+Location: `backend/tests/`. 40 tests total.
 
 | File | What it verifies |
 |---|---|
-| `test_cars.py` | Creating a car, listing cars, 404 for a non-existent car. |
-| `test_reservations.py` | Creating a reservation in `DRAFT` state (+ automatic `User` creation), confirm/cancel and their error states (404/409), the common overlap rule (only `CONFIRMED`), the domain-specific rule for cancelling after the rental period has started, `GET /cars/{id}/availability`, validation of `end_date > start_date` (422). Currently 17 tests. |
+| `test_auth.py` | Registration (incl. duplicate e-mail 409, password too short 422), login (correct/wrong credentials), `GET /auth/me` (missing/garbage token both 401). |
+| `test_cars.py` | Creating a car (admin-only — 401 without a token, 403 for a non-admin), listing, updating, deleting, filtering by category and by price range. |
+| `test_reservations.py` | Creating a reservation tied to the logged-in user, confirm/cancel and their error states (404/409), **that a customer cannot confirm their own reservation (403)**, that an admin can confirm any reservation, the common overlap rule (only `CONFIRMED`), the domain-specific rule for cancelling after the rental period has started, `GET /cars/{id}/availability`, validation of `end_date > start_date` (422), `/reservations/me` vs. admin-only `/reservations/`, and the price-calculation rule (short booking = hourly rate, long partial day capped at the daily rate, multi-day = day rate + capped remainder). |
+| `helpers.py` | Shared test fixtures: `register`, `make_admin` (creates an admin directly via `crud`, bypassing the register endpoint which never allows self-service admin creation), `create_car`, `auth_headers`. |
 
 Tests run against an isolated in-memory SQLite database (`tests/conftest.py`),
 so they never touch the `carrental.db` file used in normal operation and are
