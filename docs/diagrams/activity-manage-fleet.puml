@@ -8,19 +8,21 @@ start
 switch (Which action?)
 case ( Add )
   :Fill new car form\n(brand, model, year, plate,\nprices, category, ...);
-  |System|
-  :Create Car;
 case ( Edit )
-  |Admin|
   :Pick a car;
   :Edit form fields;
-  |System|
-  :Update Car;
 case ( Delete )
-  |Admin|
   :Pick a car;
   :Confirm deletion;
-  |System|
+endswitch
+
+|System|
+switch (Which action?)
+case ( Add )
+  :Create Car;
+case ( Edit )
+  :Update Car;
+case ( Delete )
   :Delete Car;
 endswitch
 
