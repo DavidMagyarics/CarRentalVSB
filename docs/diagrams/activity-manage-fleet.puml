@@ -5,21 +5,24 @@ skinparam backgroundColor white
 start
 :Open "Fleet administration";
 
-if (Which action?) then (Add)
+switch (Which action?)
+case ( Add )
   :Fill new car form\n(brand, model, year, plate,\nprices, category, ...);
   |System|
   :Create Car;
-elseif (Edit) then
+case ( Edit )
+  |Admin|
   :Pick a car;
   :Edit form fields;
   |System|
   :Update Car;
-else (Delete)
+case ( Delete )
+  |Admin|
   :Pick a car;
   :Confirm deletion;
   |System|
   :Delete Car;
-endif
+endswitch
 
 |Admin|
 :See updated fleet list;
