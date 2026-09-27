@@ -2,13 +2,13 @@
 
 ## Overview (C4 — Context)
 
-![C4 Context diagram](diagrams/context.svg)
+![C4 Context diagram](diagrams/context.puml)
 
 *Diagram source: [diagrams/context.puml](diagrams/context.puml) — PlantUML, the image is automatically re-rendered on every source change (see [.github/workflows/render-plantuml.yml](../.github/workflows/render-plantuml.yml)).*
 
 ## Containers (C4 — Container)
 
-![C4 Container diagram](diagrams/container.svg)
+![C4 Container diagram](diagrams/container.puml)
 
 *Diagram source: [diagrams/container.puml](diagrams/container.puml).*
 

@@ -2,7 +2,7 @@
 
 ## Current state
 
-![ER diagram — current state](diagrams/er-current.svg)
+![ER diagram — current state](diagrams/er-current.puml)
 
 *Diagram source: [diagrams/er-current.puml](diagrams/er-current.puml) — PlantUML, the image is automatically re-rendered on every source change.*
 
@@ -41,7 +41,7 @@ for instant feedback while picking dates; the server value is authoritative.
 
 ## Target model (after further iterations)
 
-![ER diagram — target model](diagrams/er-target.svg)
+![ER diagram — target model](diagrams/er-target.puml)
 
 *Diagram source: [diagrams/er-target.puml](diagrams/er-target.puml).*
 

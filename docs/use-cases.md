@@ -2,7 +2,7 @@
 
 ## Diagram (current state of the system)
 
-![Use case diagram](diagrams/use-case.svg)
+![Use case diagram](diagrams/use-case.puml)
 
 *Diagram source: [diagrams/use-case.puml](diagrams/use-case.puml) — PlantUML, the image is automatically re-rendered on every source change.*
 
@@ -33,7 +33,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Register
 
-![Activity diagram — Register](diagrams/activity-register.svg)
+![Activity diagram — Register](diagrams/activity-register.puml)
 
 *Diagram source: [diagrams/activity-register.puml](diagrams/activity-register.puml).*
 
@@ -49,7 +49,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Log in
 
-![Activity diagram — Log in](diagrams/activity-login.svg)
+![Activity diagram — Log in](diagrams/activity-login.puml)
 
 *Diagram source: [diagrams/activity-login.puml](diagrams/activity-login.puml).*
 
@@ -65,7 +65,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Browse & filter cars
 
-![Activity diagram — Browse & filter cars](diagrams/activity-browse-cars.svg)
+![Activity diagram — Browse & filter cars](diagrams/activity-browse-cars.puml)
 
 *Diagram source: [diagrams/activity-browse-cars.puml](diagrams/activity-browse-cars.puml).*
 
@@ -83,7 +83,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Create reservation
 
-![Activity diagram — Create reservation](diagrams/activity-make-reservation.svg)
+![Activity diagram — Create reservation](diagrams/activity-make-reservation.puml)
 
 *Diagram source: [diagrams/activity-make-reservation.puml](diagrams/activity-make-reservation.puml).*
 
@@ -108,7 +108,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Cancel reservation
 
-![Activity diagram — Cancel reservation](diagrams/activity-cancel-reservation.svg)
+![Activity diagram — Cancel reservation](diagrams/activity-cancel-reservation.puml)
 
 *Diagram source: [diagrams/activity-cancel-reservation.puml](diagrams/activity-cancel-reservation.puml).*
 
@@ -123,7 +123,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — View my reservations
 
-![Activity diagram — View my reservations](diagrams/activity-view-my-reservations.svg)
+![Activity diagram — View my reservations](diagrams/activity-view-my-reservations.puml)
 
 *Diagram source: [diagrams/activity-view-my-reservations.puml](diagrams/activity-view-my-reservations.puml).*
 
@@ -138,7 +138,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Contact support
 
-![Activity diagram — Contact support](diagrams/activity-contact-support.svg)
+![Activity diagram — Contact support](diagrams/activity-contact-support.puml)
 
 *Diagram source: [diagrams/activity-contact-support.puml](diagrams/activity-contact-support.puml).*
 
@@ -156,7 +156,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Confirm reservation
 
-![Activity diagram — Confirm reservation](diagrams/activity-confirm-reservation.svg)
+![Activity diagram — Confirm reservation](diagrams/activity-confirm-reservation.puml)
 
 *Diagram source: [diagrams/activity-confirm-reservation.puml](diagrams/activity-confirm-reservation.puml).*
 
@@ -179,7 +179,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Manage fleet
 
-![Activity diagram — Manage fleet](diagrams/activity-manage-fleet.svg)
+![Activity diagram — Manage fleet](diagrams/activity-manage-fleet.puml)
 
 *Diagram source: [diagrams/activity-manage-fleet.puml](diagrams/activity-manage-fleet.puml).*
 
@@ -195,6 +195,6 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — View all reservations
 
-![Activity diagram — View all reservations](diagrams/activity-view-all-reservations.svg)
+![Activity diagram — View all reservations](diagrams/activity-view-all-reservations.puml)
 
 *Diagram source: [diagrams/activity-view-all-reservations.puml](diagrams/activity-view-all-reservations.puml).*

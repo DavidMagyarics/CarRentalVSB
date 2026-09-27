@@ -9,13 +9,13 @@
 
 ## Overview (C4 — Context level)
 
-![C4 Context diagram](diagrams/context-v1.svg)
+![C4 Context diagram](diagrams/context-v1.puml)
 
 *Diagram source: [diagrams/context-v1.puml](diagrams/context-v1.puml) — PlantUML, the image is automatically re-rendered on every source change.*
 
 ## Containers (C4 — Container level)
 
-![C4 Container diagram](diagrams/container-v1.svg)
+![C4 Container diagram](diagrams/container-v1.puml)
 
 *Diagram source: [diagrams/container-v1.puml](diagrams/container-v1.puml).*
 
