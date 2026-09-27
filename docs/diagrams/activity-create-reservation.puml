@@ -1,17 +1,18 @@
 @startuml activity_create_reservation
-title Activity — Create reservation (UC2)
+title Activity - Create reservation (UC2)
 
-(*) --> "Select car"
---> "Enter name, email, date range"
---> "POST /reservations"
---> "Find or create User by email"
---> "Check availability (UC7)"
+start
+:Select car;
+:Enter name, email, date range;
+:POST /reservations;
+:Find or create User by email;
+:Check availability (UC7);
 if (Available?) then (yes)
-  --> "Create reservation (DRAFT)"
-  --> (*)
+  :Create reservation (DRAFT);
+  stop
 else (no)
-  --> "Return 409 Conflict"
-  --> (*)
+  :Return 409 Conflict;
+  stop
 endif
 
 note right
