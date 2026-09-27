@@ -1,0 +1,22 @@
+@startuml activity_create_reservation
+title Activity — Create reservation (UC2)
+
+(*) --> "Select car"
+--> "Enter name, email, date range"
+--> "POST /reservations"
+--> "Find or create User by email"
+--> "Check availability (UC7)"
+if (Available?) then (yes)
+  --> "Create reservation (DRAFT)"
+  --> (*)
+else (no)
+  --> "Return 409 Conflict"
+  --> (*)
+endif
+
+note right
+  This activity shows the optimistic flow where availability
+  is checked only against CONFIRMED reservations.
+end note
+
+@enduml
