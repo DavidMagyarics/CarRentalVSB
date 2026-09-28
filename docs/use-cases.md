@@ -21,9 +21,9 @@ To make the flows easier to present and to document concurrency/race conditions,
 
 These diagrams clarify the timing of the availability re-check and the notification call; they are intended for presentation slides and for the project documentation.
 
-![Activity diagram — Create reservation (early sketch)](diagrams/activity_create_reservation.svg)
+![Activity diagram — Create reservation (early sketch)](diagrams/activity-create-reservation.svg)
 
-![Sequence diagram — Confirm reservation](diagrams/sequence_confirm_reservation.svg)
+![Sequence diagram — Confirm reservation](diagrams/sequence-confirm-reservation.svg)
 
 ## UC1 — Register ✅
 
