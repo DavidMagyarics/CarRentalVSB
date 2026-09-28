@@ -1,22 +1,30 @@
 @startuml sequence_confirm_reservation
-title Sequence — Confirm reservation (UC3)
+title Sequence — Confirm reservation (UC8)
 
-actor Customer
+actor Admin
 participant API
 participant DB
 participant NotificationService
+actor Customer
 
-Customer -> API: POST /reservations/{id}/confirm
-API -> DB: Re-check availability (query CONFIRMED reservations)
-DB --> API: available / conflict
+Admin -> API: POST /reservations/{id}/confirm
+API -> DB: Load reservation
+DB --> API: reservation
 
-alt available
-  API -> DB: Update reservation state -> CONFIRMED
-  API -> NotificationService: send_confirmation(reservation, user)
-  NotificationService --> Customer: confirmation (email/log)
-  API --> Customer: 200 OK (reservation CONFIRMED)
-else conflict
-  API --> Customer: 409 Conflict (slot taken)
+alt reservation is not DRAFT
+  API --> Admin: 409 Conflict (cannot be confirmed)
+else reservation is DRAFT
+  API -> DB: Re-check availability (query CONFIRMED reservations)
+  DB --> API: available / conflict
+
+  alt available
+    API -> DB: Update reservation state -> CONFIRMED
+    API -> NotificationService: send_confirmation(reservation, user)
+    NotificationService --> Customer: confirmation (log, or e-mail if SMTP is configured)
+    API --> Admin: 200 OK (reservation CONFIRMED)
+  else conflict
+    API --> Admin: 409 Conflict (slot taken)
+  end
 end
 
 note over API,DB

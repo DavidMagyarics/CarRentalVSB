@@ -12,18 +12,15 @@ structure: one start, one end, and side-by-side swimlanes for every actor
 involved. `<<include>>` use cases (Check availability, Send notification)
 don't get a separate activity diagram — their steps are shown inline inside
 the activity diagram of the use case that includes them (UC4 and UC8).
+
 ## Additional diagrams
 
-To make the flows easier to present and to document concurrency/race conditions, the repository includes PlantUML sources for activity and sequence diagrams:
+To document the timing of the availability re-check and the notification call
+(a possible race condition), the repository also includes a sequence diagram
+for the "Confirm reservation" flow (UC8):
+[diagrams/sequence-confirm-reservation.puml](diagrams/sequence-confirm-reservation.puml)
 
-- Activity diagram for the "Create reservation" flow (covers UC4 → UC4a): [diagrams/activity-create-reservation.puml](diagrams/activity-create-reservation.puml)
-- Sequence diagram for the "Confirm reservation" flow (covers UC8, DB re-check and notification): [diagrams/sequence-confirm-reservation.puml](diagrams/sequence-confirm-reservation.puml)
-
-These diagrams clarify the timing of the availability re-check and the notification call; they are intended for presentation slides and for the project documentation.
-
-![Activity diagram — Create reservation (early sketch)](diagrams/activity-create-reservation.svg)
-
-![Sequence diagram — Confirm reservation](diagrams/sequence-confirm-reservation.svg)
+![Sequence diagram — Confirm reservation](diagrams/sequence_confirm_reservation.svg)
 
 ## UC1 — Register ✅
 
