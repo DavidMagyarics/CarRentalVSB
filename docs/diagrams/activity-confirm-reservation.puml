@@ -1,27 +1,3 @@
-@startuml activity_confirm_reservation
-title Activity — Confirm reservation (UC8)
-|Admin|
-start
-:Open all reservations;
-:Click Confirm on reservation;
-|System|
-:Re-check availability (UC4a) against CONFIRMED reservations;
-if (slot free?) then (yes)
-  :Set reservation state -> CONFIRMED;
-  |NotificationService|
-  :send_confirmation(reservation, user);
-  stop
-else (no)
-  :Return 409 Conflict;
-  stop
-endif
-
-note right
-  The re-check prevents race conditions where another reservation
-  was confirmed between DRAFT creation and admin approval.
-end note
-
-@enduml
 @startuml activity-confirm-reservation
 skinparam backgroundColor white
 

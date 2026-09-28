@@ -1,26 +1,3 @@
-@startuml activity_make_reservation
-title Activity — Make reservation (UC4)
-|Customer|
-start
-:Select car;
-:Open booking form;
-:Enter pickup and return date/time;
-|System|
-:Check availability (UC4a) against CONFIRMED reservations;
-if (available?) then (yes)
-  :Compute total_price;
-  :Create reservation (DRAFT) with payment method;
-  stop
-else (no)
-  :Return 409 Conflict;
-  stop
-endif
-
-note right
-  Pricing: daily rate per 24h block; remaining hours at hourly rate.
-end note
-
-@enduml
 @startuml activity-make-reservation
 skinparam backgroundColor white
 

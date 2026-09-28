@@ -2,7 +2,7 @@
 
 ## Diagram (current state of the system)
 
-![Use case diagram](diagrams/use-case.puml)
+![Use case diagram](diagrams/use-case.svg)
 
 *Diagram source: [diagrams/use-case.puml](diagrams/use-case.puml) — PlantUML, the image is automatically re-rendered on every source change.*
 
@@ -21,6 +21,10 @@ To make the flows easier to present and to document concurrency/race conditions,
 
 These diagrams clarify the timing of the availability re-check and the notification call; they are intended for presentation slides and for the project documentation.
 
+![Activity diagram — Create reservation (early sketch)](diagrams/activity-create-reservation.svg)
+
+![Sequence diagram — Confirm reservation](diagrams/sequence-confirm-reservation.svg)
+
 ## UC1 — Register ✅
 
 | | |
@@ -33,7 +37,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Register
 
-![Activity diagram — Register](diagrams/activity-register.puml)
+![Activity diagram — Register](diagrams/activity-register.svg)
 
 *Diagram source: [diagrams/activity-register.puml](diagrams/activity-register.puml).*
 
@@ -49,7 +53,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Log in
 
-![Activity diagram — Log in](diagrams/activity-login.puml)
+![Activity diagram — Log in](diagrams/activity-login.svg)
 
 *Diagram source: [diagrams/activity-login.puml](diagrams/activity-login.puml).*
 
@@ -65,7 +69,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Browse & filter cars
 
-![Activity diagram — Browse & filter cars](diagrams/activity-browse-cars.puml)
+![Activity diagram — Browse & filter cars](diagrams/activity-browse-cars.svg)
 
 *Diagram source: [diagrams/activity-browse-cars.puml](diagrams/activity-browse-cars.puml).*
 
@@ -83,7 +87,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Create reservation
 
-![Activity diagram — Create reservation](diagrams/activity-make-reservation.puml)
+![Activity diagram — Create reservation](diagrams/activity-make-reservation.svg)
 
 *Diagram source: [diagrams/activity-make-reservation.puml](diagrams/activity-make-reservation.puml).*
 
@@ -108,7 +112,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Cancel reservation
 
-![Activity diagram — Cancel reservation](diagrams/activity-cancel-reservation.puml)
+![Activity diagram — Cancel reservation](diagrams/activity-cancel-reservation.svg)
 
 *Diagram source: [diagrams/activity-cancel-reservation.puml](diagrams/activity-cancel-reservation.puml).*
 
@@ -123,7 +127,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — View my reservations
 
-![Activity diagram — View my reservations](diagrams/activity-view-my-reservations.puml)
+![Activity diagram — View my reservations](diagrams/activity-view-my-reservations.svg)
 
 *Diagram source: [diagrams/activity-view-my-reservations.puml](diagrams/activity-view-my-reservations.puml).*
 
@@ -138,7 +142,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Contact support
 
-![Activity diagram — Contact support](diagrams/activity-contact-support.puml)
+![Activity diagram — Contact support](diagrams/activity-contact-support.svg)
 
 *Diagram source: [diagrams/activity-contact-support.puml](diagrams/activity-contact-support.puml).*
 
@@ -156,7 +160,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Confirm reservation
 
-![Activity diagram — Confirm reservation](diagrams/activity-confirm-reservation.puml)
+![Activity diagram — Confirm reservation](diagrams/activity-confirm-reservation.svg)
 
 *Diagram source: [diagrams/activity-confirm-reservation.puml](diagrams/activity-confirm-reservation.puml).*
 
@@ -179,7 +183,7 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — Manage fleet
 
-![Activity diagram — Manage fleet](diagrams/activity-manage-fleet.puml)
+![Activity diagram — Manage fleet](diagrams/activity-manage-fleet.svg)
 
 *Diagram source: [diagrams/activity-manage-fleet.puml](diagrams/activity-manage-fleet.puml).*
 
@@ -195,6 +199,6 @@ These diagrams clarify the timing of the availability re-check and the notificat
 
 ### Activity diagram — View all reservations
 
-![Activity diagram — View all reservations](diagrams/activity-view-all-reservations.puml)
+![Activity diagram — View all reservations](diagrams/activity-view-all-reservations.svg)
 
 *Diagram source: [diagrams/activity-view-all-reservations.puml](diagrams/activity-view-all-reservations.puml).*
