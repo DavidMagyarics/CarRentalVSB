@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="473px" preserveAspectRatio="none" style="width:387px;height:473px;" version="1.1" viewBox="0 0 387 473" width="387px" zoomAndPan="magnify"><rect width="100%" height="100%" fill="white"/><defs><filter height="300%" id="f1uo1vvjsx2f1d" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><!--MD5=[32e23373235f0d091377578495b9f636]
+class CAR--><rect fill="#FEFECE" filter="url(#f1uo1vvjsx2f1d)" height="214.4609" id="CAR" style="stroke: #A80036; stroke-width: 1.5;" width="132" x="6" y="8"/><ellipse cx="55.75" cy="24" fill="#ADD1B2" rx="11" ry="11" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M59.8594,30 L52.1406,30 L52.1406,17.6094 L59.8594,17.6094 L59.8594,19.7656 L54.5938,19.7656 L54.5938,22.4375 L59.3594,22.4375 L59.3594,24.5938 L54.5938,24.5938 L54.5938,27.8438 L59.8594,27.8438 L59.8594,30 Z "/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="24" x="76.25" y="28.1543">CAR</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="7" x2="137" y1="40" y2="40"/><ellipse cx="17" cy="51" fill="#000000" rx="3" ry="3" style="stroke: #000000; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="68" x="26" y="54.2104">id : int «PK»</text><line style="stroke: #A80036; stroke-width: 1.0;" x1="7" x2="137" y1="60.8047" y2="60.8047"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="78" x="12" y="75.0151">brand : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="80" x="12" y="87.8198">model : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="51" x="12" y="100.6245">year : int</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="119" x="12" y="113.4292">license_plate : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="97" x="12" y="126.2339">daily_price : float</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="106" x="12" y="139.0386">hourly_price : float</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="94" x="12" y="151.8433">category : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="120" x="12" y="164.6479">transmission : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="96" x="12" y="177.4526">fuel_type : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="58" x="12" y="190.2573">seats : int</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="108" x="12" y="203.062">description : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="101" x="12" y="215.8667">image_url : string</text><!--MD5=[f3853aa2b8bce406a0e4037637558619]
+class USER--><rect fill="#FEFECE" filter="url(#f1uo1vvjsx2f1d)" height="112.0234" id="USER" style="stroke: #A80036; stroke-width: 1.5;" width="203" x="173.5" y="59"/><ellipse cx="254.25" cy="75" fill="#ADD1B2" rx="11" ry="11" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M258.3594,81 L250.6406,81 L250.6406,68.6094 L258.3594,68.6094 L258.3594,70.7656 L253.0938,70.7656 L253.0938,73.4375 L257.8594,73.4375 L257.8594,75.5938 L253.0938,75.5938 L253.0938,78.8438 L258.3594,78.8438 L258.3594,81 Z "/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="33" x="274.75" y="79.1543">USER</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="174.5" x2="375.5" y1="91" y2="91"/><ellipse cx="184.5" cy="102" fill="#000000" rx="3" ry="3" style="stroke: #000000; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="68" x="193.5" y="105.2104">id : int «PK»</text><line style="stroke: #A80036; stroke-width: 1.0;" x1="174.5" x2="375.5" y1="111.8047" y2="111.8047"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="77" x="179.5" y="126.0151">name : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="76" x="179.5" y="138.8198">email : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="135" x="179.5" y="151.6245">password_hash : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="191" x="179.5" y="164.4292">role : string "CUSTOMER | ADMIN"</text><!--MD5=[84cb5fba91ef61d95e3bba662d4d5a12]
+class RESERVATION--><rect fill="#FEFECE" filter="url(#f1uo1vvjsx2f1d)" height="163.2422" id="RESERVATION" style="stroke: #A80036; stroke-width: 1.5;" width="296" x="25" y="299"/><ellipse cx="126.75" cy="315" fill="#ADD1B2" rx="11" ry="11" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M130.8594,321 L123.1406,321 L123.1406,308.6094 L130.8594,308.6094 L130.8594,310.7656 L125.5938,310.7656 L125.5938,313.4375 L130.3594,313.4375 L130.3594,315.5938 L125.5938,315.5938 L125.5938,318.8438 L130.8594,318.8438 L130.8594,321 Z "/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="84" x="147.25" y="319.1543">RESERVATION</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="26" x2="320" y1="331" y2="331"/><ellipse cx="36" cy="342" fill="#000000" rx="3" ry="3" style="stroke: #000000; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="68" x="45" y="345.2104">id : int «PK»</text><line style="stroke: #A80036; stroke-width: 1.0;" x1="26" x2="320" y1="351.8047" y2="351.8047"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="91" x="31" y="366.0151">car_id : int «FK»</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="99" x="31" y="378.8198">user_id : int «FK»</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="284" x="31" y="391.6245">status : string "DRAFT | CONFIRMED | CANCELLED"</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="120" x="31" y="404.4292">start_date : datetime</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="114" x="31" y="417.2339">end_date : datetime</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="96" x="31" y="430.0386">total_price : float</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="230" x="31" y="442.8433">payment_method : string "CASH | CARD"</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="122" x="31" y="455.6479">created_at : datetime</text><!--MD5=[1bca60a57a42a4dda341e1f4afe943e6]
+link CAR to RESERVATION--><path d="M115.53,229.57 C123.45,250.23 131.6,271.5 139.19,291.29 " fill="none" id="CAR-RESERVATION" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.0;" x1="139.2125" x2="147.6742" y1="291.3277" y2="296.6569"/><line style="stroke: #A80036; stroke-width: 1.0;" x1="139.2125" x2="136.4658" y1="291.3277" y2="300.9431"/><line style="stroke: #A80036; stroke-width: 1.0;" x1="139.2125" x2="142.07" y1="291.3277" y2="298.8"/><ellipse cx="137.0694" cy="285.7235" fill="none" rx="4" ry="4" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.0;" x1="110.3412" x2="117.8087" y1="227.2087" y2="224.3388"/><line style="stroke: #A80036; stroke-width: 1.0;" x1="111.4174" x2="118.8849" y1="230.009" y2="227.1391"/><line style="stroke: #A80036; stroke-width: 1.0;" x1="115.5099" x2="112.64" y1="229.5075" y2="222.04"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="85" x="130" y="265.0669">is reserved in</text><!--MD5=[67b1ca79c29cbdd71b7488ade5356945]
+link USER to RESERVATION--><path d="M255.81,178.77 C246.84,206.66 235.59,239.73 224,269 C221.11,276.29 217.99,283.79 214.76,291.29 " fill="none" id="USER-RESERVATION" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.0;" x1="214.7013" x2="216.9987" y1="291.4484" y2="301.181"/><line style="stroke: #A80036; stroke-width: 1.0;" x1="214.7013" x2="206.0013" y1="291.4484" y2="296.379"/><line style="stroke: #A80036; stroke-width: 1.0;" x1="214.7013" x2="211.5" y1="291.4484" y2="298.78"/><ellipse cx="217.1023" cy="285.9498" fill="none" rx="4" ry="4" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.0;" x1="253.2407" x2="260.8596" y1="173.6396" y2="176.0793"/><line style="stroke: #A80036; stroke-width: 1.0;" x1="252.3258" x2="259.9447" y1="176.4967" y2="178.9364"/><line style="stroke: #A80036; stroke-width: 1.0;" x1="255.8302" x2="258.27" y1="178.6689" y2="171.05"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="48" x="231" y="265.0669">creates</text><!--MD5=[0060c84694f027136a29c0a0fda13f21]
+@startuml er-current
+skinparam backgroundColor white
+
+entity "CAR" as CAR {
+  * id : int <<PK>>
+  - -
+  brand : string
+  model : string
+  year : int
+  license_plate : string
+  daily_price : float
+  hourly_price : float
+  category : string
+  transmission : string
+  fuel_type : string
+  seats : int
+  description : string
+  image_url : string
+}
+
+entity "USER" as USER {
+  * id : int <<PK>>
+  - -
+  name : string
+  email : string
+  password_hash : string
+  role : string "CUSTOMER | ADMIN"
+}
+
+entity "RESERVATION" as RESERVATION {
+  * id : int <<PK>>
+  - -
+  car_id : int <<FK>>
+  user_id : int <<FK>>
+  status : string "DRAFT | CONFIRMED | CANCELLED"
+  start_date : datetime
+  end_date : datetime
+  total_price : float
+  payment_method : string "CASH | CARD"
+  created_at : datetime
+}
+
+CAR ||- -o{ RESERVATION : "is reserved in"
+USER ||- -o{ RESERVATION : "creates"
+@enduml
+
+PlantUML version 1.2020.02(Sun Mar 01 10:22:07 UTC 2020)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Java Version: 17.0.20.1+1
+Operating System: Linux
+Default Encoding: UTF-8
+Language: en
+Country: null
+--></g></svg>
