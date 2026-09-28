@@ -6,12 +6,12 @@
 
 *Diagram source: [diagrams/use-case.puml](diagrams/use-case.puml) — PlantUML, the image is automatically re-rendered on every source change.*
 
-All use cases below are implemented (✅). Each one that has a meaningfully
-independent flow also has its own activity diagram, following the same
-structure: one start, one end, and side-by-side swimlanes for every actor
-involved. `<<include>>` use cases (Check availability, Send notification)
-don't get a separate activity diagram — their steps are shown inline inside
-the activity diagram of the use case that includes them (UC4 and UC8).
+All use cases below are implemented (✅). Every use case in the diagram —
+including the two `<<include>>` ones (Check availability, Send notification) —
+has its own activity diagram, following the same structure: one start, one
+end, and side-by-side swimlanes for every actor involved. The steps of the
+included use cases also appear inline in the activity diagrams of the use
+cases that include them (UC4 and UC8).
 
 ## Additional diagrams
 
@@ -95,6 +95,12 @@ for the "Confirm reservation" flow (UC8):
 | Actor | System |
 | Main flow | The system compares the requested date range against all `CONFIRMED` reservations for that car; if no interval overlaps, the car is available. Enforced in `crud.is_car_available`. |
 
+### Activity diagram — Check availability
+
+![Activity diagram — Check availability](diagrams/activity-check-availability.svg)
+
+*Diagram source: [diagrams/activity-check-availability.puml](diagrams/activity-check-availability.puml).*
+
 ## UC5 — Cancel reservation ✅
 
 | | |
@@ -166,7 +172,13 @@ for the "Confirm reservation" flow (UC8):
 | | |
 |---|---|
 | Actor | Notification Service (external boundary) |
-| Main flow | After confirming a reservation, the system calls `NotificationService.send_confirmation`. By default `LoggingNotificationService` logs it; if SMTP environment variables are set, `EmailNotificationService` sends a real e-mail instead — same interface, no domain code changes. |
+| Main flow | After confirming a reservation, the system calls `NotificationService.send_confirmation`. By default `LoggingNotificationService` logs it; if SMTP environment variables are set, `EmailNotificationService` sends a real e-mail instead — same interface, no domain code changes. If sending the e-mail fails, the error is only logged and the reservation stays `CONFIRMED`. |
+
+### Activity diagram — Send notification
+
+![Activity diagram — Send notification](diagrams/activity-send-notification.svg)
+
+*Diagram source: [diagrams/activity-send-notification.puml](diagrams/activity-send-notification.puml).*
 
 ## UC9 — Manage fleet ✅ (admin-only)
 

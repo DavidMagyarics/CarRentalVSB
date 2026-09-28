@@ -1,0 +1,20 @@
+@startuml activity-check-availability
+skinparam backgroundColor white
+
+|Customer / Admin|
+start
+:Trigger the check\n(pick dates in the booking form\nor submit it — UC4,\nor click "Confirm" — UC8);
+
+|System|
+:Load CONFIRMED reservations\nof the selected car\n(DRAFT and CANCELLED\nones are ignored);
+if (Any of them overlaps the\nrequested time range?\n(existing start < requested end\nand existing end > requested start)) then (no)
+  :Result: car available;
+else (yes)
+  :Result: car not available;
+endif
+:Return the result to the\ncalling use case (UC4 / UC8);
+
+|Customer / Admin|
+:See result\n(slot free and the flow continues,\nor "slot already taken" message);
+stop
+@enduml

@@ -1,0 +1,24 @@
+@startuml activity-send-notification
+skinparam backgroundColor white
+
+|System|
+start
+:Reservation was set to\nCONFIRMED by the admin (UC8);
+:Call send_confirmation\n(reservation, customer);
+
+|Notification Service|
+if (SMTP configured?\n(SMTP_HOST in backend/.env)) then (yes)
+  :Compose e-mail\n(reservation no., dates,\ntotal price);
+  if (E-mail sent successfully?) then (yes)
+    :Log "confirmation\ne-mail sent";
+  else (no)
+    :Log the error\n(the reservation stays\nCONFIRMED);
+  endif
+else (no)
+  :Log the notification\n(LoggingNotificationService,\nno e-mail is sent);
+endif
+
+|Customer|
+:See the reservation as CONFIRMED\nin "My reservations"\n(+ confirmation e-mail,\nif one was sent);
+stop
+@enduml
