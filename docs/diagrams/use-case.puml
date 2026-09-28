@@ -33,5 +33,6 @@ Admin --> UC9
 Admin --> UC10
 
 UC4 ..> UC4a : <<include>>
+UC8 ..> UC4a : <<include>>
 UC8 ..> UC8a : <<include>>
 @enduml

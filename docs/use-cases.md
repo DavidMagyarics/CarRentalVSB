@@ -76,10 +76,10 @@ for the "Confirm reservation" flow (UC8):
 |---|---|
 | Actor | Customer |
 | Precondition | The customer is logged in (UC2) and the chosen car exists (UC3). |
-| Main flow | 1. The customer picks a car and opens the booking form. 2. Enters pickup and return date & time. 3. The system runs UC4a (checks availability against `CONFIRMED` reservations). 4. The customer chooses a payment method (Cash, or Card with a mock card-details step that never leaves the browser). 5. On submit, the system computes `total_price` (daily rate per full 24h block, remaining hours at the hourly rate capped at one more day) and creates the reservation in `DRAFT` state with the chosen `payment_method`. |
+| Main flow | 1. The customer picks a car and clicks "Reserve" (a logged-out visitor is asked to log in or register first, then the booking form opens). 2. Enters pickup and return date & time. 3. The system runs UC4a while the form is being filled (checks availability against `CONFIRMED` reservations). 4. The customer chooses a payment method (Cash, or Card with a mock card-details step that never leaves the browser). 5. On submit, the system runs UC4a again, computes `total_price` (daily rate per full 24h block, remaining hours at the hourly rate capped at one more day) and creates the reservation in `DRAFT` state with the chosen `payment_method`. |
 | Alternative flow A1 | Pickup or return falls outside opening hours (Mon–Fri, 08:00–20:00) → blocked client-side before submission is even possible. |
-| Alternative flow A2 | The date range conflicts with a **confirmed** reservation → the system returns error 409. |
-| Alternative flow A3 | `end_date` <= `start_date` → the system returns validation error 422. |
+| Alternative flow A2 | The date range conflicts with a **confirmed** reservation → the form shows it and submitting is disabled; if the slot gets confirmed between that check and the submit, the system returns error 409. |
+| Alternative flow A3 | `end_date` <= `start_date` → blocked in the form; the API returns validation error 422. |
 | Result | A new reservation exists in `DRAFT` state, linked to the car, the logged-in customer, the chosen dates, the computed price and the payment method — awaiting UC8 (admin approval). |
 
 ### Activity diagram — Create reservation
@@ -174,7 +174,7 @@ for the "Confirm reservation" flow (UC8):
 |---|---|
 | Actor | Admin |
 | Precondition | The admin is logged in. |
-| Main flow | The admin adds (`POST /cars/`), edits (`PUT /cars/{id}`) or removes (`DELETE /cars/{id}`) a car in the fleet, including its category, transmission, fuel type, seats, prices, description and photo URL. |
+| Main flow | The admin adds (`POST /cars/`), edits (`PUT /cars/{id}`) or removes (`DELETE /cars/{id}`) a car in the fleet, including its category, transmission, fuel type, seats, prices, description and photo URL. Removing a car also deletes all of its reservations. |
 | Alternative flow A1 | A non-admin calls any of these endpoints → error 403. |
 | Result | The fleet list reflects the change immediately for all customers. |
 

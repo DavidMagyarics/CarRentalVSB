@@ -23,7 +23,7 @@ case ( Add )
 case ( Edit )
   :Update Car;
 case ( Delete )
-  :Delete Car;
+  :Delete Car together with\nall its reservations;
 endswitch
 
 |Admin|

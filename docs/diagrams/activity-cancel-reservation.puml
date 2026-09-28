@@ -7,15 +7,19 @@ start
 :Click "Cancel" on a reservation;
 
 |System|
-if (Reservation already\nCANCELLED?) then (yes)
-  :Prepare "already cancelled"\nerror (409);
-else (no)
-  if (CONFIRMED and the rental\nperiod already started?) then (yes)
-    :Prepare "cannot cancel a\nstarted rental" error (409);
+if (Own reservation,\nor user is admin?) then (yes)
+  if (Reservation already\nCANCELLED?) then (yes)
+    :Prepare "already cancelled"\nerror (409);
   else (no)
-    :Set status to CANCELLED;
-    :Prepare success result;
+    if (CONFIRMED and the rental\nperiod already started?) then (yes)
+      :Prepare "cannot cancel a\nstarted rental" error (409);
+    else (no)
+      :Set status to CANCELLED;
+      :Prepare success result;
+    endif
   endif
+else (no)
+  :Prepare "not your\nreservation" error (403);
 endif
 
 |User|

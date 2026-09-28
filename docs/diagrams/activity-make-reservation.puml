@@ -6,10 +6,20 @@ start
 :Browse cars;
 :Select a car;
 :Click "Reserve";
+
+|System|
+if (Customer logged in?) then (no)
+  |Customer|
+  :Log in, or create an account\n(UC2 / UC1);
+else (yes)
+endif
+
+|Customer|
 :Enter pickup and return\ndate & time;
 
-if (Within opening hours?\n(Mon-Fri, 08:00-20:00)) then (yes)
-  |System|
+|System|
+if (Return after pickup and both\nwithin opening hours?\n(Mon-Fri, 08:00-20:00)) then (yes)
+  :Check availability (UC4a)\nwhile the customer fills the form;
   if (Car available for\nthe requested times?) then (yes)
     |Customer|
     :Choose payment method\n(Cash / Card);
@@ -20,17 +30,22 @@ if (Within opening hours?\n(Mon-Fri, 08:00-20:00)) then (yes)
     :Submit reservation;
 
     |System|
-    :Calculate total price\n(daily rate per full 24h block +\nhourly rate for the rest, capped\nat one more day's rate);
-    :Create Reservation\n(status DRAFT, payment_method,\ntotal_price);
-    :Prepare success result;
+    :Check availability again (UC4a)\n— the slot may have been\nconfirmed in the meantime;
+    if (Still available?) then (yes)
+      :Calculate total price\n(daily rate per full 24h block +\nhourly rate for the rest, capped\nat one more day's rate);
+      :Create Reservation\n(status DRAFT, payment_method,\ntotal_price);
+      :Prepare success result;
+    else (no)
+      :Prepare "slot already\ntaken" error (409);
+    endif
   else (no)
-    :Prepare "slot already\ntaken" error (409);
+    :Show "car already booked\nfor this time" and\ndisable submitting;
   endif
 else (no)
-  :Prepare opening-hours\nerror;
+  :Show date/time error\n(outside opening hours, or\nreturn before pickup);
 endif
 
 |Customer|
-:See result\n(confirmation awaiting admin\napproval, or error message);
+:See result\n(reservation awaiting admin\napproval, or error message);
 stop
 @enduml
