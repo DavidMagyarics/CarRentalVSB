@@ -1,0 +1,34 @@
+@startuml sequence-register
+skinparam backgroundColor white
+title Sequence — Register (UC1)
+
+actor Customer
+participant "Frontend\n(React SPA)" as FE
+participant "REST API\n(FastAPI)" as API
+database "Database\n(SQLite)" as DB
+
+Customer -> FE: Open the app
+Customer -> FE: Click "Create account"
+Customer -> FE: Enter name, e-mail and password
+Customer -> FE: Submit registration
+FE -> API: POST /auth/register\n{name, email, password}
+note right of API
+  Invalid e-mail format or password
+  shorter than 6 characters → 422
+end note
+API -> DB: Find user by e-mail
+DB --> API: user / none
+
+alt e-mail already registered
+  API --> FE: 409 Conflict\n"Tento e-mail je již zaregistrován"
+else e-mail is free
+  API -> API: Hash password (bcrypt)
+  API -> DB: INSERT User (role CUSTOMER)
+  DB --> API: new user
+  API -> API: Issue JWT access token
+  API --> FE: 201 Created\n{access_token, user}
+  FE -> FE: Store the token (localStorage)
+end
+
+FE --> Customer: See result\n(logged in, or error message)
+@enduml

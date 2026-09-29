@@ -1,0 +1,26 @@
+@startuml sequence-browse-cars
+skinparam backgroundColor white
+title Sequence — Browse & filter cars (UC3)
+
+actor Customer
+participant "Frontend\n(React SPA)" as FE
+participant "REST API\n(FastAPI)" as API
+database "Database\n(SQLite)" as DB
+
+Customer -> FE: Open the app
+FE -> API: GET /cars/
+API -> DB: SELECT all cars\n(ordered by brand, model)
+DB --> API: cars
+API --> FE: 200 OK [cars]
+FE --> Customer: Car grid\n(photo, price/day, price/hour, specs)
+
+opt apply a filter
+  Customer -> FE: Choose category, transmission,\nfuel type or price range
+  FE -> API: GET /cars/?category=...&transmission=...\n&fuel_type=...&min_price=...&max_price=...
+  API -> DB: SELECT cars matching the filters\n(price range compares the daily price)
+  DB --> API: matching cars
+  API --> FE: 200 OK [cars]
+end
+
+FE --> Customer: See (updated) car grid
+@enduml

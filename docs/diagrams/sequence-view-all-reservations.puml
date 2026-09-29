@@ -1,0 +1,20 @@
+@startuml sequence-view-all-reservations
+skinparam backgroundColor white
+title Sequence — View all reservations (UC10)
+
+actor Admin
+participant "Frontend\n(React SPA)" as FE
+participant "REST API\n(FastAPI)" as API
+database "Database\n(SQLite)" as DB
+
+Admin -> FE: Open "All reservations"
+FE -> API: GET /reservations/ (JWT)
+note right of API
+  Admin-only endpoint —
+  a non-admin gets 403
+end note
+API -> DB: SELECT all reservations\n(every customer, newest first)
+DB --> API: reservations (with car and customer)
+API --> FE: 200 OK [reservations]
+FE --> Admin: See table — car, customer name & e-mail,\ndates, price, payment method, status
+@enduml

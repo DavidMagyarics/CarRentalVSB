@@ -13,14 +13,10 @@ end, and side-by-side swimlanes for every actor involved. The steps of the
 included use cases also appear inline in the activity diagrams of the use
 cases that include them (UC4 and UC8).
 
-## Additional diagrams
-
-To document the timing of the availability re-check and the notification call
-(a possible race condition), the repository also includes a sequence diagram
-for the "Confirm reservation" flow (UC8):
-[diagrams/sequence-confirm-reservation.puml](diagrams/sequence-confirm-reservation.puml)
-
-![Sequence diagram — Confirm reservation](diagrams/sequence_confirm_reservation.svg)
+Each activity diagram is followed by a sequence diagram of the same flow,
+showing the messages between the user, the frontend (React SPA), the REST API
+(FastAPI) and the database — with the real endpoints, the same branches as the
+activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 
 ## UC1 — Register ✅
 
@@ -38,6 +34,12 @@ for the "Confirm reservation" flow (UC8):
 
 *Diagram source: [diagrams/activity-register.puml](diagrams/activity-register.puml).*
 
+### Sequence diagram — Register
+
+![Sequence diagram — Register](diagrams/sequence-register.svg)
+
+*Diagram source: [diagrams/sequence-register.puml](diagrams/sequence-register.puml).*
+
 ## UC2 — Log in ✅
 
 | | |
@@ -54,6 +56,12 @@ for the "Confirm reservation" flow (UC8):
 
 *Diagram source: [diagrams/activity-login.puml](diagrams/activity-login.puml).*
 
+### Sequence diagram — Log in
+
+![Sequence diagram — Log in](diagrams/sequence-login.svg)
+
+*Diagram source: [diagrams/sequence-login.puml](diagrams/sequence-login.puml).*
+
 ## UC3 — Browse & filter cars ✅
 
 | | |
@@ -69,6 +77,12 @@ for the "Confirm reservation" flow (UC8):
 ![Activity diagram — Browse & filter cars](diagrams/activity-browse-cars.svg)
 
 *Diagram source: [diagrams/activity-browse-cars.puml](diagrams/activity-browse-cars.puml).*
+
+### Sequence diagram — Browse & filter cars
+
+![Sequence diagram — Browse & filter cars](diagrams/sequence-browse-cars.svg)
+
+*Diagram source: [diagrams/sequence-browse-cars.puml](diagrams/sequence-browse-cars.puml).*
 
 ## UC4 — Create reservation ✅
 
@@ -88,6 +102,12 @@ for the "Confirm reservation" flow (UC8):
 
 *Diagram source: [diagrams/activity-make-reservation.puml](diagrams/activity-make-reservation.puml).*
 
+### Sequence diagram — Create reservation
+
+![Sequence diagram — Create reservation](diagrams/sequence-make-reservation.svg)
+
+*Diagram source: [diagrams/sequence-make-reservation.puml](diagrams/sequence-make-reservation.puml).*
+
 ## UC4a — Check availability ✅ (include, part of UC4 and UC8)
 
 | | |
@@ -100,6 +120,12 @@ for the "Confirm reservation" flow (UC8):
 ![Activity diagram — Check availability](diagrams/activity-check-availability.svg)
 
 *Diagram source: [diagrams/activity-check-availability.puml](diagrams/activity-check-availability.puml).*
+
+### Sequence diagram — Check availability
+
+![Sequence diagram — Check availability](diagrams/sequence-check-availability.svg)
+
+*Diagram source: [diagrams/sequence-check-availability.puml](diagrams/sequence-check-availability.puml).*
 
 ## UC5 — Cancel reservation ✅
 
@@ -119,6 +145,12 @@ for the "Confirm reservation" flow (UC8):
 
 *Diagram source: [diagrams/activity-cancel-reservation.puml](diagrams/activity-cancel-reservation.puml).*
 
+### Sequence diagram — Cancel reservation
+
+![Sequence diagram — Cancel reservation](diagrams/sequence-cancel-reservation.svg)
+
+*Diagram source: [diagrams/sequence-cancel-reservation.puml](diagrams/sequence-cancel-reservation.puml).*
+
 ## UC6 — View my reservations ✅
 
 | | |
@@ -134,6 +166,12 @@ for the "Confirm reservation" flow (UC8):
 
 *Diagram source: [diagrams/activity-view-my-reservations.puml](diagrams/activity-view-my-reservations.puml).*
 
+### Sequence diagram — View my reservations
+
+![Sequence diagram — View my reservations](diagrams/sequence-view-my-reservations.svg)
+
+*Diagram source: [diagrams/sequence-view-my-reservations.puml](diagrams/sequence-view-my-reservations.puml).*
+
 ## UC7 — Contact support ✅
 
 | | |
@@ -148,6 +186,12 @@ for the "Confirm reservation" flow (UC8):
 ![Activity diagram — Contact support](diagrams/activity-contact-support.svg)
 
 *Diagram source: [diagrams/activity-contact-support.puml](diagrams/activity-contact-support.puml).*
+
+### Sequence diagram — Contact support
+
+![Sequence diagram — Contact support](diagrams/sequence-contact-support.svg)
+
+*Diagram source: [diagrams/sequence-contact-support.puml](diagrams/sequence-contact-support.puml).*
 
 ## UC8 — Confirm reservation ✅ (admin-only)
 
@@ -167,6 +211,12 @@ for the "Confirm reservation" flow (UC8):
 
 *Diagram source: [diagrams/activity-confirm-reservation.puml](diagrams/activity-confirm-reservation.puml).*
 
+### Sequence diagram — Confirm reservation
+
+![Sequence diagram — Confirm reservation](diagrams/sequence-confirm-reservation.svg)
+
+*Diagram source: [diagrams/sequence-confirm-reservation.puml](diagrams/sequence-confirm-reservation.puml).*
+
 ## UC8a — Send notification ✅ (include, part of UC8, external boundary)
 
 | | |
@@ -179,6 +229,12 @@ for the "Confirm reservation" flow (UC8):
 ![Activity diagram — Send notification](diagrams/activity-send-notification.svg)
 
 *Diagram source: [diagrams/activity-send-notification.puml](diagrams/activity-send-notification.puml).*
+
+### Sequence diagram — Send notification
+
+![Sequence diagram — Send notification](diagrams/sequence-send-notification.svg)
+
+*Diagram source: [diagrams/sequence-send-notification.puml](diagrams/sequence-send-notification.puml).*
 
 ## UC9 — Manage fleet ✅ (admin-only)
 
@@ -196,6 +252,12 @@ for the "Confirm reservation" flow (UC8):
 
 *Diagram source: [diagrams/activity-manage-fleet.puml](diagrams/activity-manage-fleet.puml).*
 
+### Sequence diagram — Manage fleet
+
+![Sequence diagram — Manage fleet](diagrams/sequence-manage-fleet.svg)
+
+*Diagram source: [diagrams/sequence-manage-fleet.puml](diagrams/sequence-manage-fleet.puml).*
+
 ## UC10 — View all reservations ✅ (admin-only)
 
 | | |
@@ -211,3 +273,9 @@ for the "Confirm reservation" flow (UC8):
 ![Activity diagram — View all reservations](diagrams/activity-view-all-reservations.svg)
 
 *Diagram source: [diagrams/activity-view-all-reservations.puml](diagrams/activity-view-all-reservations.puml).*
+
+### Sequence diagram — View all reservations
+
+![Sequence diagram — View all reservations](diagrams/sequence-view-all-reservations.svg)
+
+*Diagram source: [diagrams/sequence-view-all-reservations.puml](diagrams/sequence-view-all-reservations.puml).*

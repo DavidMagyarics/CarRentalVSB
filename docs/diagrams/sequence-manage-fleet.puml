@@ -1,0 +1,47 @@
+@startuml sequence-manage-fleet
+skinparam backgroundColor white
+title Sequence — Manage fleet (UC9)
+
+actor Admin
+participant "Frontend\n(React SPA)" as FE
+participant "REST API\n(FastAPI)" as API
+database "Database\n(SQLite)" as DB
+
+Admin -> FE: Open "Fleet administration"
+FE -> API: GET /cars/
+API -> DB: SELECT all cars
+DB --> API: cars
+API --> FE: 200 OK [cars]
+FE --> Admin: Fleet table
+note right of API
+  POST / PUT / DELETE are admin-only
+  (JWT) — a non-admin gets 403
+end note
+
+alt Add
+  Admin -> FE: Fill new car form\n(brand, model, year, plate, prices, category, ...)
+  FE -> API: POST /cars/ {car}
+  API -> DB: INSERT Car
+  DB --> API: car
+  API --> FE: 201 Created {car}
+else Edit
+  Admin -> FE: Pick a car and edit form fields
+  FE -> API: PUT /cars/{id} {changed fields}
+  API -> DB: UPDATE Car
+  DB --> API: car
+  API --> FE: 200 OK {car}
+else Delete
+  Admin -> FE: Pick a car and click "Delete"
+  FE --> Admin: "Opravdu smazat ...?"
+  Admin -> FE: Confirm deletion
+  FE -> API: DELETE /cars/{id}
+  API -> DB: DELETE Car together with\nall its reservations
+  API --> FE: 204 No Content
+end
+
+FE -> API: Reload the list (GET /cars/)
+API -> DB: SELECT all cars
+DB --> API: cars
+API --> FE: 200 OK [cars]
+FE --> Admin: See updated fleet list
+@enduml

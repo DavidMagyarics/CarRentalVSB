@@ -1,0 +1,31 @@
+@startuml sequence-cancel-reservation
+skinparam backgroundColor white
+title Sequence — Cancel reservation (UC5)
+
+actor "User\n(Customer or Admin)" as User
+participant "Frontend\n(React SPA)" as FE
+participant "REST API\n(FastAPI)" as API
+database "Database\n(SQLite)" as DB
+
+User -> FE: Open "My reservations"\n(or "All reservations" as admin)
+User -> FE: Click "Cancel" on a reservation
+FE -> API: POST /reservations/{id}/cancel (JWT)
+API -> DB: Load the reservation
+DB --> API: reservation
+
+alt not own reservation and user is not admin
+  API --> FE: 403 Forbidden\n"Tato rezervace vám nepatří"
+else reservation already CANCELLED
+  API --> FE: 409 Conflict\n"Rezervace je již zrušena"
+else CONFIRMED and the rental period already started
+  API --> FE: 409 Conflict\n"Potvrzenou rezervaci nelze zrušit poté,\nco již začal termín výpůjčky"
+else can be cancelled
+  API -> DB: UPDATE status = CANCELLED
+  DB --> API: reservation
+  API --> FE: 200 OK {reservation}
+  FE -> API: Reload the list\n(GET /reservations/me or GET /reservations/)
+  API --> FE: 200 OK [reservations]
+end
+
+FE --> User: See result\n(cancelled, or error message)
+@enduml

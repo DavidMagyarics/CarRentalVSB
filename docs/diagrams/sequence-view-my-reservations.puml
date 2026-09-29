@@ -1,0 +1,17 @@
+@startuml sequence-view-my-reservations
+skinparam backgroundColor white
+title Sequence — View my reservations (UC6)
+
+actor Customer
+participant "Frontend\n(React SPA)" as FE
+participant "REST API\n(FastAPI)" as API
+database "Database\n(SQLite)" as DB
+
+Customer -> FE: Open "My reservations"
+FE -> API: GET /reservations/me (JWT)
+API -> API: Identify the user from the JWT
+API -> DB: SELECT reservations\nWHERE user_id = logged-in user\n(newest first)
+DB --> API: reservations (with car)
+API --> FE: 200 OK [reservations]
+FE --> Customer: See list — car thumbnail,\ndates, price, payment method, status
+@enduml

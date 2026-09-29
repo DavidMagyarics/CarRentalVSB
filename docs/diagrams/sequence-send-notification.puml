@@ -1,0 +1,39 @@
+@startuml sequence-send-notification
+skinparam backgroundColor white
+title Sequence — Send notification (UC8a, included in UC8)
+
+participant "REST API\n(FastAPI)" as API
+participant "Notification\nService" as NS
+participant "SMTP server" as SMTP
+actor Customer
+
+note over API
+  The admin has just set the
+  reservation to CONFIRMED (UC8)
+end note
+API -> NS: send_confirmation(reservation, customer)
+
+alt SMTP configured (SMTP_HOST in backend/.env)\n→ EmailNotificationService
+  NS -> NS: Compose e-mail\n(reservation no., dates, total price)
+  NS -> SMTP: Connect, STARTTLS, log in, send
+  alt e-mail sent
+    SMTP --> NS: accepted
+    SMTP -> Customer: Confirmation e-mail
+    NS -> NS: Log "Confirmation e-mail sent"
+    NS --> API: true
+  else sending failed
+    SMTP --> NS: error / no connection
+    NS -> NS: Log the error\n(the reservation stays CONFIRMED)
+    NS --> API: false
+  end
+else no SMTP → LoggingNotificationService
+  NS -> NS: Log the notification\n(no e-mail is sent)
+  NS --> API: true
+end
+
+note over Customer
+  Sees the reservation as CONFIRMED
+  in "My reservations" (UC6)
+  (+ the e-mail, if one was sent)
+end note
+@enduml

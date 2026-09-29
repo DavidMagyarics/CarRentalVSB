@@ -1,0 +1,30 @@
+@startuml sequence-check-availability
+skinparam backgroundColor white
+title Sequence — Check availability (UC4a, included in UC4 and UC8)
+
+actor "Customer / Admin" as User
+participant "Frontend\n(React SPA)" as FE
+participant "REST API\n(FastAPI)" as API
+participant "Availability check\n(crud.is_car_available)" as AV
+database "Database\n(SQLite)" as DB
+
+User -> FE: Pick dates in the booking form or submit it (UC4),\nor click "Confirm" (UC8)
+FE -> API: GET /cars/{id}/availability, POST /reservations/\nor POST /reservations/{id}/confirm
+API -> AV: is_car_available(car_id, start, end)
+AV -> DB: SELECT first reservation of the car\nWHERE status = CONFIRMED\nAND start_date < requested end\nAND end_date > requested start
+note right of DB
+  DRAFT and CANCELLED
+  reservations are ignored
+end note
+DB --> AV: reservation / none
+
+alt no overlapping reservation
+  AV --> API: true (car available)
+else overlapping CONFIRMED reservation found
+  AV --> API: false (car not available)
+end
+
+API -> API: Continue the calling use case\n(UC4 / UC8) with the result
+API --> FE: Result — {available: true / false} for the\nform check, 409 "slot taken" on submit / confirm
+FE --> User: See result\n(slot free and the flow continues,\nor "slot already taken" message)
+@enduml

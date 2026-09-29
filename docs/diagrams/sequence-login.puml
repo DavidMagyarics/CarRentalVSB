@@ -1,0 +1,28 @@
+@startuml sequence-login
+skinparam backgroundColor white
+title Sequence — Log in (UC2)
+
+actor Customer
+participant "Frontend\n(React SPA)" as FE
+participant "REST API\n(FastAPI)" as API
+database "Database\n(SQLite)" as DB
+
+Customer -> FE: Open the app
+Customer -> FE: Click "Log in"
+Customer -> FE: Enter e-mail and password
+Customer -> FE: Submit login
+FE -> API: POST /auth/login\n{email, password}
+API -> DB: Find user by e-mail
+DB --> API: user / none
+API -> API: Verify the password against\nthe stored bcrypt hash
+
+alt e-mail and password match
+  API -> API: Issue JWT access token
+  API --> FE: 200 OK\n{access_token, user}
+  FE -> FE: Store the token (localStorage)
+else unknown e-mail or wrong password
+  API --> FE: 401 Unauthorized\n"Nesprávný e-mail nebo heslo"
+end
+
+FE --> Customer: See result\n(logged in, or error message)
+@enduml

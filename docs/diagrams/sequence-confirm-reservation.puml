@@ -1,49 +1,46 @@
-@startuml sequence_confirm_reservation
+@startuml sequence-confirm-reservation
+skinparam backgroundColor white
 title Sequence — Confirm reservation (UC8)
 
 actor Admin
-participant API
-participant DB
-participant NotificationService
-actor Customer
+participant "Frontend\n(React SPA)" as FE
+participant "REST API\n(FastAPI)" as API
+database "Database\n(SQLite)" as DB
+participant "Notification\nService" as NS
 
-Admin -> API: POST /reservations/{id}/confirm (JWT)
+Admin -> FE: Open "All reservations"
+Admin -> FE: Click "Confirm" on a DRAFT reservation
+FE -> API: POST /reservations/{id}/confirm (JWT)
+note right of API
+  Admin-only endpoint —
+  a non-admin gets 403
+end note
+API -> DB: Load the reservation
+DB --> API: reservation
 
-alt user is not an admin
-  API --> Admin: 403 Forbidden
-else admin
-  API -> DB: Load reservation
+alt reservation is not DRAFT anymore
+  API --> FE: 409 Conflict\n"Rezervaci ve stavu ... nelze potvrdit"
+else still DRAFT
+  API -> DB: Check availability again (UC4a) —\nany overlapping CONFIRMED reservation?
   DB --> API: reservation / none
-
-  alt reservation not found
-    API --> Admin: 404 Not Found
-  else reservation is not DRAFT
-    API --> Admin: 409 Conflict (cannot be confirmed)
-  else reservation is DRAFT
-    API -> DB: Re-check availability (query CONFIRMED reservations)
-    DB --> API: available / conflict
-
-    alt available
-      API -> DB: Update reservation state -> CONFIRMED (commit)
-      API -> NotificationService: send_confirmation(reservation, user)
-      NotificationService --> Customer: confirmation (log, or e-mail if SMTP is configured)
-      NotificationService --> API: sent / failed
-      API --> Admin: 200 OK (reservation CONFIRMED)
-    else conflict
-      API --> Admin: 409 Conflict (slot taken)
-    end
+  alt slot taken in the meantime
+    API --> FE: 409 Conflict\n"Auto je v tomto termínu už\njinou rezervací potvrzeno"
+  else car still available
+    API -> DB: UPDATE status = CONFIRMED (commit)
+    DB --> API: reservation
+    API -> NS: send_confirmation(reservation, customer)\n(UC8a)
+    NS --> API: sent / failed (a failure is only logged)
+    API --> FE: 200 OK {reservation}
+    FE -> API: Reload the list (GET /reservations/)
+    API --> FE: 200 OK [reservations]
   end
 end
 
-note over API,DB
-  The re-check catches a slot that was confirmed earlier.
-  Without transactional locking, two confirmations running
-  at the same moment could still both pass (known risk).
-end note
+FE --> Admin: See result\n(confirmed, or error message)
 
-note over NotificationService
-  A failed e-mail is only logged —
-  the reservation stays CONFIRMED.
+note over API, DB
+  Without transactional locking, two confirmations
+  running at the same moment could both pass
+  the re-check (known risk, see intent-and-change.md).
 end note
-
 @enduml

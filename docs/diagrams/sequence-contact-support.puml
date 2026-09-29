@@ -1,0 +1,23 @@
+@startuml sequence-contact-support
+skinparam backgroundColor white
+title Sequence — Contact support (UC7)
+
+actor Customer
+participant "Frontend\n(React SPA)" as FE
+participant "Phone / mail app\n(customer's device)" as Device
+
+Customer -> FE: Click the support button\n(bottom-right, any page)
+FE --> Customer: Show contact panel\n(phone, e-mail, office hours)
+note right of FE
+  Purely client-side —
+  no backend call
+end note
+
+opt click phone or e-mail
+  Customer -> FE: Click the phone number or e-mail
+  FE -> Device: Open tel: / mailto: link
+  Device --> Customer: Native phone / mail app opens
+end
+
+Customer -> FE: Close the panel
+@enduml
