@@ -147,9 +147,9 @@ the diagram ends.
 |---|---|
 | Actor | Customer (no login required) |
 | Precondition | — |
-| Main flow | 1. The customer opens the app. 2. The system lists all cars (`GET /cars/`). 3. The customer optionally sets filters (category, transmission, fuel type, price range); the system re-queries and returns the matching cars. |
+| Main flow | 1. The customer opens the app. 2. The system lists all cars (`GET /cars/`). 3. The customer optionally sets filters (category, transmission, fuel type, price range, branch — F11); the system re-queries and returns the matching cars. |
 | Alternative flow | The fleet (or the filtered result) is empty → the system shows an informational message. |
-| Result | The customer sees a grid of cars matching the current filters, each with a photo (or category illustration), specs, and both the hourly and daily price. |
+| Result | The customer sees a grid of cars matching the current filters, each with a photo (or category illustration), specs, branch, and both the hourly and daily price. |
 
 ### Activity diagram — Browse & filter cars
 
@@ -380,8 +380,9 @@ e-mail problem.
 |---|---|
 | Actor | Admin |
 | Precondition | The admin is logged in. |
-| Main flow | The admin adds (`POST /cars/`), edits (`PUT /cars/{id}`) or removes (`DELETE /cars/{id}`) a car in the fleet, including its category, transmission, fuel type, seats, prices, description and photo URL. Removing a car also deletes all of its reservations. |
+| Main flow | The admin adds (`POST /cars/`), edits (`PUT /cars/{id}`) or removes (`DELETE /cars/{id}`) a car in the fleet, including its category, transmission, fuel type, seats, prices, description, photo URL and branch (F11, required — every car belongs to exactly one). Removing a car also deletes all of its reservations. |
 | Alternative flow A1 | A non-admin calls any of these endpoints → error 403. |
+| Alternative flow A2 | `branch_id` doesn't reference an existing branch → error 404. |
 | Result | The fleet list reflects the change immediately for all customers. |
 
 ### Activity diagram — Manage fleet

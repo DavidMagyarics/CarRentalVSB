@@ -8,7 +8,8 @@ readable overview of them for SWI documentation purposes.
 ## Authentication
 
 All endpoints except `GET /cars/`, `GET /cars/{id}`, `GET /cars/{id}/availability`,
-`POST /auth/register` and `POST /auth/login` require a JWT bearer token:
+`GET /branches/`, `GET /branches/{id}`, `POST /auth/register` and
+`POST /auth/login` require a JWT bearer token:
 
 ```
 Authorization: Bearer <token>
@@ -48,21 +49,44 @@ Obtained from `POST /auth/register` or `POST /auth/login`. Endpoints marked
 }
 ```
 
+## Branches (F11)
+
+A branch is a physical pickup/return location; every car belongs to exactly
+one (see [domain-model.md](domain-model.md)).
+
+| Method | Path | Description | Responses |
+|---|---|---|---|
+| GET | `/branches/` | List all branches | 200 |
+| GET | `/branches/{branch_id}` | Get a single branch | 200, 404 |
+| POST | `/branches/` | **Admin.** Create a branch | 201, 401, 403, 422 |
+| PUT | `/branches/{branch_id}` | **Admin.** Update a branch (partial) | 200, 401, 403, 404 |
+| DELETE | `/branches/{branch_id}` | **Admin.** Remove a branch | 204, 401, 403, 404, 409 (cars still assigned to it) |
+
+### `Branch` schema
+
+```json
+{
+  "id": 1,
+  "name": "Ostrava – centrum",
+  "address": "28. října 15, Ostrava"
+}
+```
+
 ## Cars
 
 | Method | Path | Description | Responses |
 |---|---|---|---|
 | GET | `/cars/` | List cars, optionally filtered | 200 |
 | GET | `/cars/{car_id}` | Get a single car | 200, 404 |
-| POST | `/cars/` | **Admin.** Create a new car | 201, 401, 403, 422 |
-| PUT | `/cars/{car_id}` | **Admin.** Update a car (partial) | 200, 401, 403, 404 |
+| POST | `/cars/` | **Admin.** Create a new car | 201, 401, 403, 404 (unknown `branch_id`), 422 |
+| PUT | `/cars/{car_id}` | **Admin.** Update a car (partial) | 200, 401, 403, 404 (unknown car or `branch_id`) |
 | DELETE | `/cars/{car_id}` | **Admin.** Remove a car | 204, 401, 403, 404 |
 | GET | `/cars/{car_id}/availability?start_date=...&end_date=...` | Is the car free for the given date range? (based on `CONFIRMED` reservations) | 200, 404, 422 |
 
 ### Query parameters for `GET /cars/`
 
 All optional, combinable: `category`, `transmission`, `fuel_type`,
-`min_price`, `max_price`, `min_seats`.
+`min_price`, `max_price`, `min_seats`, `branch_id`.
 
 ### `Car` schema
 
@@ -80,14 +104,20 @@ All optional, combinable: `category`, `transmission`, `fuel_type`,
   "fuel_type": "PETROL",
   "seats": 5,
   "description": "Prostorný rodinný sedan s nízkou spotřebou a velkým kufrem.",
-  "image_url": "/cars/skoda-octavia.jpg"
+  "image_url": "/cars/skoda-octavia.jpg",
+  "branch_id": 1,
+  "branch": { "id": 1, "name": "Ostrava – centrum", "address": "28. října 15, Ostrava" }
 }
 ```
 
 `category` is one of `SEDAN | SUV | HATCHBACK | VAN | SPORTS`, `transmission`
 is `MANUAL | AUTOMATIC`, `fuel_type` is `PETROL | DIESEL | ELECTRIC | HYBRID`.
 `description` and `image_url` are optional (`null` when unset — the frontend
-falls back to a category illustration when `image_url` is missing).
+falls back to a category illustration when `image_url` is missing). `branch`
+is nested the same way `car`/`user` are nested on a `Reservation`, so the
+frontend doesn't need a separate lookup; `branch_id` must reference an
+existing branch (SQLite doesn't enforce the foreign key itself, so the API
+checks it explicitly).
 
 ## Reservations
 
@@ -159,10 +189,3 @@ All errors have the shape `{"detail": "error description"}` (FastAPI
 convention); for validation errors (422), `detail` contains a field-by-field
 description of the invalid input. `401` means no/invalid token, `403` means
 a valid token without the required role or ownership.
-
-## Planned endpoints (future iterations)
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/branches/` | List rental branches (F11) |
-| POST | `/payments/{reservation_id}` | Real payment provider callback, replacing the mock `payment_method` flag |

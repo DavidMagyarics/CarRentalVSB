@@ -1,6 +1,13 @@
 @startuml er-current
 skinparam backgroundColor white
 
+entity "BRANCH" as BRANCH {
+  * id : int <<PK>>
+  --
+  name : string
+  address : string
+}
+
 entity "CAR" as CAR {
   * id : int <<PK>>
   --
@@ -16,6 +23,7 @@ entity "CAR" as CAR {
   seats : int
   description : string
   image_url : string
+  branch_id : int <<FK>>
 }
 
 entity "USER" as USER {
@@ -42,4 +50,5 @@ entity "RESERVATION" as RESERVATION {
 
 CAR ||--o{ RESERVATION : "is reserved in"
 USER ||--o{ RESERVATION : "creates"
+BRANCH ||--o{ CAR : "is home to"
 @enduml

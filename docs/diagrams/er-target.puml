@@ -64,7 +64,7 @@ entity "PAYMENT" as PAYMENT {
 
 USER ||--o{ RESERVATION : "creates"
 CAR ||--o{ RESERVATION : "is reserved in"
-BRANCH ||--o{ CAR : "belongs to"
-CAR ||--o{ CAR_CATEGORY : "belongs to category"
+BRANCH ||--o{ CAR : "is home to"
+CAR_CATEGORY ||--o{ CAR : "is used by"
 RESERVATION ||--o| PAYMENT : "settled by"
 @enduml

@@ -11,6 +11,12 @@
 no more anonymous name/e-mail booking; see [api-design.md](api-design.md) for
 the auth endpoints.
 
+**Branches (F11):** `Branch` (`name`, `address`) is a physical pickup/return
+location. Every `Car` belongs to exactly one `Branch` (`branch_id`, required)
+— there is no cross-branch drop-off yet, pickup and return both happen at the
+car's own branch. A branch that still has cars assigned can't be deleted
+(409), to avoid silently orphaning them.
+
 **Car pricing and specs:** `Car` carries both `daily_price` and
 `hourly_price` (see the pricing rule below), plus `category`, `transmission`,
 `fuel_type`, `seats`, an optional `description` and an optional `image_url`
@@ -45,9 +51,9 @@ for instant feedback while picking dates; the server value is authoritative.
 
 *Diagram source: [diagrams/er-target.puml](diagrams/er-target.puml).*
 
-Extensions still ahead: a `BRANCH` entity for multiple pickup/return
-locations (F11), a proper `CAR_CATEGORY` table instead of today's fixed enum
-(so categories become manageable data, not hardcoded values), and a
-`PAYMENT` entity recording a real transaction (provider ID, amount, status,
-timestamp) once the mock Cash/Card step is replaced with a real payment
-provider.
+Extensions still ahead: a proper `CAR_CATEGORY` table instead of today's
+fixed enum (so categories become manageable data, not hardcoded values), and
+a `PAYMENT` entity recording a real transaction (provider ID, amount,
+status, timestamp) once the mock Cash/Card step is replaced with a real
+payment provider. (`BRANCH` used to be listed here too — it's now part of
+the current state above, see F11.)

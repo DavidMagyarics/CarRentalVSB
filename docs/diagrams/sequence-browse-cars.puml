@@ -12,11 +12,11 @@ FE -> API: GET /cars/
 API -> DB: SELECT all cars\n(ordered by brand, model)
 DB --> API: cars
 API --> FE: 200 OK [cars]
-FE --> Customer: Car grid\n(photo, price/day, price/hour, specs)
+FE --> Customer: Car grid\n(photo, branch, price/day, price/hour, specs)
 
 opt apply a filter
-  Customer -> FE: Choose category, transmission,\nfuel type or price range
-  FE -> API: GET /cars/?category=...&transmission=...\n&fuel_type=...&min_price=...&max_price=...
+  Customer -> FE: Choose category, transmission,\nfuel type, price range or branch (F11)
+  FE -> API: GET /cars/?category=...&transmission=...\n&fuel_type=...&min_price=...&max_price=...&branch_id=...
   API -> DB: SELECT cars matching the filters\n(price range compares the daily price)
   DB --> API: matching cars
   API --> FE: 200 OK [cars]

@@ -10,10 +10,18 @@ book a vehicle for a chosen date and time, and to let the rental admin
 manage the fleet, review reservation requests and approve them.
 
 The system is developed iteratively (see [roadmap.md](roadmap.md)) — this
-document describes the **target scope** of the whole system. Each
-requirement lists its implementation status.
+document describes the **full scope** of the system as it stands today.
+Every requirement below lists its implementation status; as of this
+revision, every one of them is `MVP` — there is nothing left in a `Planned`
+state. The one piece of earlier-considered scope that will *not* be built,
+a real payment provider integration, is intentionally not listed here at
+all (see decision D9 in
+[architecture-and-decisions.md](architecture-and-decisions.md) and
+[roadmap.md](roadmap.md)) — the mock `payment_method` flag (F13) is the
+final design, not a stand-in for it.
 
-Statuses: `MVP` (done), `Planned` (to be added in later iterations).
+Status: `MVP` — implemented and verified (automated tests and/or a manual
+check recorded in the status note).
 
 ## 2. Actors
 
@@ -37,7 +45,7 @@ Statuses: `MVP` (done), `Planned` (to be added in later iterations).
 | F8 | The admin can add, edit and remove a car from the fleet; removing a car also removes all of its reservations. | Admin | MVP |
 | F9 | The admin sees an overview of all reservations (with customer contact info) and can confirm or cancel any of them. | Admin | MVP |
 | F10 | The system allows filtering cars by category, transmission, fuel type and price range. | Customer | MVP |
-| F11 | The system supports multiple rental branches (pickup/return). | Customer | Planned |
+| F11 | The system supports multiple rental branches. Every car belongs to one branch; the customer can see and filter by it. Pickup and return both happen at the car's own branch — cross-branch drop-off is not supported yet. | Customer | MVP |
 | F12 | The system notifies the customer when their reservation is confirmed, via the Notification Service. Defaults to a console log; sends a real e-mail automatically once SMTP settings are configured (no code change). | System | MVP |
 | F13 | The customer chooses a payment method (Cash or Card) when booking; Card shows a mock card-details step that is never sent to the server. | Customer | MVP |
 | F14 | The admin confirms a pending reservation (`DRAFT → CONFIRMED`); the system re-checks availability before confirming. **A customer cannot confirm their own reservation** — this is a deliberate domain rule, not a bug: a request only becomes binding once staff has approved it. | Admin | MVP |
@@ -81,4 +89,5 @@ Statuses: `MVP` (done), `Planned` (to be added in later iterations).
 | Reservation | A customer's commitment to rent a specific car for a specific date & time range, with a status, a computed price and a payment method. |
 | Availability | A car is available for a date range if it doesn't overlap another `CONFIRMED` reservation. |
 | Fleet | The set of all cars registered in the system. |
+| Branch | A physical pickup/return location; every car belongs to exactly one (F11). |
 | Confirm | The admin-only action that turns a `DRAFT` reservation into a binding `CONFIRMED` one. |

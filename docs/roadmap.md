@@ -25,7 +25,7 @@ corresponding requirement in [requirements.md](requirements.md).
 ## Week 2 — Frontend interactions ✅
 
 - [x] Frontend UI for confirming/cancelling a reservation and checking availability
-- [ ] Frontend component tests (Vitest) — still planned
+- [x] Frontend component tests (Vitest) — done in Week 6, see below
 
 ## Week 3 — Accounts and roles ✅
 
@@ -53,12 +53,20 @@ corresponding requirement in [requirements.md](requirements.md).
 
 ## Week 6 — Closing out the remaining planned work ✅
 
-- [x] Server-side opening-hours validation (N12) — `schemas.ReservationCreate` now re-validates F18 on every `POST /reservations/`, with new pytest coverage (weekend, before-opening, after-closing, exactly-at-closing)
-- [ ] Branches (F11)
-- [ ] Real payment provider integration, replacing the mock `payment_method` flag
-- [ ] CI pipeline (GitHub Actions) running `pytest` and `npm run build` on every pull request
-- [ ] Dockerization (N9)
-- [ ] Frontend component tests (Vitest) and an E2E test (Playwright)
+- [x] Server-side opening-hours validation (N12) — `schemas.ReservationCreate` now re-validates F18 on every `POST /reservations/`; also fixed a real bug this uncovered (the frontend was sending dates through `toISOString()`, silently shifting the hour by the browser's UTC offset instead of the wall-clock time the customer picked)
+- [x] Branches (F11) — `Branch` entity, every car assigned to one, customers can filter by it; admin fleet form requires picking one; deleting a branch with cars is blocked (409)
+- [x] CI pipeline (GitHub Actions, `.github/workflows/ci.yml`) — `pytest`, the frontend build, and the E2E test, on every push/PR to `main`
+- [x] Dockerization (N9) — `docker compose up --build` runs the whole app (backend + nginx-served frontend)
+- [x] Frontend component tests (Vitest + React Testing Library) — `pricing.ts`, `CarFilters`, `ReservationForm`'s opening-hours validation
+- [x] E2E test (Playwright) — the main "customer books a car" scenario, against the real backend and frontend
+
+Everything that was tracked as `Planned` in [requirements.md](requirements.md)
+is now either done (above) or deliberately out of scope: a real payment
+provider integration would need an actual merchant/provider account, which
+isn't something a seminar project can set up, so it's not carried forward as
+a future item — the mock `payment_method` flag (F13, see decision D9 in
+[architecture-and-decisions.md](architecture-and-decisions.md)) is the final
+design, not a placeholder.
 
 > Note: adjust the specific content of each week to your instructor's actual
 > assignment / submission deadlines. This file also serves as the basis for
