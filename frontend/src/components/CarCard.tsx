@@ -36,6 +36,7 @@ export default function CarCard({ car, onReserve }: Props) {
         <p className="car-card-meta">
           {car.year} · {car.license_plate}
         </p>
+        <p className="car-card-branch">📍 {car.branch.name}</p>
 
         {car.description && <p className="car-card-desc">{car.description}</p>}
 

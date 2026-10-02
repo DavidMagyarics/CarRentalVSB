@@ -8,6 +8,12 @@ export type UserRole = 'CUSTOMER' | 'ADMIN'
 export type ReservationStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED'
 export type PaymentMethod = 'CASH' | 'CARD'
 
+export interface Branch {
+  id: number
+  name: string
+  address: string
+}
+
 export interface Car {
   id: number
   brand: string
@@ -22,6 +28,8 @@ export interface Car {
   seats: number
   description: string | null
   image_url: string | null
+  branch_id: number
+  branch: Branch
 }
 
 export interface CarInput {
@@ -37,6 +45,7 @@ export interface CarInput {
   seats: number
   description?: string | null
   image_url?: string | null
+  branch_id: number
 }
 
 export interface CarFilters {
@@ -46,6 +55,7 @@ export interface CarFilters {
   min_price?: number
   max_price?: number
   min_seats?: number
+  branch_id?: number | ''
 }
 
 export interface User {
@@ -139,6 +149,11 @@ async function handleVoidResponse(response: Response): Promise<void> {
       typeof detail === 'string' ? detail : `Chyba serveru (${response.status})`,
     )
   }
+}
+
+export async function fetchBranches(): Promise<Branch[]> {
+  const response = await fetch(`${API_BASE_URL}/branches/`)
+  return handleResponse<Branch[]>(response)
 }
 
 export async function fetchCars(filters: CarFilters = {}): Promise<Car[]> {

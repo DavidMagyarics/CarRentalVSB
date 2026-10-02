@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { Car, Reservation } from './api'
-import { fetchAllReservations, fetchCars, fetchMyReservations } from './api'
+import type { Branch, Car, Reservation } from './api'
+import { fetchAllReservations, fetchBranches, fetchCars, fetchMyReservations } from './api'
 import { AuthProvider, useAuth } from './auth/AuthContext'
 import { ToastProvider } from './components/Toast'
 import Navbar from './components/Navbar'
@@ -27,6 +27,14 @@ function AppContent() {
   const [carsError, setCarsError] = useState<string | null>(null)
   const [filters, setFilters] = useState<FiltersState>(EMPTY_FILTERS)
 
+  const [branches, setBranches] = useState<Branch[]>([])
+
+  useEffect(() => {
+    fetchBranches()
+      .then(setBranches)
+      .catch(() => setBranches([]))
+  }, [])
+
   const [myReservations, setMyReservations] = useState<Reservation[]>([])
   const [myReservationsLoading, setMyReservationsLoading] = useState(false)
 
@@ -47,6 +55,7 @@ function AppContent() {
         fuel_type: filters.fuelType || undefined,
         min_price: filters.minPrice ? Number(filters.minPrice) : undefined,
         max_price: filters.maxPrice ? Number(filters.maxPrice) : undefined,
+        branch_id: filters.branchId ? Number(filters.branchId) : undefined,
       })
         .then(setCars)
         .catch((err) =>
@@ -117,7 +126,7 @@ function AppContent() {
               <p>Vyber si z {cars.length} vozů podle kategorie, převodovky, paliva i ceny.</p>
             </div>
 
-            <CarFilters filters={filters} onChange={setFilters} />
+            <CarFilters filters={filters} onChange={setFilters} branches={branches} />
 
             {carsLoading && <p className="hint">Načítám auta…</p>}
             {carsError && <p className="error">{carsError}</p>}
@@ -136,7 +145,7 @@ function AppContent() {
           </>
         )}
 
-        {tab === 'admin-cars' && user?.role === 'ADMIN' && <AdminCars />}
+        {tab === 'admin-cars' && user?.role === 'ADMIN' && <AdminCars branches={branches} />}
 
         {tab === 'admin-reservations' && user?.role === 'ADMIN' && (
           <>

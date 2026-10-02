@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import type { Car, CarInput } from '../api'
+import type { Branch, Car, CarInput } from '../api'
 import { createCar, deleteCar, fetchCars, updateCar } from '../api'
 import { useAuth } from '../auth/AuthContext'
 import { CATEGORY_LABELS, FUEL_LABELS, TRANSMISSION_LABELS } from '../constants'
 import { useToast } from './Toast'
 import Modal from './Modal'
 
-const EMPTY_FORM: CarInput = {
+const EMPTY_FORM: Omit<CarInput, 'branch_id'> = {
   brand: '',
   model: '',
   year: new Date().getFullYear(),
@@ -21,7 +21,11 @@ const EMPTY_FORM: CarInput = {
   image_url: '',
 }
 
-export default function AdminCars() {
+interface Props {
+  branches: Branch[]
+}
+
+export default function AdminCars({ branches }: Props) {
   const { token } = useAuth()
   const { show } = useToast()
 
@@ -30,7 +34,7 @@ export default function AdminCars() {
 
   const [editing, setEditing] = useState<Car | null>(null)
   const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState<CarInput>(EMPTY_FORM)
+  const [form, setForm] = useState<CarInput>({ ...EMPTY_FORM, branch_id: 0 })
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -44,7 +48,7 @@ export default function AdminCars() {
   useEffect(load, [])
 
   function openCreate() {
-    setForm(EMPTY_FORM)
+    setForm({ ...EMPTY_FORM, branch_id: branches[0]?.id ?? 0 })
     setError(null)
     setCreating(true)
   }
@@ -63,6 +67,7 @@ export default function AdminCars() {
       seats: car.seats,
       description: car.description ?? '',
       image_url: car.image_url ?? '',
+      branch_id: car.branch_id,
     })
     setError(null)
     setEditing(car)
@@ -127,6 +132,7 @@ export default function AdminCars() {
               <tr>
                 <th>Auto</th>
                 <th>Kategorie</th>
+                <th>Pobočka</th>
                 <th>Cena</th>
                 <th>SPZ</th>
                 <th />
@@ -139,6 +145,7 @@ export default function AdminCars() {
                     {car.brand} {car.model} ({car.year})
                   </td>
                   <td>{CATEGORY_LABELS[car.category]}</td>
+                  <td>{car.branch.name}</td>
                   <td>
                     {car.daily_price.toLocaleString('cs-CZ')} Kč/den
                     <br />
@@ -196,6 +203,23 @@ export default function AdminCars() {
                   value={form.license_plate}
                   onChange={(e) => setForm({ ...form, license_plate: e.target.value })}
                 />
+              </label>
+              <label>
+                Pobočka
+                <select
+                  required
+                  value={form.branch_id || ''}
+                  onChange={(e) => setForm({ ...form, branch_id: Number(e.target.value) })}
+                >
+                  <option value="" disabled>
+                    Vyberte pobočku
+                  </option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label>
                 Cena/den (Kč)

@@ -415,6 +415,12 @@ label {
   color: var(--color-text-dim);
 }
 
+.car-card-branch {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
 .car-card-desc {
   font-size: 0.85rem;
   color: var(--color-text-muted);

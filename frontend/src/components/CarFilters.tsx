@@ -1,4 +1,4 @@
-import type { CarCategory, FuelType, Transmission } from '../api'
+import type { Branch, CarCategory, FuelType, Transmission } from '../api'
 import { CATEGORY_LABELS, FUEL_LABELS, TRANSMISSION_LABELS } from '../constants'
 
 export interface FiltersState {
@@ -7,6 +7,7 @@ export interface FiltersState {
   fuelType: FuelType | ''
   minPrice: string
   maxPrice: string
+  branchId: string
 }
 
 export const EMPTY_FILTERS: FiltersState = {
@@ -15,14 +16,16 @@ export const EMPTY_FILTERS: FiltersState = {
   fuelType: '',
   minPrice: '',
   maxPrice: '',
+  branchId: '',
 }
 
 interface Props {
   filters: FiltersState
   onChange: (filters: FiltersState) => void
+  branches?: Branch[]
 }
 
-export default function CarFilters({ filters, onChange }: Props) {
+export default function CarFilters({ filters, onChange, branches = [] }: Props) {
   function set<K extends keyof FiltersState>(key: K, value: FiltersState[K]) {
     onChange({ ...filters, [key]: value })
   }
@@ -32,7 +35,8 @@ export default function CarFilters({ filters, onChange }: Props) {
     filters.transmission ||
     filters.fuelType ||
     filters.minPrice ||
-    filters.maxPrice
+    filters.maxPrice ||
+    filters.branchId
 
   return (
     <div className="filters">
@@ -47,6 +51,17 @@ export default function CarFilters({ filters, onChange }: Props) {
           </option>
         ))}
       </select>
+
+      {branches.length > 0 && (
+        <select value={filters.branchId} onChange={(e) => set('branchId', e.target.value)}>
+          <option value="">Všechny pobočky</option>
+          {branches.map((branch) => (
+            <option key={branch.id} value={branch.id}>
+              {branch.name}
+            </option>
+          ))}
+        </select>
+      )}
 
       <select
         value={filters.transmission}

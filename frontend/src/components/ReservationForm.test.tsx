@@ -29,6 +29,8 @@ const car: Car = {
   seats: 5,
   description: null,
   image_url: null,
+  branch_id: 1,
+  branch: { id: 1, name: 'Ostrava – centrum', address: 'Testovací 1, Ostrava' },
 }
 
 function fillDates(start: string, end: string) {
