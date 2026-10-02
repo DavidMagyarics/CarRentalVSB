@@ -11,6 +11,48 @@ class DomainError(Exception):
     """Raised when an operation violates a domain/business rule."""
 
 
+def get_branches(db: Session) -> list[models.Branch]:
+    return db.query(models.Branch).order_by(models.Branch.name).all()
+
+
+def get_branch(db: Session, branch_id: int) -> models.Branch | None:
+    return db.query(models.Branch).filter(models.Branch.id == branch_id).first()
+
+
+def create_branch(db: Session, branch: schemas.BranchCreate) -> models.Branch:
+    db_branch = models.Branch(**branch.model_dump())
+    db.add(db_branch)
+    db.commit()
+    db.refresh(db_branch)
+    return db_branch
+
+
+def update_branch(
+    db: Session, branch_id: int, branch: schemas.BranchUpdate
+) -> models.Branch | None:
+    db_branch = get_branch(db, branch_id)
+    if db_branch is None:
+        return None
+    for field, value in branch.model_dump(exclude_unset=True).items():
+        setattr(db_branch, field, value)
+    db.commit()
+    db.refresh(db_branch)
+    return db_branch
+
+
+def delete_branch(db: Session, branch_id: int) -> bool:
+    db_branch = get_branch(db, branch_id)
+    if db_branch is None:
+        return False
+    if db_branch.cars:
+        raise DomainError(
+            "Pobočku nelze smazat, dokud k ní jsou přiřazená auta"
+        )
+    db.delete(db_branch)
+    db.commit()
+    return True
+
+
 def calculate_price(car: models.Car, start_date: datetime, end_date: datetime) -> float:
     """Whole days cost the daily rate; the leftover hours are billed at the
     hourly rate but never more than another full day — so booking close to
@@ -29,6 +71,7 @@ def get_cars(
     min_price: float | None = None,
     max_price: float | None = None,
     min_seats: int | None = None,
+    branch_id: int | None = None,
 ) -> list[models.Car]:
     query = db.query(models.Car)
     if category is not None:
@@ -43,6 +86,8 @@ def get_cars(
         query = query.filter(models.Car.daily_price <= max_price)
     if min_seats is not None:
         query = query.filter(models.Car.seats >= min_seats)
+    if branch_id is not None:
+        query = query.filter(models.Car.branch_id == branch_id)
     return query.order_by(models.Car.brand, models.Car.model).all()
 
 

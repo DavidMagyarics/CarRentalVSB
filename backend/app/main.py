@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
 from . import crud, models  # noqa: E402
 from .database import SessionLocal, engine  # noqa: E402
-from .routers import auth, cars, reservations, users  # noqa: E402
+from .routers import auth, branches, cars, reservations, users  # noqa: E402
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -32,6 +32,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(branches.router)
 app.include_router(cars.router)
 app.include_router(reservations.router)
 app.include_router(users.router)
@@ -48,6 +49,16 @@ def _seed_demo_data() -> None:
         if db.query(models.Car).count() > 0:
             return
 
+        demo_branches = [
+            models.Branch(name="Ostrava – centrum", address="28. října 15, Ostrava"),
+            models.Branch(name="Praha – Václavské náměstí", address="Václavské náměstí 1, Praha"),
+            models.Branch(name="Brno – hlavní nádraží", address="Nádražní 6, Brno"),
+        ]
+        db.add_all(demo_branches)
+        db.commit()
+        for branch in demo_branches:
+            db.refresh(branch)
+
         demo_cars = [
             models.Car(
                 brand="Škoda",
@@ -62,6 +73,7 @@ def _seed_demo_data() -> None:
                 seats=5,
                 description="Prostorný rodinný sedan s nízkou spotřebou a velkým kufrem.",
                 image_url="/cars/skoda-octavia.jpg",
+                branch_id=demo_branches[0].id,
             ),
             models.Car(
                 brand="Škoda",
@@ -76,6 +88,7 @@ def _seed_demo_data() -> None:
                 seats=5,
                 description="Nejlevnější volba do města, snadné parkování.",
                 image_url="/cars/skoda-fabia.jpg",
+                branch_id=demo_branches[1].id,
             ),
             models.Car(
                 brand="Volkswagen",
@@ -90,6 +103,7 @@ def _seed_demo_data() -> None:
                 seats=5,
                 description="Vyvážený hatchback pro město i dálnici.",
                 image_url="/cars/volkswagen-golf.jpg",
+                branch_id=demo_branches[2].id,
             ),
             models.Car(
                 brand="Škoda",
@@ -104,6 +118,7 @@ def _seed_demo_data() -> None:
                 seats=7,
                 description="Prostorné SUV až pro 7 osob, ideální na rodinnou dovolenou.",
                 image_url="/cars/skoda-kodiaq.jpg",
+                branch_id=demo_branches[0].id,
             ),
             models.Car(
                 brand="Tesla",
@@ -118,6 +133,7 @@ def _seed_demo_data() -> None:
                 seats=5,
                 description="Plně elektrický sedan s autopilotem a nulovými emisemi.",
                 image_url="/cars/tesla-model-3.jpg",
+                branch_id=demo_branches[1].id,
             ),
             models.Car(
                 brand="Ford",
@@ -132,6 +148,7 @@ def _seed_demo_data() -> None:
                 seats=9,
                 description="Devítimístný van na stěhování i firemní výlety.",
                 image_url="/cars/ford-transit.jpg",
+                branch_id=demo_branches[2].id,
             ),
             models.Car(
                 brand="Porsche",
@@ -146,6 +163,7 @@ def _seed_demo_data() -> None:
                 seats=2,
                 description="Sportovní ikona pro zvláštní příležitosti.",
                 image_url="/cars/porsche-911.jpg",
+                branch_id=demo_branches[0].id,
             ),
             models.Car(
                 brand="Toyota",
@@ -160,6 +178,7 @@ def _seed_demo_data() -> None:
                 seats=5,
                 description="Spolehlivý hybrid s minimální spotřebou paliva.",
                 image_url="/cars/toyota-corolla.jpg",
+                branch_id=demo_branches[1].id,
             ),
             models.Car(
                 brand="Jeep",
@@ -174,6 +193,7 @@ def _seed_demo_data() -> None:
                 seats=5,
                 description="Terénní SUV pro výlety mimo silnice.",
                 image_url="/cars/jeep-wrangler.jpg",
+                branch_id=demo_branches[2].id,
             ),
             models.Car(
                 brand="Mini",
@@ -188,6 +208,7 @@ def _seed_demo_data() -> None:
                 seats=4,
                 description="Stylový maloauto s výrazným charakterem.",
                 image_url="/cars/mini-cooper.jpg",
+                branch_id=demo_branches[0].id,
             ),
         ]
         db.add_all(demo_cars)

@@ -24,7 +24,21 @@ def make_admin(client, name="Admin", email="admin@example.com", password="admin1
     return response.json()
 
 
+def create_branch(client, admin_token, name="Testovací pobočka", address="Testovací 1, Ostrava"):
+    response = client.post(
+        "/branches/",
+        json={"name": name, "address": address},
+        headers=auth_headers(admin_token),
+    )
+    assert response.status_code == 201
+    return response.json()
+
+
 def create_car(client, admin_token, license_plate="9ZZ0001", **overrides):
+    if "branch_id" not in overrides:
+        overrides["branch_id"] = create_branch(
+            client, admin_token, name=f"Pobočka pro {license_plate}"
+        )["id"]
     payload = {
         "brand": "Škoda",
         "model": "Superb",

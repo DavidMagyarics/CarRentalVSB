@@ -55,6 +55,20 @@ class User(Base):
     reservations = relationship("Reservation", back_populates="user")
 
 
+class Branch(Base):
+    """A physical rental location a car can be picked up from and returned
+    to (F11). Every car belongs to exactly one branch — there is no
+    cross-branch drop-off yet, see docs/domain-model.md."""
+
+    __tablename__ = "branches"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    address = Column(String, nullable=False)
+
+    cars = relationship("Car", back_populates="branch")
+
+
 class Car(Base):
     """The reservation Resource: a car available in the fleet."""
 
@@ -73,7 +87,9 @@ class Car(Base):
     seats = Column(Integer, nullable=False, default=5)
     description = Column(Text, nullable=True)
     image_url = Column(String, nullable=True)
+    branch_id = Column(Integer, ForeignKey("branches.id"), nullable=False)
 
+    branch = relationship("Branch", back_populates="cars")
     reservations = relationship(
         "Reservation", back_populates="car", cascade="all, delete-orphan"
     )

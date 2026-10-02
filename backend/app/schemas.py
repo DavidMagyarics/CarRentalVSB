@@ -5,6 +5,26 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from .models import CarCategory, FuelType, PaymentMethod, ReservationStatus, Transmission, UserRole
 
 
+class BranchBase(BaseModel):
+    name: str
+    address: str
+
+
+class BranchCreate(BranchBase):
+    pass
+
+
+class BranchUpdate(BaseModel):
+    name: str | None = None
+    address: str | None = None
+
+
+class Branch(BranchBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+
+
 class CarBase(BaseModel):
     brand: str
     model: str
@@ -18,6 +38,7 @@ class CarBase(BaseModel):
     seats: int = Field(default=5, ge=1, le=9)
     description: str | None = None
     image_url: str | None = None
+    branch_id: int
 
 
 class CarCreate(CarBase):
@@ -37,12 +58,14 @@ class CarUpdate(BaseModel):
     seats: int | None = Field(default=None, ge=1, le=9)
     description: str | None = None
     image_url: str | None = None
+    branch_id: int | None = None
 
 
 class Car(CarBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    branch: Branch
 
 
 class UserRegister(BaseModel):

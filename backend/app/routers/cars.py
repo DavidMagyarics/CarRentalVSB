@@ -18,6 +18,7 @@ def list_cars(
     min_price: float | None = None,
     max_price: float | None = None,
     min_seats: int | None = None,
+    branch_id: int | None = None,
     db: Session = Depends(get_db),
 ):
     return crud.get_cars(
@@ -28,6 +29,7 @@ def list_cars(
         min_price=min_price,
         max_price=max_price,
         min_seats=min_seats,
+        branch_id=branch_id,
     )
 
 
@@ -45,6 +47,8 @@ def create_car(
     db: Session = Depends(get_db),
     _admin: models.User = Depends(require_admin),
 ):
+    if crud.get_branch(db, car.branch_id) is None:
+        raise HTTPException(status_code=404, detail="Pobočka nenalezena")
     return crud.create_car(db, car)
 
 
@@ -55,6 +59,8 @@ def update_car(
     db: Session = Depends(get_db),
     _admin: models.User = Depends(require_admin),
 ):
+    if car.branch_id is not None and crud.get_branch(db, car.branch_id) is None:
+        raise HTTPException(status_code=404, detail="Pobočka nenalezena")
     updated = crud.update_car(db, car_id, car)
     if updated is None:
         raise HTTPException(status_code=404, detail="Auto nenalezeno")
