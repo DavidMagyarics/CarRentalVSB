@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { OPENING_HOURS_LABEL } from '../constants'
 
 export default function SupportWidget() {
   const [open, setOpen] = useState(false)
@@ -29,7 +30,7 @@ export default function SupportWidget() {
             <span className="support-contact-label">E-mail</span>
             <span>podpora@carrentalvsb.cz</span>
           </a>
-          <p className="hint">Po–Pá 8:00–18:00</p>
+          <p className="hint">{OPENING_HOURS_LABEL}</p>
         </div>
       )}
       <button

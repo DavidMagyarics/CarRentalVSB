@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Car, PaymentMethod } from '../api'
 import { checkAvailability, createReservation } from '../api'
 import { useAuth } from '../auth/AuthContext'
+import { CLOSING_HOUR, OPENING_HOUR } from '../constants'
 import { calculatePrice, formatDuration } from '../pricing'
 import { useToast } from './Toast'
 
@@ -36,12 +37,10 @@ function toNaiveIsoString(datetimeLocalValue: string): string {
   return `${datetimeLocalValue}:00`
 }
 
-// The lot only operates Mon–Fri, 08:00–20:00 — someone has to physically be
-// there to hand over or receive the car, so pickup and return both have to
-// fall inside opening hours.
-const OPENING_HOUR = 8
-const CLOSING_HOUR = 20
-
+// The lot only operates Mon–Fri, 08:00–20:00 (OPENING_HOUR/CLOSING_HOUR,
+// see constants.ts) — someone has to physically be there to hand over or
+// receive the car, so pickup and return both have to fall inside opening
+// hours.
 function isWithinBusinessHours(datetimeLocalValue: string): boolean {
   if (!datetimeLocalValue) return true
   const d = new Date(datetimeLocalValue)
