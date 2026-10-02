@@ -59,7 +59,7 @@ Statuses: `MVP` (done), `Planned` (to be added in later iterations).
 | N6 | The API responds to common requests (reading the car list) within 300 ms in a local environment. | MVP (measured: `GET /cars/` over 20 requests on localhost/SQLite — avg. 7 ms, max 20 ms once warmed up; ~80 ms on the very first, cold-start request) |
 | N7 | User passwords are stored hashed (bcrypt), never in plain text. | MVP |
 | N8 | The application is responsive and usable on mobile devices. | MVP (one breakpoint at 720px; verified at desktop and ~420px widths, not exhaustively tested on real devices) |
-| N9 | Deployment via containers (Docker) for easy setup on another machine. | Planned |
+| N9 | Deployment via containers (Docker) for easy setup on another machine. | MVP (`docker compose up --build`; `backend/Dockerfile`, `frontend/Dockerfile` — nginx serving the Vite build — and `docker-compose.yml`; verified end-to-end: login, browse, reserve, confirm, notification logged) |
 | N10 | Authentication uses stateless JWT bearer tokens (no server-side session storage). | MVP |
 | N11 | Sending a real confirmation e-mail requires no code change — only environment variables (`backend/.env`, see `.env.example`); the app runs correctly without them (logs instead). | MVP |
 | N12 | Opening-hours validation (F18) is re-validated server-side on every reservation `POST /reservations/` makes (`schemas.ReservationCreate.within_business_hours`), not just client-side — a request made directly against the API without going through the frontend is still rejected (422) outside Mon–Fri 08:00–20:00. It still assumes a single timezone throughout the system (see §5); true per-customer timezone handling remains out of scope. | MVP |

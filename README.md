@@ -90,6 +90,27 @@ npm run dev
 The app runs on `http://localhost:5173` and expects the backend at
 `http://localhost:8000` (configurable via `.env`, see `.env.example`).
 
+## Running with Docker
+
+The whole app (backend + frontend) can also run in containers, without
+installing Python or Node locally:
+
+```bash
+docker compose up --build
+```
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:8000` (`/docs` for the OpenAPI UI)
+
+The backend's SQLite database lives inside the container, not on a volume,
+so it resets (reseeds the demo accounts and fleet) whenever the container is
+recreated — fine for local demo use, matching the project's "SQLite for
+development" scope (see `docs/requirements.md`). To send real confirmation
+e-mails instead of just logging them, set the `SMTP_*` variables (see
+`backend/.env.example`) in your shell or in a `.env` file next to
+`docker-compose.yml` before running `docker compose up` — no code or image
+change needed.
+
 ## Demo accounts
 
 Seeded automatically on first backend run:

@@ -1,0 +1,30 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Bare names, not NAME=${NAME:-}: that would set an *empty* string in
+      # the container even when unset on the host, which overrides the
+      # application's own Python-side default (empty is not "unset" to
+      # os.environ.get) and breaks JWT signing. This form instead omits the
+      # variable entirely when it isn't set on the host / in a .env file
+      # next to this one, letting app/auth.py's own default apply.
+      #
+      # SECRET_KEY: optional, for anything beyond local demo use (auth.py).
+      - SECRET_KEY
+      # SMTP_*: optional, set all of these to send real confirmation
+      # e-mails instead of just logging them — no code change either way
+      # (F12/N11). See backend/.env.example.
+      - SMTP_HOST
+      - SMTP_PORT
+      - SMTP_USER
+      - SMTP_PASSWORD
+      - SMTP_FROM
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
