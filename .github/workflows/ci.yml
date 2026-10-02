@@ -37,7 +37,12 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # Pinned to match the version this was developed and verified on
+          # (`node --version` -> v24.x). Vitest + jsdom's bundled undici
+          # throw `webidl.util.markAsUncloneable is not a function` on
+          # Node 20 — a known jsdom/undici/Node version-compatibility issue,
+          # not anything in this project's own code.
+          node-version: "24"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
@@ -67,7 +72,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
