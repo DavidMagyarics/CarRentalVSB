@@ -1,22 +1,86 @@
 # Use Cases
 
-## Diagram (current state of the system)
+This document is the use case specification for CarRentalVSB: it defines,
+for every piece of functionality a Customer or an Admin can use, who
+triggers it, under what precondition, what the exact main and alternative
+flows are (with the real API endpoint and HTTP status behind each one), and
+what the system guarantees once it succeeds. It is the single source of
+truth for *what the system does*, independent of how any particular screen
+happens to be laid out.
+
+## Use Case Diagram
 
 ![Use case diagram](diagrams/use-case.svg)
 
 *Diagram source: [diagrams/use-case.puml](diagrams/use-case.puml) — PlantUML, the image is automatically re-rendered on every source change.*
 
-All use cases below are implemented (✅). Every use case in the diagram —
-including the two `<<include>>` ones (Check availability, Send notification) —
-has its own activity diagram, following the same structure: one start, one
-end, and side-by-side swimlanes for every actor involved. The steps of the
-included use cases also appear inline in the activity diagrams of the use
-cases that include them (UC4 and UC8).
+### What this diagram specifies
 
-Each activity diagram is followed by a sequence diagram of the same flow,
-showing the messages between the user, the frontend (React SPA), the REST API
-(FastAPI) and the database — with the real endpoints, the same branches as the
-activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
+The diagram above is the complete functional scope of CarRentalVSB as it is
+actually implemented today: **2 actors** and **12 use cases**, covering
+everything a customer or an admin can do in the system, from creating an
+account to approving a reservation. It is read left to right: an actor
+(stick figure) is connected to every use case (oval) it can trigger
+directly; a dashed arrow labelled `<<include>>` means one use case always
+triggers another as an internal step of its own flow, rather than an actor
+triggering it directly.
+
+**Customer** — anyone can browse the fleet and register without an account,
+but everything else needs one. A customer can register (UC1), log in (UC2),
+browse and filter the fleet (UC3), create (UC4) and cancel (UC5) their own
+reservations, see their own reservation history (UC6), and reach support
+(UC7).
+
+**Admin** — shares the same login screen and endpoint as customers (UC2);
+the account's `role` field is what unlocks the administration tabs on the
+frontend, not a separate login. An admin additionally confirms pending
+reservations (UC8), manages the fleet (UC9), sees every customer's
+reservations (UC10), and — unlike a customer — can cancel *any* reservation
+(UC5), not only their own.
+
+Two use cases are never triggered by an actor directly; they only ever run
+as a step **inside** another use case, which is exactly what the
+`<<include>>` relationship means here:
+
+- **UC4a — Check availability** runs inside UC4, twice (once live while the
+  customer is still picking dates, once more right before the reservation
+  is actually created), and inside UC8, once more, right before a
+  reservation is confirmed.
+- **UC8a — Send notification** runs inside UC8, immediately after a
+  reservation becomes `CONFIRMED`.
+
+Every use case on this diagram is implemented (✅) — there are no
+planned/future use cases in the model. Work that is still only planned
+(e.g. multiple rental branches, a real payment provider) is tracked as a
+functional requirement in [requirements.md](requirements.md) instead,
+because it extends an *existing* use case rather than adding a new one to
+this diagram.
+
+### How each use case is documented below
+
+For every use case, this document gives three views of the same behaviour,
+at increasing levels of technical detail:
+
+1. **A table** — actor(s), precondition, the numbered main flow (with the
+   real API endpoint each step calls), every alternative/error flow with
+   its HTTP status code, and the result once the use case succeeds. This is
+   the authoritative description; the two diagrams that follow are
+   illustrations of it, not additional requirements.
+2. **An activity diagram** — the same flow as a flowchart, with one
+   swimlane per actor/component involved (`Customer`, `Admin`, `System`,
+   ...). Every diagram has exactly one start node and one end node; every
+   branch, including every error outcome, eventually merges back into a
+   single final step before that end, so no alternative flow is a dead end.
+3. **A sequence diagram** — the same flow as a left-to-right message
+   exchange between the actor, the frontend (React SPA), the REST API
+   (FastAPI), the database and, where relevant, the Notification Service —
+   with the literal HTTP method, path and status code of every call, so it
+   can be checked directly against the running API (see also
+   [api-design.md](api-design.md)).
+
+The activity diagram is the better starting point for explaining a flow to
+a non-technical audience; the sequence diagram is the one to open when
+discussing the actual implementation or writing a test for it.
 
 ## UC1 — Register ✅
 
@@ -29,6 +93,14 @@ activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 | Result | A new `User` exists; the customer is logged in. |
 
 ### Activity diagram — Register
+
+The diagram reduces the whole use case to one decision the System makes
+right after the form is submitted: is the e-mail already taken? The `no`
+branch is the common path — hashing the password, creating the account and
+issuing a token all happen before control returns to the customer; the
+`yes` branch only ever produces an error. Both branches converge on the
+same final "see result" step, so the customer always gets one unambiguous
+outcome regardless of which path was taken.
 
 ![Activity diagram — Register](diagrams/activity-register.svg)
 
@@ -52,6 +124,13 @@ activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 
 ### Activity diagram — Log in
 
+Structurally this mirrors registration, but with a single check instead of
+two possible causes of failure: does the submitted e-mail/password pair
+match an existing account? Only the System swimlane branches — the
+customer's own steps (enter credentials, submit) are identical regardless
+of the outcome — and both branches converge on the same final step before
+the diagram ends.
+
 ![Activity diagram — Log in](diagrams/activity-login.svg)
 
 *Diagram source: [diagrams/activity-login.puml](diagrams/activity-login.puml).*
@@ -73,6 +152,12 @@ activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 | Result | The customer sees a grid of cars matching the current filters, each with a photo (or category illustration), specs, and both the hourly and daily price. |
 
 ### Activity diagram — Browse & filter cars
+
+The System always returns the complete, unfiltered fleet first, so the
+customer never faces an empty screen while deciding whether to filter at
+all; the single `if` in the System swimlane only runs once a filter is
+actively chosen, and its result simply replaces the car grid already on
+screen rather than starting a new flow.
 
 ![Activity diagram — Browse & filter cars](diagrams/activity-browse-cars.svg)
 
@@ -98,6 +183,16 @@ activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 
 ### Activity diagram — Create reservation
 
+This is the most involved flow in the system: it nests three independent
+decisions — is the customer logged in, do the chosen dates satisfy the
+opening-hours/return-after-pickup rule, and is the car available — and the
+availability check (UC4a) deliberately runs *twice*: once live while the
+dates are being picked, purely to inform the customer, and once more,
+authoritatively, the instant the reservation is submitted, because the
+first result can go stale while the customer is still choosing a payment
+method. Every branch, including both distinct "slot taken" outcomes, still
+merges into the same single final "see result" step.
+
 ![Activity diagram — Create reservation](diagrams/activity-make-reservation.svg)
 
 *Diagram source: [diagrams/activity-make-reservation.puml](diagrams/activity-make-reservation.puml).*
@@ -116,6 +211,13 @@ activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 | Main flow | The system compares the requested date range against all `CONFIRMED` reservations for that car; if no interval overlaps, the car is available. Enforced in `crud.is_car_available`. |
 
 ### Activity diagram — Check availability
+
+Because this use case is only ever triggered by another one (UC4 or UC8),
+its first swimlane belongs to the *caller* ("Customer / Admin") rather than
+to an actor acting on its own — and the System lane reduces to a single
+comparison: does any `CONFIRMED` reservation for this car overlap the
+requested date range? `DRAFT` and `CANCELLED` reservations are deliberately
+excluded from the check, since neither of them actually blocks the slot.
 
 ![Activity diagram — Check availability](diagrams/activity-check-availability.svg)
 
@@ -141,6 +243,13 @@ activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 
 ### Activity diagram — Cancel reservation
 
+Three independent guard clauses have to pass, in a fixed order, before a
+cancellation succeeds — ownership (or admin), not already `CANCELLED`, and
+not a `CONFIRMED` rental whose period has already started — so the diagram
+reads top to bottom as exactly the sequence `crud.cancel_reservation`
+evaluates them in. Any single failing check produces its own distinct error
+and short-circuits the rest.
+
 ![Activity diagram — Cancel reservation](diagrams/activity-cancel-reservation.svg)
 
 *Diagram source: [diagrams/activity-cancel-reservation.puml](diagrams/activity-cancel-reservation.puml).*
@@ -162,6 +271,12 @@ activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 
 ### Activity diagram — View my reservations
 
+The simplest flow in the system: one request, one response, no branching —
+the System always returns exactly the logged-in customer's own
+reservations and nothing else. That single difference (whose reservations
+are returned) is also what distinguishes this use case from its
+admin-only counterpart, UC10.
+
 ![Activity diagram — View my reservations](diagrams/activity-view-my-reservations.svg)
 
 *Diagram source: [diagrams/activity-view-my-reservations.puml](diagrams/activity-view-my-reservations.puml).*
@@ -182,6 +297,12 @@ activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 | Result | The customer has a way to reach support, purely client-side (no backend call). |
 
 ### Activity diagram — Contact support
+
+Everything here happens in the browser; the System swimlane exists only to
+show that showing the contact panel and opening the phone/mail app are
+handled by the frontend itself — there is no call to the backend anywhere
+in this flow. The single `if` is optional: closing the panel without
+clicking a contact method is just as valid an ending as using one.
 
 ![Activity diagram — Contact support](diagrams/activity-contact-support.svg)
 
@@ -207,6 +328,14 @@ activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 
 ### Activity diagram — Confirm reservation
 
+Confirmation uses the same guard-clause style as cancellation: is the
+reservation still `DRAFT`, then is the car still available. What makes this
+flow different is that its success branch doesn't end once the status
+flips to `CONFIRMED` — it continues straight into UC8a (send the
+notification) before control returns to the admin, because notifying the
+customer is part of what "confirming" means in this system, not a
+side effect bolted on afterwards.
+
 ![Activity diagram — Confirm reservation](diagrams/activity-confirm-reservation.svg)
 
 *Diagram source: [diagrams/activity-confirm-reservation.puml](diagrams/activity-confirm-reservation.puml).*
@@ -225,6 +354,15 @@ activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 | Main flow | After confirming a reservation, the system calls `NotificationService.send_confirmation`. By default `LoggingNotificationService` logs it; if SMTP environment variables are set, `EmailNotificationService` sends a real e-mail instead — same interface, no domain code changes. If sending the e-mail fails, the error is only logged and the reservation stays `CONFIRMED`. |
 
 ### Activity diagram — Send notification
+
+This is the only diagram in the system with three swimlanes instead of two,
+because there are genuinely three independent parties involved: the System
+that decides *whether* to attempt an e-mail at all, the Notification
+Service that attempts it and decides whether it *succeeded*, and the
+Customer who only materially benefits from the one branch where it did.
+A failed send is deliberately swallowed — logged, not surfaced — so the
+reservation the admin just confirmed is never rolled back because of an
+e-mail problem.
 
 ![Activity diagram — Send notification](diagrams/activity-send-notification.svg)
 
@@ -248,6 +386,14 @@ activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 
 ### Activity diagram — Manage fleet
 
+A single three-way `switch` replaces three separate flows for add / edit /
+delete, since all three share the same shape in both swimlanes: the admin
+fills in or confirms something, the System persists it, and the fleet list
+is refreshed. Deleting is the only branch with a consequence that reaches
+outside the fleet itself — every reservation for that car is removed along
+with it — which is why that step is called out explicitly rather than left
+as a plain "Delete Car".
+
 ![Activity diagram — Manage fleet](diagrams/activity-manage-fleet.svg)
 
 *Diagram source: [diagrams/activity-manage-fleet.puml](diagrams/activity-manage-fleet.puml).*
@@ -269,6 +415,11 @@ activity diagram (`alt` / `opt`) and the HTTP status of every outcome.
 | Result | The admin has a full overview of demand across the fleet. |
 
 ### Activity diagram — View all reservations
+
+Like UC6, this is a single request/response with no branching at all — the
+difference is scope, not shape: every customer's reservations instead of
+just the logged-in user's own. It is the admin-only entry point that feeds
+both UC8 (confirm a pending one) and UC5 (cancel any one of them).
 
 ![Activity diagram — View all reservations](diagrams/activity-view-all-reservations.svg)
 

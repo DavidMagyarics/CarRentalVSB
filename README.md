@@ -44,7 +44,7 @@ docs/       SWI documentation (requirements, use cases, architecture, ...)
 | [docs/architecture-and-decisions.md](docs/architecture-and-decisions.md) | Architecture (C4), decision log, boundary, future pressure (SWI C01) |
 | [docs/evidence-and-evolution.md](docs/evidence-and-evolution.md) | **C01 Engineering Spike** — evidence and decision |
 | [docs/requirements.md](docs/requirements.md) | Requirements specification (SRS) |
-| [docs/use-cases.md](docs/use-cases.md) | Complete use case diagram + one activity diagram per use case |
+| [docs/use-cases.md](docs/use-cases.md) | Use case specification — diagram + table, activity diagram and sequence diagram for every use case |
 | [docs/architecture.md](docs/architecture.md) | Detailed architecture, repository structure, technology choices |
 | [docs/domain-model.md](docs/domain-model.md) | ER / domain model |
 | [docs/api-design.md](docs/api-design.md) | REST API design |
