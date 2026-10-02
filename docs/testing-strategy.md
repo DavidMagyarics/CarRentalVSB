@@ -43,7 +43,6 @@ pytest -v
 - Unit tests for React components (Vitest + React Testing Library) for `CarList` and `ReservationForm`.
 - E2E test for the main "customer books a car" scenario (Playwright).
 - CI pipeline (GitHub Actions) running `pytest` and `npm run build` on every pull request.
-- Tests for authentication and authorization once they're introduced (see [roadmap.md](roadmap.md)).
 
 ## Manual testing
 

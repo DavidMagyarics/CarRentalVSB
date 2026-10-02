@@ -49,6 +49,7 @@ corresponding requirement in [requirements.md](requirements.md).
 - [x] Optional real e-mail notifications via SMTP env vars, same boundary interface (F12)
 - [x] Full black/orange visual redesign
 - [x] Complete use case diagram + one activity diagram per use case
+- [x] One sequence diagram per use case, plus a fully descriptive, specification-level write-up in [use-cases.md](use-cases.md)
 
 ## Week 6+ — planned
 

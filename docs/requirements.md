@@ -34,7 +34,7 @@ Statuses: `MVP` (done), `Planned` (to be added in later iterations).
 | F5 | Customer registration (account with hashed password) and login, issuing a JWT access token. | Customer | MVP |
 | F6 | The customer can view their own reservations and cancel any of them. | Customer | MVP |
 | F7 | The admin logs in through the same login as customers; the account's `role` (`ADMIN`) unlocks the administration tabs. | Admin | MVP |
-| F8 | The admin can add, edit and remove a car from the fleet. | Admin | MVP |
+| F8 | The admin can add, edit and remove a car from the fleet; removing a car also removes all of its reservations. | Admin | MVP |
 | F9 | The admin sees an overview of all reservations (with customer contact info) and can confirm or cancel any of them. | Admin | MVP |
 | F10 | The system allows filtering cars by category, transmission, fuel type and price range. | Customer | MVP |
 | F11 | The system supports multiple rental branches (pickup/return). | Customer | Planned |
@@ -54,9 +54,9 @@ Statuses: `MVP` (done), `Planned` (to be added in later iterations).
 | N1 | The backend provides a REST API with automatically generated OpenAPI/Swagger documentation. | MVP |
 | N2 | The application is split into a separate backend (API) and frontend (SPA), communicating over HTTP/JSON. | MVP |
 | N3 | The backend is covered by automated tests (unit/integration) run via `pytest`. | MVP (40 tests) |
-| N4 | The code is versioned in Git, development happens on separate branches with pull requests. | MVP |
+| N4 | The code is versioned in Git; each feature was developed on a separate branch and integrated into `main` through a pull request (PRs #2–#7). Later, smaller documentation-only changes are pushed directly to `main`. | MVP |
 | N5 | The system validates input data (types, required fields, e-mail format, password length, start/end date consistency). | MVP |
-| N6 | The API responds to common requests (reading the car list) within 300 ms in a local environment. | Planned (not measured) |
+| N6 | The API responds to common requests (reading the car list) within 300 ms in a local environment. | MVP (measured: `GET /cars/` over 20 requests on localhost/SQLite — avg. 7 ms, max 20 ms once warmed up; ~80 ms on the very first, cold-start request) |
 | N7 | User passwords are stored hashed (bcrypt), never in plain text. | MVP |
 | N8 | The application is responsive and usable on mobile devices. | MVP (one breakpoint at 720px; verified at desktop and ~420px widths, not exhaustively tested on real devices) |
 | N9 | Deployment via containers (Docker) for easy setup on another machine. | Planned |
