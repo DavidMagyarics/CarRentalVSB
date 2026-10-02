@@ -37,18 +37,24 @@ else dates valid
     end
     Customer -> FE: Submit reservation
     FE -> API: POST /reservations/ (JWT)\n{car_id, start_date, end_date, payment_method}
-    API -> DB: Load the car
-    DB --> API: car
-    API -> DB: Check availability again (UC4a) —\nthe slot may have been confirmed in the meantime
-    DB --> API: reservation / none
+    API -> API: Re-validate opening hours (N12) —\ndefense in depth, in case this request\ndidn't go through the frontend's own check
 
-    alt slot already taken
-      API --> FE: 409 Conflict\n"Auto je v požadovaném termínu již\npotvrzenou rezervací obsazeno"
-    else still available
-      API -> API: Calculate total price\n(daily rate per full 24h block + hourly\nrate for the rest, capped at one more day)
-      API -> DB: INSERT Reservation\n(status DRAFT, payment_method, total_price)
-      DB --> API: reservation
-      API --> FE: 201 Created {reservation}
+    alt outside opening hours
+      API --> FE: 422 Unprocessable Entity\n"Vyzvednutí i vrácení auta jsou možné jen\nv pracovní dny (Po–Pá) mezi 8:00 a 20:00"
+    else within opening hours
+      API -> DB: Load the car
+      DB --> API: car
+      API -> DB: Check availability again (UC4a) —\nthe slot may have been confirmed in the meantime
+      DB --> API: reservation / none
+
+      alt slot already taken
+        API --> FE: 409 Conflict\n"Auto je v požadovaném termínu již\npotvrzenou rezervací obsazeno"
+      else still available
+        API -> API: Calculate total price\n(daily rate per full 24h block + hourly\nrate for the rest, capped at one more day)
+        API -> DB: INSERT Reservation\n(status DRAFT, payment_method, total_price)
+        DB --> API: reservation
+        API --> FE: 201 Created {reservation}
+      end
     end
   end
 end

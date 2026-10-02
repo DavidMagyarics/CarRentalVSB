@@ -99,9 +99,14 @@ Implemented as a `require_admin` dependency on `POST
 **3. The rental only operates Mon–Fri, 08:00–20:00 — pickup and return must
 both fall inside those hours,** because staff has to physically hand over
 and receive the car. Enforced client-side in `ReservationForm.tsx`
-(`isWithinBusinessHours`); not yet re-validated server-side (see N12 in
-`requirements.md` — the backend doesn't track the customer's timezone, so a
-naive server-side check would be wrong rather than merely redundant).
+(`isWithinBusinessHours`) *and* re-validated server-side in
+`schemas.ReservationCreate.within_business_hours` (see N12 in
+`requirements.md`) — a request made straight against the API, bypassing the
+frontend entirely, is still rejected (422) outside those hours. Both checks
+use the same naive, single-timezone notion of "Mon–Fri 08:00–20:00" as the
+rest of the system (see the Constraints in `requirements.md`); a customer
+genuinely booking from a different timezone is still out of scope (see
+Unknown, below).
 
 ## External / system boundary
 
@@ -124,10 +129,13 @@ revocation, neither of which exist yet.
 
 ## Unknown
 
-We don't yet know exactly how the opening-hours rule (domain rule 3 above)
-should be enforced server-side once customers might be in different
-timezones — today it's a client-only check. This is intentionally left open
-as a candidate for a future engineering spike.
+The opening-hours rule (domain rule 3 above) is now enforced server-side
+too, but only under the system's existing single-timezone assumption. We
+still don't know exactly how it should be enforced once customers might
+genuinely be in different timezones from the rental — that would need the
+system to actually track a customer's timezone first, which it doesn't.
+This is intentionally left open as a candidate for a future engineering
+spike.
 
 ---
 

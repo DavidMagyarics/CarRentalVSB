@@ -44,7 +44,7 @@ Statuses: `MVP` (done), `Planned` (to be added in later iterations).
 | F15 | The customer (own reservation) or admin (any reservation) can cancel a reservation (`→ CANCELLED`); a confirmed reservation can only be cancelled before the rental period starts (domain-specific rule). | Customer, Admin | MVP |
 | F16 | The customer can check a car's availability for a specific date range without creating a reservation (used internally while picking dates in the booking form). | Customer | MVP |
 | F17 | Each car has both a daily and an hourly price; the system bills full 24h blocks at the daily rate and the remainder at the hourly rate, capped at one more day's rate — a long partial day is never worse than booking a full day. | System | MVP |
-| F18 | The rental only operates Mon–Fri, 08:00–20:00 — pickup and return must both fall inside opening hours, since staff has to be present to hand over/receive the car. | System | MVP (checked client-side; see N12) |
+| F18 | The rental only operates Mon–Fri, 08:00–20:00 — pickup and return must both fall inside opening hours, since staff has to be present to hand over/receive the car. | System | MVP (checked client-side *and* re-validated server-side; see N12) |
 | F19 | The customer can reach support via a floating contact widget (dummy phone number and e-mail) visible on every page. | Customer | MVP |
 
 ## 4. Non-functional requirements
@@ -62,7 +62,7 @@ Statuses: `MVP` (done), `Planned` (to be added in later iterations).
 | N9 | Deployment via containers (Docker) for easy setup on another machine. | Planned |
 | N10 | Authentication uses stateless JWT bearer tokens (no server-side session storage). | MVP |
 | N11 | Sending a real confirmation e-mail requires no code change — only environment variables (`backend/.env`, see `.env.example`); the app runs correctly without them (logs instead). | MVP |
-| N12 | Opening-hours validation (F18) is enforced client-side only; the backend does not yet re-validate it, since it doesn't track the customer's timezone. A known, recorded limitation, not an oversight. | Planned |
+| N12 | Opening-hours validation (F18) is re-validated server-side on every reservation `POST /reservations/` makes (`schemas.ReservationCreate.within_business_hours`), not just client-side — a request made directly against the API without going through the frontend is still rejected (422) outside Mon–Fri 08:00–20:00. It still assumes a single timezone throughout the system (see §5); true per-customer timezone handling remains out of scope. | MVP |
 
 ## 5. Constraints and assumptions
 

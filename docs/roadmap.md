@@ -51,11 +51,11 @@ corresponding requirement in [requirements.md](requirements.md).
 - [x] Complete use case diagram + one activity diagram per use case
 - [x] One sequence diagram per use case, plus a fully descriptive, specification-level write-up in [use-cases.md](use-cases.md)
 
-## Week 6+ — planned
+## Week 6 — Closing out the remaining planned work ✅
 
+- [x] Server-side opening-hours validation (N12) — `schemas.ReservationCreate` now re-validates F18 on every `POST /reservations/`, with new pytest coverage (weekend, before-opening, after-closing, exactly-at-closing)
 - [ ] Branches (F11)
 - [ ] Real payment provider integration, replacing the mock `payment_method` flag
-- [ ] Server-side opening-hours validation once the app tracks customer timezone (N12)
 - [ ] CI pipeline (GitHub Actions) running `pytest` and `npm run build` on every pull request
 - [ ] Dockerization (N9)
 - [ ] Frontend component tests (Vitest) and an E2E test (Playwright)

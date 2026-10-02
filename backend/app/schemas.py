@@ -71,11 +71,40 @@ class Token(BaseModel):
     user: User
 
 
+#  The rental lot only operates Mon-Fri, 08:00-20:00 - someone has to
+# physically be there to hand over/receive the car (F18). This mirrors the
+# live, client-side check in frontend/src/components/ReservationForm.tsx;
+# the backend re-validates it too on every reservation it actually creates,
+# since the frontend check alone can't be trusted (N12).
+OPENING_HOUR = 8
+CLOSING_HOUR = 20
+
+
+def _is_within_business_hours(value: datetime) -> bool:
+    if value.weekday() >= 5:  # Monday=0 ... Saturday=5, Sunday=6
+        return False
+    if value.hour < OPENING_HOUR:
+        return False
+    if value.hour > CLOSING_HOUR or (value.hour == CLOSING_HOUR and value.minute > 0):
+        return False
+    return True
+
+
 class ReservationCreate(BaseModel):
     car_id: int
     start_date: datetime
     end_date: datetime
     payment_method: PaymentMethod
+
+    @field_validator("start_date", "end_date")
+    @classmethod
+    def within_business_hours(cls, value: datetime) -> datetime:
+        if not _is_within_business_hours(value):
+            raise ValueError(
+                "Vyzvednutí i vrácení auta jsou možné jen v pracovní dny "
+                f"(Po–Pá) mezi {OPENING_HOUR}:00 a {CLOSING_HOUR}:00"
+            )
+        return value
 
     @field_validator("end_date")
     @classmethod

@@ -3,8 +3,8 @@ from tests.helpers import auth_headers, create_car, make_admin, register
 
 def make_reservation_payload(
     car_id,
-    start="2026-01-10T00:00:00",
-    end="2026-01-15T00:00:00",
+    start="2026-01-12T09:00:00",
+    end="2026-01-16T09:00:00",
     payment_method="CASH",
 ):
     return {
@@ -146,7 +146,7 @@ def test_two_drafts_for_same_slot_can_coexist_but_only_one_can_be_confirmed(clie
     token_a, _ = _customer(client, email="a@example.com")
     token_b, _ = _customer(client, email="b@example.com")
     payload = make_reservation_payload(
-        car["id"], start="2026-02-01T00:00:00", end="2026-02-10T00:00:00"
+        car["id"], start="2026-02-02T09:00:00", end="2026-02-10T09:00:00"
     )
 
     first = client.post("/reservations/", json=payload, headers=auth_headers(token_a)).json()
@@ -172,10 +172,10 @@ def test_create_rejects_slot_already_confirmed(client):
     car = create_car(client, admin["access_token"])
     token, _ = _customer(client)
     first = make_reservation_payload(
-        car["id"], start="2026-03-01T00:00:00", end="2026-03-10T00:00:00"
+        car["id"], start="2026-03-02T09:00:00", end="2026-03-10T09:00:00"
     )
     overlapping = make_reservation_payload(
-        car["id"], start="2026-03-05T00:00:00", end="2026-03-12T00:00:00"
+        car["id"], start="2026-03-05T09:00:00", end="2026-03-12T09:00:00"
     )
 
     reservation = client.post(
@@ -197,10 +197,10 @@ def test_non_overlapping_confirmed_reservations_are_accepted(client):
     car = create_car(client, admin["access_token"])
     token, _ = _customer(client)
     first = make_reservation_payload(
-        car["id"], start="2026-04-01T00:00:00", end="2026-04-05T00:00:00"
+        car["id"], start="2026-04-01T09:00:00", end="2026-04-03T09:00:00"
     )
     second = make_reservation_payload(
-        car["id"], start="2026-04-05T00:00:00", end="2026-04-10T00:00:00"
+        car["id"], start="2026-04-03T09:00:00", end="2026-04-10T09:00:00"
     )
 
     r1 = client.post("/reservations/", json=first, headers=auth_headers(token)).json()
@@ -225,12 +225,69 @@ def test_end_date_must_be_after_start_date(client):
     car = create_car(client, admin["access_token"])
     token, _ = _customer(client)
     payload = make_reservation_payload(
-        car["id"], start="2026-04-10T00:00:00", end="2026-04-01T00:00:00"
+        car["id"], start="2026-04-10T09:00:00", end="2026-04-01T09:00:00"
     )
 
     response = client.post("/reservations/", json=payload, headers=auth_headers(token))
 
     assert response.status_code == 422
+
+
+def test_reservation_on_a_weekend_is_rejected(client):
+    """N12 / F18 — the backend re-validates opening hours, it doesn't just
+    trust the frontend's client-side check."""
+    admin = make_admin(client)
+    car = create_car(client, admin["access_token"])
+    token, _ = _customer(client)
+    # 2026-01-10 is a Saturday.
+    payload = make_reservation_payload(
+        car["id"], start="2026-01-10T09:00:00", end="2026-01-12T09:00:00"
+    )
+
+    response = client.post("/reservations/", json=payload, headers=auth_headers(token))
+
+    assert response.status_code == 422
+
+
+def test_reservation_before_opening_hour_is_rejected(client):
+    admin = make_admin(client)
+    car = create_car(client, admin["access_token"])
+    token, _ = _customer(client)
+    payload = make_reservation_payload(
+        car["id"], start="2026-01-12T07:59:00", end="2026-01-13T09:00:00"
+    )
+
+    response = client.post("/reservations/", json=payload, headers=auth_headers(token))
+
+    assert response.status_code == 422
+
+
+def test_reservation_after_closing_hour_is_rejected(client):
+    admin = make_admin(client)
+    car = create_car(client, admin["access_token"])
+    token, _ = _customer(client)
+    payload = make_reservation_payload(
+        car["id"], start="2026-01-12T09:00:00", end="2026-01-13T20:01:00"
+    )
+
+    response = client.post("/reservations/", json=payload, headers=auth_headers(token))
+
+    assert response.status_code == 422
+
+
+def test_reservation_exactly_at_closing_hour_is_accepted(client):
+    """20:00 itself is still within opening hours — the lot closes *after*
+    the last pickup/return slot of the day, not before it."""
+    admin = make_admin(client)
+    car = create_car(client, admin["access_token"])
+    token, _ = _customer(client)
+    payload = make_reservation_payload(
+        car["id"], start="2026-01-12T08:00:00", end="2026-01-13T20:00:00"
+    )
+
+    response = client.post("/reservations/", json=payload, headers=auth_headers(token))
+
+    assert response.status_code == 201
 
 
 def test_cancel_draft_reservation(client):
@@ -254,7 +311,7 @@ def test_cancel_confirmed_reservation_before_start_date(client):
     car = create_car(client, admin["access_token"])
     token, _ = _customer(client)
     payload = make_reservation_payload(
-        car["id"], start="2099-01-10T00:00:00", end="2099-01-15T00:00:00"
+        car["id"], start="2099-01-12T09:00:00", end="2099-01-16T09:00:00"
     )
     reservation = client.post(
         "/reservations/", json=payload, headers=auth_headers(token)
@@ -278,7 +335,7 @@ def test_cannot_cancel_confirmed_reservation_after_start_date(client):
     car = create_car(client, admin["access_token"])
     token, _ = _customer(client)
     payload = make_reservation_payload(
-        car["id"], start="2020-01-10T00:00:00", end="2020-01-15T00:00:00"
+        car["id"], start="2020-01-10T09:00:00", end="2020-01-15T09:00:00"
     )
     reservation = client.post(
         "/reservations/", json=payload, headers=auth_headers(token)
@@ -315,7 +372,7 @@ def test_availability_reflects_confirmed_reservations_only(client):
     car = create_car(client, admin["access_token"])
     token, _ = _customer(client)
     payload = make_reservation_payload(
-        car["id"], start="2026-06-01T00:00:00", end="2026-06-10T00:00:00"
+        car["id"], start="2026-06-01T09:00:00", end="2026-06-10T09:00:00"
     )
     reservation = client.post(
         "/reservations/", json=payload, headers=auth_headers(token)
@@ -345,12 +402,12 @@ def test_list_my_reservations_only_returns_own(client):
     token_b, _ = _customer(client, email="b@example.com")
     client.post(
         "/reservations/",
-        json=make_reservation_payload(car["id"], start="2026-07-01T00:00:00", end="2026-07-05T00:00:00"),
+        json=make_reservation_payload(car["id"], start="2026-07-01T09:00:00", end="2026-07-03T09:00:00"),
         headers=auth_headers(token_a),
     )
     client.post(
         "/reservations/",
-        json=make_reservation_payload(car["id"], start="2026-08-01T00:00:00", end="2026-08-05T00:00:00"),
+        json=make_reservation_payload(car["id"], start="2026-08-03T09:00:00", end="2026-08-05T09:00:00"),
         headers=auth_headers(token_b),
     )
 
@@ -409,7 +466,7 @@ def test_price_is_capped_at_daily_rate_for_a_long_partial_day(client):
     response = client.post(
         "/reservations/",
         json=make_reservation_payload(
-            car["id"], start="2026-09-01T08:00:00", end="2026-09-01T22:00:00"
+            car["id"], start="2026-09-01T08:00:00", end="2026-09-01T20:00:00"
         ),
         headers=auth_headers(token),
     )
