@@ -23,6 +23,19 @@ function nowLocalInputValue(): string {
   return now.toISOString().slice(0, 16)
 }
 
+// The backend (and the rest of this app) treats start_date/end_date as
+// naive, single-timezone wall-clock values — there's no per-user timezone
+// handling (see docs/requirements.md, N12). A <input type="datetime-local">
+// value is already exactly that: "YYYY-MM-DDTHH:mm", no timezone. Sending
+// it through `new Date(...).toISOString()` would convert it to UTC and
+// silently shift the hour whenever the browser isn't in UTC+0 — which could
+// then fail the opening-hours check (08:00-20:00) for a time the customer
+// actually picked well inside it. So this just appends seconds and sends
+// the value as typed, instead of round-tripping it through `Date`.
+function toNaiveIsoString(datetimeLocalValue: string): string {
+  return `${datetimeLocalValue}:00`
+}
+
 // The lot only operates Mon–Fri, 08:00–20:00 — someone has to physically be
 // there to hand over or receive the car, so pickup and return both have to
 // fall inside opening hours.
@@ -80,11 +93,7 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
     let cancelled = false
     setAvailability({ status: 'checking' })
     const timeout = setTimeout(() => {
-      checkAvailability(
-        car.id,
-        new Date(startDate).toISOString(),
-        new Date(endDate).toISOString(),
-      )
+      checkAvailability(car.id, toNaiveIsoString(startDate), toNaiveIsoString(endDate))
         .then((result) => {
           if (!cancelled) {
             setAvailability({ status: result.available ? 'available' : 'unavailable' })
@@ -117,8 +126,8 @@ export default function ReservationForm({ car, onDone, onCancel }: Props) {
       // only the chosen method is part of the actual reservation.
       await createReservation(token, {
         car_id: car.id,
-        start_date: new Date(startDate).toISOString(),
-        end_date: new Date(endDate).toISOString(),
+        start_date: toNaiveIsoString(startDate),
+        end_date: toNaiveIsoString(endDate),
         payment_method: paymentMethod,
       })
       show('Rezervace byla úspěšně vytvořena.', 'success')
