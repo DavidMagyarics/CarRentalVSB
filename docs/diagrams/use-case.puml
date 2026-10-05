@@ -5,18 +5,18 @@ skinparam backgroundColor white
 actor "Customer" as Customer
 actor "Admin" as Admin
 
-usecase "Register" as UC1
-usecase "Log in" as UC2
-usecase "Browse & filter cars" as UC3
-usecase "Create reservation" as UC4
-usecase "Check availability" as UC4a
-usecase "Cancel reservation" as UC5
-usecase "View my reservations" as UC6
-usecase "Contact support" as UC7
-usecase "Confirm reservation" as UC8
-usecase "Send notification" as UC8a
-usecase "Manage fleet" as UC9
-usecase "View all reservations" as UC10
+usecase "UC1 — Register" as UC1
+usecase "UC2 — Log in" as UC2
+usecase "UC3 — Browse & filter cars" as UC3
+usecase "UC4 — Create reservation" as UC4
+usecase "UC4a — Check availability" as UC4a
+usecase "UC5 — Cancel reservation" as UC5
+usecase "UC6 — View my reservations" as UC6
+usecase "UC7 — Contact support" as UC7
+usecase "UC8 — Confirm reservation" as UC8
+usecase "UC8a — Send notification" as UC8a
+usecase "UC9 — Manage fleet" as UC9
+usecase "UC10 — View all reservations" as UC10
 
 Customer --> UC1
 Customer --> UC2
