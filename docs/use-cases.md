@@ -50,11 +50,75 @@ as a step **inside** another use case, which is exactly what the
   reservation becomes `CONFIRMED`.
 
 Every use case on this diagram is implemented (✅) — there are no
-planned/future use cases in the model. Work that is still only planned
-(e.g. multiple rental branches, a real payment provider) is tracked as a
-functional requirement in [requirements.md](requirements.md) instead,
-because it extends an *existing* use case rather than adding a new one to
-this diagram.
+planned/future use cases in the model. Multiple rental branches (F11) are
+not a separate use case: they extend existing ones (a car's branch is shown
+and filterable in UC3, and required when managing the fleet in UC9) — see
+[requirements.md](requirements.md).
+
+## Class Diagram
+
+![Class diagram](diagrams/class-system.svg)
+
+*Diagram source: [diagrams/class-system.puml](diagrams/class-system.puml) — PlantUML, the image is automatically re-rendered on every source change.*
+
+### What this diagram specifies
+
+The class diagram combines every sequence diagram below into one static
+picture of the system: it shows **which parts exist, what each one is
+responsible for, and who talks to whom**. Where a sequence diagram shows one
+flow over time (e.g. "Admin confirms a reservation"), the class diagram shows
+all the participants of *all* the flows at once, with the dependencies that
+make those flows possible. Every element in it corresponds to real code —
+the stereotypes say what kind of code it is, since the backend is written as
+Python modules rather than classes:
+
+- `<<component>>` / `<<context>>` — a React component or context in
+  `frontend/src/`.
+- `<<module>>` — a module of plain functions (`api.ts`, `pricing.ts`,
+  `deps.py`).
+- `<<router>>` — a FastAPI router in `backend/app/routers/`; its compartments
+  list the actual HTTP endpoints, `(admin)` marks admin-only ones.
+- `<<service>>` — business logic (`crud.py`) and security (`auth.py`).
+- `<<schema>>` — a Pydantic schema that validates incoming data.
+- plain classes and enums in the bottom package — the SQLAlchemy domain
+  model, i.e. the database tables (`models.py`).
+
+It is read top to bottom, in four layers:
+
+1. **Frontend (React SPA).** `App` is the root component: it holds which tab
+   is open and which car is being booked, and composes every other component
+   — the car grid and filters (UC3), the booking form (UC4), the customer's
+   reservation list (UC5, UC6), the admin screens (UC8–UC10), the login and
+   registration forms (UC1, UC2) and the support widget (UC7). Components
+   never call the backend directly; they all go through the single `api`
+   module. `ReservationForm` additionally uses `pricing` for the live price
+   estimate and applies the same opening-hours rule the backend's
+   `ReservationCreate` schema enforces (F18/N12).
+2. **Backend API (FastAPI).** The dashed `HTTP/JSON` arrows from `api` are the
+   *only* connection between frontend and backend — one router per area
+   (auth, cars, branches, reservations, users). Routers that need a logged-in
+   user or an admin go through `deps` (`get_current_user`, `require_admin`),
+   and `ReservationsRouter` validates every new reservation with the
+   `ReservationCreate` schema before anything is stored.
+3. **Services.** Routers contain no business rules themselves; they delegate
+   to `crud` — price calculation (F17), the availability check (UC4a), the
+   reservation state transitions (confirm, cancel) and the "can't delete a
+   branch that still has cars" rule — and to `auth` for password hashing and
+   JWT tokens. On a successful confirmation, `ReservationsRouter` calls the
+   `NotificationService` interface (UC8a); which implementation runs —
+   `LoggingNotificationService` by default, `EmailNotificationService` when
+   SMTP is configured — is decided at startup, without changing any of the
+   code that calls it.
+4. **Domain model.** `crud` is the only part that reads and writes the
+   database tables. A `Branch` has many `Car`s, a `Car` has many
+   `Reservation`s, and a `User` creates many `Reservation`s; the enums fix
+   the allowed values of each status and category field (e.g. a reservation
+   is always `DRAFT`, `CONFIRMED` or `CANCELLED`).
+
+To follow any single use case through the diagram, start at its frontend
+component, go through `api` to the matching router, then into `crud` and the
+domain model — the sequence diagram of that use case below shows the same
+path, step by step in time.
 
 ### How each use case is documented below
 

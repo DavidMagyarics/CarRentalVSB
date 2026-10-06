@@ -1,0 +1,225 @@
+@startuml class-system
+skinparam backgroundColor white
+skinparam classAttributeIconSize 0
+title Class diagram — CarRentalVSB (how the system fits together)
+
+package "Frontend (React SPA)" {
+  class App <<component>> {
+    -tab : Tab
+    -bookingCar : Car
+    +handleReserveClick(car)
+    +handleBookingDone()
+  }
+  class AuthProvider <<context>> {
+    +login(email, password)
+    +register(name, email, password)
+    +logout()
+  }
+  class api <<module>> {
+    +fetchCars(filters)
+    +fetchBranches()
+    +checkAvailability(carId, start, end)
+    +createReservation(token, input)
+    +fetchMyReservations(token)
+    +fetchAllReservations(token)
+    +confirmReservation(token, id)
+    +cancelReservation(token, id)
+    +createCar / updateCar / deleteCar
+    +loginUser / registerUser / fetchMe
+  }
+  class pricing <<module>> {
+    +calculatePrice(daily, hourly, start, end)
+  }
+  class CarGrid <<component>>
+  class CarCard <<component>> {
+    +onReserve(car)
+  }
+  class CarFilters <<component>>
+  class ReservationForm <<component>> {
+    -isWithinBusinessHours(value)
+  }
+  class ReservationList <<component>>
+  class AdminCars <<component>>
+  class AdminReservations <<component>>
+  class AuthForms <<component>>
+  class SupportWidget <<component>>
+}
+
+package "Backend API (FastAPI)" {
+  class AuthRouter <<router>> {
+    POST /auth/register
+    POST /auth/login
+    GET /auth/me
+  }
+  class CarsRouter <<router>> {
+    GET /cars/
+    POST /cars/  (admin)
+    PUT /cars/{id}  (admin)
+    DELETE /cars/{id}  (admin)
+    GET /cars/{id}/availability
+  }
+  class BranchesRouter <<router>> {
+    GET /branches/
+    POST /branches/  (admin)
+    DELETE /branches/{id}  (admin)
+  }
+  class ReservationsRouter <<router>> {
+    POST /reservations/
+    GET /reservations/me
+    GET /reservations/  (admin)
+    POST /reservations/{id}/confirm  (admin)
+    POST /reservations/{id}/cancel
+  }
+  class UsersRouter <<router>> {
+    GET /users/  (admin)
+  }
+  class deps <<module>> {
+    +get_current_user()
+    +require_admin()
+  }
+  class ReservationCreate <<schema>> {
+    car_id, start_date, end_date, payment_method
+    -within_business_hours()
+    -end_after_start()
+  }
+}
+
+package "Services" {
+  class crud <<service>> {
+    +calculate_price(car, start, end)
+    +is_car_available(carId, start, end)
+    +create_reservation(...)
+    +confirm_reservation(id)
+    +cancel_reservation(id)
+    +delete_branch(id)
+  }
+  class auth <<service>> {
+    +hash_password(pw)
+    +verify_password(pw, hash)
+    +create_access_token(userId)
+    +decode_access_token(token)
+  }
+  interface NotificationService {
+    +send_confirmation(reservation, user) : bool
+  }
+  class LoggingNotificationService {
+    logs the notification
+  }
+  class EmailNotificationService {
+    sends via SMTP
+  }
+}
+
+package "Domain model (SQLAlchemy)" {
+  class User {
+    id, name, email
+    password_hash
+    role : UserRole
+  }
+  class Branch {
+    id, name, address
+  }
+  class Car {
+    id, brand, model, year, license_plate
+    daily_price, hourly_price
+    category, transmission, fuel_type, seats
+    description, image_url
+    branch_id
+  }
+  class Reservation {
+    id, car_id, user_id
+    status : ReservationStatus
+    start_date, end_date
+    total_price, payment_method
+    created_at
+  }
+  enum UserRole {
+    CUSTOMER
+    ADMIN
+  }
+  enum ReservationStatus {
+    DRAFT
+    CONFIRMED
+    CANCELLED
+  }
+  enum PaymentMethod {
+    CASH
+    CARD
+  }
+  enum CarCategory {
+    SEDAN
+    SUV
+    HATCHBACK
+    VAN
+    SPORTS
+  }
+  enum Transmission {
+    MANUAL
+    AUTOMATIC
+  }
+  enum FuelType {
+    PETROL
+    DIESEL
+    ELECTRIC
+    HYBRID
+  }
+}
+
+' --- frontend -> backend (HTTP/JSON, the only connection between the two) ---
+api ..> AuthRouter : HTTP/JSON
+api ..> CarsRouter : HTTP/JSON
+api ..> BranchesRouter : HTTP/JSON
+api ..> ReservationsRouter : HTTP/JSON
+api ..> UsersRouter : HTTP/JSON
+
+App --> AuthProvider : uses
+App --> CarGrid
+App --> CarFilters
+App --> AdminCars
+App --> AdminReservations
+App --> ReservationList
+App --> ReservationForm
+App --> AuthForms
+App --> SupportWidget
+CarGrid --> CarCard
+ReservationForm ..> api : checkAvailability, createReservation
+ReservationForm ..> pricing : price estimate
+ReservationForm ..> ReservationCreate : same rules (client side)
+ReservationList ..> api : cancelReservation
+AdminReservations ..> api : confirm / cancel
+AdminCars ..> api : create / update / delete
+AuthForms ..> AuthProvider : login / register
+
+' --- backend internals ---
+AuthRouter ..> auth
+AuthRouter ..> crud
+CarsRouter ..> crud
+CarsRouter ..> deps
+BranchesRouter ..> crud
+ReservationsRouter ..> crud
+ReservationsRouter ..> deps
+ReservationsRouter ..> NotificationService : on confirm
+ReservationsRouter ..> ReservationCreate : validates body
+UsersRouter ..> crud
+deps ..> auth
+deps ..> crud
+
+crud ..> User
+crud ..> Car
+crud ..> Reservation
+crud ..> Branch
+
+NotificationService <|.. LoggingNotificationService
+NotificationService <|.. EmailNotificationService
+
+' --- domain relationships ---
+Branch "1" -- "0..*" Car : has
+Car "1" -- "0..*" Reservation : is reserved in
+User "1" -- "0..*" Reservation : creates
+User --> UserRole
+Reservation --> ReservationStatus
+Reservation --> PaymentMethod
+Car --> CarCategory
+Car --> Transmission
+Car --> FuelType
+@enduml
