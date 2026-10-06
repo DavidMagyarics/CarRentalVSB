@@ -1,225 +1,128 @@
 @startuml class-system
 skinparam backgroundColor white
 skinparam classAttributeIconSize 0
-title Class diagram — CarRentalVSB (how the system fits together)
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 60
+skinparam class {
+  BackgroundColor #FAFAFA
+  BorderColor #555555
+}
+title Class diagram — CarRentalVSB
 
-package "Frontend (React SPA)" {
-  class App <<component>> {
-    -tab : Tab
-    -bookingCar : Car
-    +handleReserveClick(car)
-    +handleBookingDone()
+package "Frontend (React)" {
+  class ApiClient <<api.ts>> {
+    + login(email, password)
+    + register(name, email, password)
+    + fetchCars(filters)
+    + checkAvailability(carId, start, end)
+    + createReservation(car, start, end, payment)
+    + cancelReservation(id)
+    + confirmReservation(id)
+    + createCar(car) / updateCar / deleteCar
   }
-  class AuthProvider <<context>> {
-    +login(email, password)
-    +register(name, email, password)
-    +logout()
-  }
-  class api <<module>> {
-    +fetchCars(filters)
-    +fetchBranches()
-    +checkAvailability(carId, start, end)
-    +createReservation(token, input)
-    +fetchMyReservations(token)
-    +fetchAllReservations(token)
-    +confirmReservation(token, id)
-    +cancelReservation(token, id)
-    +createCar / updateCar / deleteCar
-    +loginUser / registerUser / fetchMe
-  }
-  class pricing <<module>> {
-    +calculatePrice(daily, hourly, start, end)
-  }
-  class CarGrid <<component>>
-  class CarCard <<component>> {
-    +onReserve(car)
-  }
-  class CarFilters <<component>>
-  class ReservationForm <<component>> {
-    -isWithinBusinessHours(value)
-  }
-  class ReservationList <<component>>
-  class AdminCars <<component>>
-  class AdminReservations <<component>>
-  class AuthForms <<component>>
-  class SupportWidget <<component>>
 }
 
-package "Backend API (FastAPI)" {
-  class AuthRouter <<router>> {
+package "REST API (FastAPI routers)" {
+  class AuthRouter <<routers/auth.py>> {
     POST /auth/register
     POST /auth/login
-    GET /auth/me
   }
-  class CarsRouter <<router>> {
-    GET /cars/
-    POST /cars/  (admin)
-    PUT /cars/{id}  (admin)
-    DELETE /cars/{id}  (admin)
-    GET /cars/{id}/availability
-  }
-  class BranchesRouter <<router>> {
-    GET /branches/
-    POST /branches/  (admin)
-    DELETE /branches/{id}  (admin)
-  }
-  class ReservationsRouter <<router>> {
+  class ReservationsRouter <<routers/reservations.py>> {
     POST /reservations/
     GET /reservations/me
     GET /reservations/  (admin)
     POST /reservations/{id}/confirm  (admin)
     POST /reservations/{id}/cancel
   }
-  class UsersRouter <<router>> {
-    GET /users/  (admin)
-  }
-  class deps <<module>> {
-    +get_current_user()
-    +require_admin()
-  }
-  class ReservationCreate <<schema>> {
-    car_id, start_date, end_date, payment_method
-    -within_business_hours()
-    -end_after_start()
+  class CarsRouter <<routers/cars.py + branches.py>> {
+    GET /cars/ , GET /branches/
+    GET /cars/{id}/availability
+    POST · PUT · DELETE /cars/  (admin)
   }
 }
 
-package "Services" {
-  class crud <<service>> {
-    +calculate_price(car, start, end)
-    +is_car_available(carId, start, end)
-    +create_reservation(...)
-    +confirm_reservation(id)
-    +cancel_reservation(id)
-    +delete_branch(id)
+package "Services (business logic)" {
+  class AuthService <<auth.py + crud.py>> {
+    + register(name, email, password) : User
+    + authenticate(email, password) : User
+    - hash_password(password)
+    + create_access_token(user) : JWT
   }
-  class auth <<service>> {
-    +hash_password(pw)
-    +verify_password(pw, hash)
-    +create_access_token(userId)
-    +decode_access_token(token)
+  class ReservationService <<crud.py>> {
+    + create_reservation(user, car, start, end) : Reservation
+    + is_car_available(car, start, end) : bool
+    + calculate_price(car, start, end) : float
+    + confirm_reservation(id) : Reservation
+    + cancel_reservation(id) : Reservation
   }
-  interface NotificationService {
-    +send_confirmation(reservation, user) : bool
+  interface NotificationService <<notification.py>> {
+    + send_confirmation(reservation, user) : bool
   }
   class LoggingNotificationService {
-    logs the notification
+    default: writes to the log
   }
   class EmailNotificationService {
-    sends via SMTP
+    used when SMTP is configured
+  }
+  class FleetService <<crud.py>> {
+    + get_cars(filters) : Car[]
+    + create_car(car) / update_car / delete_car
+    + delete_branch(id)
   }
 }
 
-package "Domain model (SQLAlchemy)" {
+package "Domain model (database tables)" {
   class User {
-    id, name, email
-    password_hash
-    role : UserRole
-  }
-  class Branch {
-    id, name, address
-  }
-  class Car {
-    id, brand, model, year, license_plate
-    daily_price, hourly_price
-    category, transmission, fuel_type, seats
-    description, image_url
-    branch_id
+    id : int
+    name : str
+    email : str
+    password_hash : str
+    role : CUSTOMER | ADMIN
   }
   class Reservation {
-    id, car_id, user_id
-    status : ReservationStatus
-    start_date, end_date
-    total_price, payment_method
-    created_at
+    id : int
+    start_date : datetime
+    end_date : datetime
+    status : DRAFT | CONFIRMED | CANCELLED
+    total_price : float
+    payment_method : CASH | CARD
   }
-  enum UserRole {
-    CUSTOMER
-    ADMIN
+  class Car {
+    id : int
+    brand : str
+    model : str
+    year : int
+    license_plate : str
+    daily_price : float
+    hourly_price : float
+    category, transmission, fuel_type
   }
-  enum ReservationStatus {
-    DRAFT
-    CONFIRMED
-    CANCELLED
-  }
-  enum PaymentMethod {
-    CASH
-    CARD
-  }
-  enum CarCategory {
-    SEDAN
-    SUV
-    HATCHBACK
-    VAN
-    SPORTS
-  }
-  enum Transmission {
-    MANUAL
-    AUTOMATIC
-  }
-  enum FuelType {
-    PETROL
-    DIESEL
-    ELECTRIC
-    HYBRID
+  class Branch {
+    id : int
+    name : str
+    address : str
   }
 }
 
-' --- frontend -> backend (HTTP/JSON, the only connection between the two) ---
-api ..> AuthRouter : HTTP/JSON
-api ..> CarsRouter : HTTP/JSON
-api ..> BranchesRouter : HTTP/JSON
-api ..> ReservationsRouter : HTTP/JSON
-api ..> UsersRouter : HTTP/JSON
 
-App --> AuthProvider : uses
-App --> CarGrid
-App --> CarFilters
-App --> AdminCars
-App --> AdminReservations
-App --> ReservationList
-App --> ReservationForm
-App --> AuthForms
-App --> SupportWidget
-CarGrid --> CarCard
-ReservationForm ..> api : checkAvailability, createReservation
-ReservationForm ..> pricing : price estimate
-ReservationForm ..> ReservationCreate : same rules (client side)
-ReservationList ..> api : cancelReservation
-AdminReservations ..> api : confirm / cancel
-AdminCars ..> api : create / update / delete
-AuthForms ..> AuthProvider : login / register
+ApiClient -down-> AuthRouter : HTTP
+ApiClient -down-> ReservationsRouter : HTTP
+ApiClient -down-> CarsRouter : HTTP
 
-' --- backend internals ---
-AuthRouter ..> auth
-AuthRouter ..> crud
-CarsRouter ..> crud
-CarsRouter ..> deps
-BranchesRouter ..> crud
-ReservationsRouter ..> crud
-ReservationsRouter ..> deps
-ReservationsRouter ..> NotificationService : on confirm
-ReservationsRouter ..> ReservationCreate : validates body
-UsersRouter ..> crud
-deps ..> auth
-deps ..> crud
+AuthRouter -down-> AuthService
+ReservationsRouter -down-> ReservationService
+ReservationsRouter -down-> NotificationService : on confirm
+CarsRouter -down-> FleetService
 
-crud ..> User
-crud ..> Car
-crud ..> Reservation
-crud ..> Branch
+NotificationService <|.down. LoggingNotificationService
+NotificationService <|.down. EmailNotificationService
 
-NotificationService <|.. LoggingNotificationService
-NotificationService <|.. EmailNotificationService
+AuthService -down---> User
+ReservationService -down---> Reservation
+FleetService -down---> Car
 
-' --- domain relationships ---
-Branch "1" -- "0..*" Car : has
-Car "1" -- "0..*" Reservation : is reserved in
-User "1" -- "0..*" Reservation : creates
-User --> UserRole
-Reservation --> ReservationStatus
-Reservation --> PaymentMethod
-Car --> CarCategory
-Car --> Transmission
-Car --> FuelType
+User "1" -- "0..*" Reservation : creates >
+Reservation "0..*" -- "1" Car : for >
+Car "0..*" -- "1" Branch : located at >
 @enduml

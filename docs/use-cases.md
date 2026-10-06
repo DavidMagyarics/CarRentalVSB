@@ -63,62 +63,60 @@ and filterable in UC3, and required when managing the fleet in UC9) — see
 
 ### What this diagram specifies
 
-The class diagram combines every sequence diagram below into one static
-picture of the system: it shows **which parts exist, what each one is
-responsible for, and who talks to whom**. Where a sequence diagram shows one
-flow over time (e.g. "Admin confirms a reservation"), the class diagram shows
-all the participants of *all* the flows at once, with the dependencies that
-make those flows possible. Every element in it corresponds to real code —
-the stereotypes say what kind of code it is, since the backend is written as
-Python modules rather than classes:
+The class diagram puts all the sequence diagrams below together into one
+picture of the whole system. A sequence diagram shows *one* flow step by
+step in time (e.g. "the admin confirms a reservation"); the class diagram
+shows *every* participant of all those flows at once — what each part is
+responsible for and which part calls which. It is deliberately simplified so
+it stays readable: it shows the main parts and the main calls between them,
+not every function in the code.
 
-- `<<component>>` / `<<context>>` — a React component or context in
-  `frontend/src/`.
-- `<<module>>` — a module of plain functions (`api.ts`, `pricing.ts`,
-  `deps.py`).
-- `<<router>>` — a FastAPI router in `backend/app/routers/`; its compartments
-  list the actual HTTP endpoints, `(admin)` marks admin-only ones.
-- `<<service>>` — business logic (`crud.py`) and security (`auth.py`).
-- `<<schema>>` — a Pydantic schema that validates incoming data.
-- plain classes and enums in the bottom package — the SQLAlchemy domain
-  model, i.e. the database tables (`models.py`).
+It is read **top to bottom, in four layers**, and arrows only ever point
+downwards — a layer uses the one below it, never the other way round:
 
-It is read top to bottom, in four layers:
+1. **Frontend (React)** — `ApiClient` (`api.ts`) is the single place the web
+   app talks to the backend from. Every screen (car list, booking form, "My
+   reservations", the admin pages) calls one of its methods; nothing else in
+   the frontend sends requests.
+2. **REST API** — three routers receive those HTTP requests, one per area:
+   accounts (`AuthRouter`), reservations (`ReservationsRouter`) and the fleet
+   — cars and branches (`CarsRouter`). Each box lists its real endpoints;
+   `(admin)` marks the ones only an admin may call. A router only checks who
+   is calling and what was sent, then passes the work on.
+3. **Services** — the business logic itself:
+   - `AuthService` — registering, logging in, hashing passwords and issuing
+     the JWT token (UC1, UC2).
+   - `ReservationService` — creating a reservation, the availability check
+     (UC4a), the price calculation (F17), and confirming or cancelling
+     (UC4, UC5, UC8).
+   - `FleetService` — listing and filtering cars, and adding, editing and
+     deleting cars and branches (UC3, UC9).
+   - `NotificationService` — an **interface** (UC8a): `ReservationsRouter`
+     calls it after a successful confirmation without knowing how the
+     message is actually sent. The two dashed arrows show its two
+     implementations — `LoggingNotificationService` (default, writes to the
+     log) and `EmailNotificationService` (real e-mail, used once SMTP is
+     configured).
+4. **Domain model** — the four database tables and how they relate, read
+   along the chain: a `User` **creates** 0..* `Reservation`s, each
+   reservation is **for** exactly one `Car`, and each car is **located at**
+   exactly one `Branch`. The allowed values of the important fields are
+   written right next to them (a reservation is always `DRAFT`, `CONFIRMED`
+   or `CANCELLED`; a user is a `CUSTOMER` or an `ADMIN`).
 
-1. **Frontend (React SPA).** `App` is the root component: it holds which tab
-   is open and which car is being booked, and composes every other component
-   — the car grid and filters (UC3), the booking form (UC4), the customer's
-   reservation list (UC5, UC6), the admin screens (UC8–UC10), the login and
-   registration forms (UC1, UC2) and the support widget (UC7). Components
-   never call the backend directly; they all go through the single `api`
-   module. `ReservationForm` additionally uses `pricing` for the live price
-   estimate and applies the same opening-hours rule the backend's
-   `ReservationCreate` schema enforces (F18/N12).
-2. **Backend API (FastAPI).** The dashed `HTTP/JSON` arrows from `api` are the
-   *only* connection between frontend and backend — one router per area
-   (auth, cars, branches, reservations, users). Routers that need a logged-in
-   user or an admin go through `deps` (`get_current_user`, `require_admin`),
-   and `ReservationsRouter` validates every new reservation with the
-   `ReservationCreate` schema before anything is stored.
-3. **Services.** Routers contain no business rules themselves; they delegate
-   to `crud` — price calculation (F17), the availability check (UC4a), the
-   reservation state transitions (confirm, cancel) and the "can't delete a
-   branch that still has cars" rule — and to `auth` for password hashing and
-   JWT tokens. On a successful confirmation, `ReservationsRouter` calls the
-   `NotificationService` interface (UC8a); which implementation runs —
-   `LoggingNotificationService` by default, `EmailNotificationService` when
-   SMTP is configured — is decided at startup, without changing any of the
-   code that calls it.
-4. **Domain model.** `crud` is the only part that reads and writes the
-   database tables. A `Branch` has many `Car`s, a `Car` has many
-   `Reservation`s, and a `User` creates many `Reservation`s; the enums fix
-   the allowed values of each status and category field (e.g. a reservation
-   is always `DRAFT`, `CONFIRMED` or `CANCELLED`).
+The small `<<…>>` label above each class name says which source file it
+lives in. The backend is written in Python as modules of functions rather
+than classes, so the three "Service" classes are logical groups of the
+functions in `crud.py` and `auth.py` — e.g. everything about reservations in
+`crud.py` is shown as `ReservationService`.
 
-To follow any single use case through the diagram, start at its frontend
-component, go through `api` to the matching router, then into `crud` and the
-domain model — the sequence diagram of that use case below shows the same
-path, step by step in time.
+**Example — following one use case through the diagram (UC8, confirm a
+reservation):** the admin's click goes through `ApiClient.confirmReservation`
+→ `POST /reservations/{id}/confirm` in `ReservationsRouter` →
+`ReservationService.confirm_reservation`, which re-checks availability and
+changes the `Reservation`'s status to `CONFIRMED` → `ReservationsRouter`
+then calls `NotificationService.send_confirmation`. The sequence diagram of
+UC8 below shows exactly this path, step by step in time.
 
 ### How each use case is documented below
 
