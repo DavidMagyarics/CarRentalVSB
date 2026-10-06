@@ -23,8 +23,10 @@ alt e-mail already registered
   API --> FE: 409 Conflict\n"Tento e-mail je již zaregistrován"
 else e-mail is free
   API -> API: Hash password (bcrypt)
-  API -> DB: INSERT User (role CUSTOMER)
-  DB --> API: new user
+  create participant "u : User" as U
+  API -> U: <<create>>\n(name, email, password_hash,\nrole = CUSTOMER)
+  API -> DB: INSERT u (save the new user)
+  DB --> API: saved (u now has its id)
   API -> API: Issue JWT access token
   API --> FE: 201 Created\n{access_token, user}
   FE -> FE: Store the token (localStorage)

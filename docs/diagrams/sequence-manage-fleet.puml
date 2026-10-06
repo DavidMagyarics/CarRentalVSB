@@ -21,8 +21,10 @@ end note
 alt Add
   Admin -> FE: Fill new car form\n(brand, model, year, plate, prices, category, ...)
   FE -> API: POST /cars/ {car}
-  API -> DB: INSERT Car
-  DB --> API: car
+  create participant "c : Car" as C
+  API -> C: <<create>>\n(brand, model, ..., branch_id)
+  API -> DB: INSERT c (save the new car)
+  DB --> API: saved (c now has its id)
   API --> FE: 201 Created {car}
 else Edit
   Admin -> FE: Pick a car and edit form fields

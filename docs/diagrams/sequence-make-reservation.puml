@@ -51,8 +51,10 @@ else dates valid
         API --> FE: 409 Conflict\n"Auto je v požadovaném termínu již\npotvrzenou rezervací obsazeno"
       else still available
         API -> API: Calculate total price\n(daily rate per full 24h block + hourly\nrate for the rest, capped at one more day)
-        API -> DB: INSERT Reservation\n(status DRAFT, payment_method, total_price)
-        DB --> API: reservation
+        create participant "r : Reservation" as R
+        API -> R: <<create>>\n(car, user, start_date, end_date,\npayment_method, total_price,\nstatus = DRAFT)
+        API -> DB: INSERT r (save the new reservation)
+        DB --> API: saved (r now has its id)
         API --> FE: 201 Created {reservation}
       end
     end
