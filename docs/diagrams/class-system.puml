@@ -122,7 +122,7 @@ AuthService -down---> User
 ReservationService -down---> Reservation
 FleetService -down---> Car
 
-User "1" -- "0..*" Reservation : creates >
-Reservation "0..*" -- "1" Car : for >
-Car "0..*" -- "1" Branch : located at >
+User "1" -right- "0..*" Reservation : creates >
+Reservation "0..*" -right- "1" Car : for >
+Car "0..*" -right- "1" Branch : located at >
 @enduml
