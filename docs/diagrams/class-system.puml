@@ -122,6 +122,12 @@ AuthService -down---> User
 ReservationService -down---> Reservation
 FleetService -down---> Car
 
+' keep the columns in the same left-to-right order as the domain chain
+AuthRouter -[hidden]right- ReservationsRouter
+ReservationsRouter -[hidden]right- CarsRouter
+AuthService -[hidden]right- ReservationService
+ReservationService -[hidden]right- FleetService
+
 User "1" -right- "0..*" Reservation : creates >
 Reservation "0..*" -right- "1" Car : for >
 Car "0..*" -right- "1" Branch : located at >
