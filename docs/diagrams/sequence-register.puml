@@ -4,31 +4,23 @@ skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — Register (UC1)
 actor Customer
-boundary ":WebApp" as Web
-control ":AuthService" as Auth
-database ":Database" as DB
-entity "u : User" as U
+participant ":AuthService" as Auth
+participant "u : User" as U
 
-Customer -> Web : register(name, email, password)
-Web -> Auth : create_user(name, email, password)\n[POST /auth/register]
+Customer -> Auth : create_user(name, email, password)\n[POST /auth/register]
 note right of Auth
   Invalid e-mail or password
   shorter than 6 characters → 422
 end note
-Auth -> DB : query(User, email)
-DB --> Auth : User | none
+Auth -> Auth : get_user_by_email(email)
 
 alt e-mail already registered
-  Auth --> Web : 409 "Tento e-mail je již zaregistrován"
+  Auth --> Customer : 409 "Tento e-mail je již zaregistrován"
 else e-mail is free
   Auth -> Auth : hash_password(password)
   create U
   Auth -> U : <<create>> (name, email, password_hash,\nrole = CUSTOMER)
-  Auth -> DB : save(u)
   Auth -> Auth : create_access_token(u)
-  Auth --> Web : 201 Created {token, u}
-  Web -> Web : store the token (localStorage)
+  Auth --> Customer : 201 Created {token, u}
 end
-
-Web --> Customer : logged in, or error message
 @enduml

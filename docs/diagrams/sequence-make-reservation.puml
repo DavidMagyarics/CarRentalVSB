@@ -4,51 +4,40 @@ skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — Create reservation (UC4)
 actor Customer
-boundary ":WebApp" as Web
-control ":ReservationService" as Res
-control ":AuthService" as Auth
-database ":Database" as DB
-entity "r : Reservation" as R
+participant ":ReservationService" as Res
+participant "c : Car" as C
+participant "r : Reservation" as R
 
-Customer -> Web : reserveCar(car)
 opt customer not logged in
-  ref over Customer, Web, Auth : UC2 Log in / UC1 Register
+  ref over Customer, Res : UC2 Log in / UC1 Register
 end
-Customer -> Web : enter pickup and return date & time
-Web -> Web : isWithinOpeningHours(start, end)\n(Mon–Fri 08:00–20:00, return after pickup)
 
-alt date/time invalid
-  Web --> Customer : date/time error, submit disabled
-else dates valid
-  Web -> Res : is_car_available(car, start, end)\n[GET /cars/{id}/availability]
-  ref over Res, DB : UC4a Check availability
-  Res --> Web : true / false
+Customer -> Res : is_car_available(c, start, end)\n[GET /cars/{id}/availability]
+ref over Res : UC4a Check availability
+Res --> Customer : true / false — the form shows\n"Termín je dostupný" or disables submitting
 
-  alt car not available
-    Web --> Customer : "already booked for this time",\nsubmit disabled
-  else car available
-    Web -> Web : estimatePrice(car, start, end)
-    Web --> Customer : "Termín je dostupný" + price
-    Customer -> Web : choose payment method (CASH / CARD),\nsubmit
-    Web -> Res : create_reservation(token, car_id, start, end, payment)\n[POST /reservations/]
-    Res -> Auth : get_current_user(token)
-    Auth --> Res : user : User (401 if the token is invalid)
-    Res -> Res : check opening hours again\n(422 if outside — the API is protected\neven without the web form)
-    Res -> DB : query(Car, car_id)
-    DB --> Res : car (404 if none)
-    Res -> Res : is_car_available(car, start, end)\n(UC4a again — the slot may have been\nconfirmed in the meantime)
+Customer -> Res : create_reservation(c, start, end, payment)\n[POST /reservations/]
+note right of Res
+  The customer is identified from the
+  JWT token (see UC6); without a valid
+  token → 401.
+end note
+Res -> Res : check opening hours\n(Mon–Fri 08:00–20:00, end after start)
 
-    alt slot already taken
-      Res --> Web : 409 "Auto je v požadovaném termínu\njiž potvrzenou rezervací obsazeno"
-    else still available
-      Res -> Res : calculate_price(car, start, end)
-      create R
-      Res -> R : <<create>> (car, user, start, end,\ntotal_price, payment, status = DRAFT)
-      Res -> DB : save(r)
-      Res --> Web : 201 Created r
-    end
+alt outside opening hours
+  Res --> Customer : 422 "Vyzvednutí i vrácení auta jsou možné\njen v pracovní dny (Po–Pá) mezi 8:00 a 20:00"
+else within opening hours
+  Res -> Res : is_car_available(c, start, end)
+  ref over Res : UC4a — the slot may have been\nconfirmed in the meantime
+  alt slot already taken
+    Res --> Customer : 409 "Auto je v požadovaném termínu\njiž potvrzenou rezervací obsazeno"
+  else still available
+    Res -> C : get_prices()
+    C --> Res : daily_price, hourly_price
+    Res -> Res : calculate_price(c, start, end)
+    create R
+    Res -> R : <<create>> (c, customer, start, end,\ntotal_price, payment, status = DRAFT)
+    Res --> Customer : 201 Created r — awaiting\nadmin approval (UC8)
   end
 end
-
-Web --> Customer : reservation awaiting admin approval,\nor error message
 @enduml

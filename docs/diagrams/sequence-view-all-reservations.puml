@@ -4,24 +4,26 @@ skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — View all reservations (UC10)
 actor Admin
-boundary ":WebApp" as Web
-control ":ReservationService" as Res
-control ":AuthService" as Auth
-database ":Database" as DB
+participant ":ReservationService" as Res
+participant "admin : User" as A
+participant "r : Reservation" as R
 
-Admin -> Web : showReservations() — "Všechny rezervace"
-Web -> Res : get_reservations(token)\n[GET /reservations/]
-Res -> Auth : require_admin(token)
+Admin -> Res : get_reservations()\n[GET /reservations/]
+Res -> A : is_admin()
+A --> Res : true / false
 
 alt not an admin
-  Auth --> Res : 403
-  Res --> Web : 403 "Vyžadována jsou práva administrátora"
+  Res --> Admin : 403 "Vyžadována jsou práva administrátora"
 else admin
-  Auth --> Res : admin : User
-  Res -> DB : query(Reservation), newest first
-  DB --> Res : Reservation[] (every customer,\nwith car and customer)
-  Res --> Web : 200 OK Reservation[]
+  loop for each reservation (newest first)
+    Res -> R : get_car(), get_user()
+    R --> Res : car, customer
+  end
+  Res --> Admin : 200 OK Reservation[] — car, customer,\ndates, price, payment, status
 end
 
-Web --> Admin : table — car, customer, dates, price,\npayment, status; buttons "Potvrdit" (UC8)\nand "Zrušit" (UC5)
+note over Admin, Res
+  From this list the admin can confirm (UC8)
+  or cancel (UC5) a reservation.
+end note
 @enduml

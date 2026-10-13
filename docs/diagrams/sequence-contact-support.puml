@@ -4,21 +4,21 @@ skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — Contact support (UC7)
 actor Customer
-boundary ":WebApp" as Web
+participant ":SupportWidget" as W
 participant "phone / mail app\n(customer's device)" as Device
 
-Customer -> Web : openSupport()
-Web --> Customer : contact panel — phone, e-mail,\noffice hours
-note right of Web
-  Purely in the browser —
+Customer -> W : open()
+W --> Customer : phone, e-mail, office hours
+note right of W
+  Only in the browser —
   no call to the backend
 end note
 
 opt click the phone number or the e-mail
-  Customer -> Web : click tel: / mailto: link
-  Web -> Device : open the link
+  Customer -> W : click tel: / mailto: link
+  W -> Device : open the link
   Device --> Customer : phone / mail app opens
 end
 
-Customer -> Web : close the panel
+Customer -> W : close()
 @enduml

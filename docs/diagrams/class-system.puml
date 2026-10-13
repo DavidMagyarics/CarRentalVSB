@@ -10,49 +10,33 @@ skinparam class {
 }
 title Class diagram — CarRentalVSB
 
-class WebApp <<boundary>> {
-  token : string
-  user : User
-  + register(name, email, password)
-  + login(email, password)
-  + showCars(filters)
-  + reserveCar(car)
-  + showReservations()
-  + cancelReservation(id)
-  + confirmReservation(id)
-  + saveCar(data)
-  + deleteCar(id)
-  + openSupport()
-  - isWithinOpeningHours(start, end) : bool
-  - estimatePrice(car, start, end) : float
-}
-
-class AuthService <<control>> {
+class AuthService {
   + create_user(name, email, password) : Token
   + authenticate_user(email, password) : Token
   + get_current_user(token) : User
-  + require_admin(token) : User
+  - get_user_by_email(email) : User
   - hash_password(password) : str
-  - verify_password(password, hash) : bool
   - create_access_token(user) : JWT
 }
 
-class ReservationService <<control>> {
-  + create_reservation(token, car_id, start, end, payment) : Reservation
+class ReservationService {
+  + create_reservation(car, start, end, payment) : Reservation
   + is_car_available(car, start, end) : bool
-  + get_reservations_for_user(token) : Reservation[]
-  + get_reservations(token) : Reservation[]
-  + confirm_reservation(token, id) : Reservation
-  + cancel_reservation(token, id) : Reservation
+  + confirm_reservation(id) : Reservation
+  + cancel_reservation(id) : Reservation
+  + get_reservations_for_user() : Reservation[]
+  + get_reservations() : Reservation[]
+  - get_reservation(id) : Reservation
   - calculate_price(car, start, end) : float
 }
 
-class FleetService <<control>> {
+class FleetService {
   + get_cars(filters) : Car[]
-  + get_branches() : Branch[]
-  + create_car(token, data) : Car
-  + update_car(token, id, data) : Car
-  + delete_car(token, id)
+  + create_car(data) : Car
+  + update_car(id, data) : Car
+  + delete_car(id)
+  - get_car(id) : Car
+  - get_branch(id) : Branch
 }
 
 interface NotificationService {
@@ -65,28 +49,38 @@ class LoggingNotificationService {
   + send_confirmation(reservation, user) : bool
 }
 
-class Database <<SQLite>> {
-  + query(entity, conditions) : list
-  + save(obj)
-  + delete(obj)
+class SupportWidget {
+  + open()
+  + close()
 }
 
-class User <<entity>> {
+class User {
   id : int
   name : str
   email : str
   password_hash : str
   role : CUSTOMER | ADMIN
+  + check_password(password) : bool
+  + is_admin() : bool
+  + get_reservations() : Reservation[]
 }
-class Reservation <<entity>> {
+
+class Reservation {
   id : int
   start_date : datetime
   end_date : datetime
   status : DRAFT | CONFIRMED | CANCELLED
   total_price : float
   payment_method : CASH | CARD
+  + get_status() : Status
+  + get_user() : User
+  + get_car() : Car
+  + overlaps(start, end) : bool
+  + confirm()
+  + cancel()
 }
-class Car <<entity>> {
+
+class Car {
   id : int
   brand : str
   model : str
@@ -94,30 +88,32 @@ class Car <<entity>> {
   daily_price : float
   hourly_price : float
   category, transmission, fuel_type
+  + get_prices() : (float, float)
+  + matches(filters) : bool
+  + update(data)
 }
-class Branch <<entity>> {
+
+class Branch {
   id : int
   name : str
   address : str
+  + get_name() : str
 }
 
-WebApp ..> AuthService : HTTP
-WebApp ..> ReservationService : HTTP
-WebApp ..> FleetService : HTTP
-
-ReservationService -left-> AuthService : auth
-FleetService -[norank]-> AuthService : auth
+ReservationService -left-> AuthService : token
 ReservationService -right-> NotificationService : on confirm
 NotificationService <|.. EmailNotificationService
 NotificationService <|.. LoggingNotificationService
 
-AuthService --> Database
-ReservationService --> Database
-FleetService --> Database
-
 AuthService ...> User : <<instantiate>>
 ReservationService ...> Reservation : <<instantiate>>
 FleetService ...> Car : <<instantiate>>
+
+' every message in a sequence diagram needs a link between the two classes
+ReservationService ...> Car : get_prices
+ReservationService ...> User : is_admin
+FleetService ...> User : is_admin
+FleetService ...> Branch : get_branch
 
 User "1" -right- "0..*" Reservation : creates >
 Reservation "0..*" -right- "1" Car : for >

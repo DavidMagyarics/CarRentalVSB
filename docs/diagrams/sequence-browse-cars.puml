@@ -4,31 +4,28 @@ skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — Browse & filter cars (UC3)
 actor Customer
-boundary ":WebApp" as Web
-control ":FleetService" as Fleet
-database ":Database" as DB
+participant ":FleetService" as Fleet
+participant "c : Car" as C
+participant "b : Branch" as B
 
-Customer -> Web : showCars()
-Web -> Fleet : get_branches()\n[GET /branches/]
-Fleet -> DB : query(Branch)
-DB --> Fleet : Branch[]
-Fleet --> Web : Branch[] (for the branch filter)
-Web -> Fleet : get_cars()\n[GET /cars/]
-Fleet -> DB : query(Car) ordered by brand, model
-DB --> Fleet : Car[]
-Fleet --> Web : Car[]
-Web --> Customer : car grid (photo, branch,\nprice per day and per hour)
-
-opt choose a filter
-  Customer -> Web : showCars(filters)\n(category, transmission, fuel type,\nprice range, branch)
-  Web -> Fleet : get_cars(filters)\n[GET /cars/?category=...&branch_id=...]
-  Fleet -> DB : query(Car, filters)\n(price range compares the daily price)
-  DB --> Fleet : matching Car[]
-  Fleet --> Web : Car[]
-  alt no car matches
-    Web --> Customer : "Žádná auta neodpovídají zvoleným filtrům."
-  else
-    Web --> Customer : updated car grid
+Customer -> Fleet : get_cars(filters)\n[GET /cars/?category=...&branch_id=...]
+note right of Fleet
+  No filter set = every car.
+  The filters are category, transmission,
+  fuel type, price range and branch.
+end note
+loop for each car of the fleet
+  Fleet -> C : matches(filters)
+  C --> Fleet : true / false
+  opt matches
+    C -> B : get_name()
+    B --> C : branch name
   end
+end
+
+alt no car matches
+  Fleet --> Customer : [] — "Žádná auta neodpovídají\nzvoleným filtrům."
+else
+  Fleet --> Customer : Car[] — photo, branch,\nprice per day and per hour
 end
 @enduml

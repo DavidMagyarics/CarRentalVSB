@@ -4,56 +4,43 @@ skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — Manage fleet (UC9)
 actor Admin
-boundary ":WebApp" as Web
-control ":FleetService" as Fleet
-control ":AuthService" as Auth
-database ":Database" as DB
-entity "c : Car" as C
+participant ":FleetService" as Fleet
+participant "admin : User" as A
+participant "newCar : Car" as N
+participant "c : Car" as C
 
-Admin -> Web : showCars() — "Administrace aut"
-Web -> Fleet : get_cars()\n[GET /cars/]
-Fleet -> DB : query(Car)
-DB --> Fleet : Car[]
-Fleet --> Web : Car[]
-Web --> Admin : fleet table
-
-note over Fleet, Auth
-  Add / edit / delete first call require_admin(token);
+note over Fleet, A
+  Every operation first checks admin.is_admin() —
   a non-admin gets 403.
 end note
 
-alt Add
-  Admin -> Web : saveCar(data)\n(brand, model, plate, prices, ..., branch)
-  Web -> Fleet : create_car(token, data)\n[POST /cars/]
-  Fleet -> Auth : require_admin(token)
-  Auth --> Fleet : admin
-  Fleet -> DB : query(Branch, data.branch_id)
-  DB --> Fleet : branch (404 if none)
-  create C
-  Fleet -> C : <<create>> (data, branch)
-  Fleet -> DB : save(c)
-  Fleet --> Web : 201 Created c
-else Edit
-  Admin -> Web : saveCar(id, changed data)
-  Web -> Fleet : update_car(token, id, data)\n[PUT /cars/{id}]
-  Fleet -> Auth : require_admin(token)
-  Auth --> Fleet : admin
-  Fleet -> DB : query(Car, id)
-  DB --> Fleet : car (404 if none)
-  Fleet -> DB : save(car with the changed fields)
-  Fleet --> Web : 200 OK car
-else Delete
-  Admin -> Web : deleteCar(id)
-  Web --> Admin : "Opravdu smazat ...?"
-  Admin -> Web : confirm
-  Web -> Fleet : delete_car(token, id)\n[DELETE /cars/{id}]
-  Fleet -> Auth : require_admin(token)
-  Auth --> Fleet : admin
-  Fleet -> DB : delete(car)\n(all its reservations are deleted too)
-  Fleet --> Web : 204 No Content
+alt Add a car
+  Admin -> Fleet : create_car(data)\n[POST /cars/]
+  Fleet -> A : is_admin()
+  A --> Fleet : true
+  Fleet -> Fleet : get_branch(data.branch_id)
+  note right of Fleet : b : Branch (404 if it does not exist)
+  create N
+  Fleet -> N : <<create>> (brand, model, plate,\nprices, category, ..., b)
+  Fleet --> Admin : 201 Created newCar
+else Edit a car
+  Admin -> Fleet : update_car(id, data)\n[PUT /cars/{id}]
+  Fleet -> A : is_admin()
+  A --> Fleet : true
+  Fleet -> Fleet : get_car(id)
+  Fleet -> C : update(data)
+  Fleet --> Admin : 200 OK c
+else Delete a car
+  Admin -> Fleet : delete_car(id)\n[DELETE /cars/{id}]
+  Fleet -> A : is_admin()
+  A --> Fleet : true
+  Fleet -> Fleet : get_car(id)
+  Fleet -> C : <<destroy>>
+  destroy C
+  note right of Fleet
+    All reservations of the car
+    are deleted together with it
+  end note
+  Fleet --> Admin : 204 No Content
 end
-
-Web -> Fleet : get_cars() — reload the list
-Fleet --> Web : Car[]
-Web --> Admin : updated fleet list, or error message
 @enduml

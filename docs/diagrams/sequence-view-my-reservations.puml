@@ -4,24 +4,20 @@ skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — View my reservations (UC6)
 actor Customer
-boundary ":WebApp" as Web
-control ":ReservationService" as Res
-control ":AuthService" as Auth
-database ":Database" as DB
+participant ":ReservationService" as Res
+participant ":AuthService" as Auth
+participant "u : User" as U
 
-Customer -> Web : showReservations()
-Web -> Res : get_reservations_for_user(token)\n[GET /reservations/me]
+Customer -> Res : get_reservations_for_user()\n[GET /reservations/me + JWT]
 Res -> Auth : get_current_user(token)
 
 alt no token, or the token is invalid / expired
-  Auth --> Res : 401
-  Res --> Web : 401 Unauthorized
+  Auth --> Res : error
+  Res --> Customer : 401 Unauthorized
 else valid token
-  Auth --> Res : user : User
-  Res -> DB : query(Reservation) where user = user,\nnewest first
-  DB --> Res : Reservation[] (each with its car)
-  Res --> Web : 200 OK Reservation[]
+  Auth --> Res : u
+  Res -> U : get_reservations()
+  U --> Res : Reservation[] (newest first)
+  Res --> Customer : 200 OK Reservation[] — car,\ndates, price, payment, status
 end
-
-Web --> Customer : list — car, dates, price,\npayment method, status
 @enduml

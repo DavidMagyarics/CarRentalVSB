@@ -3,9 +3,9 @@ skinparam backgroundColor white
 skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — Send notification (UC8a, included in UC8)
-control ":ReservationService" as Res
-control ":EmailNotificationService" as Email
-control ":LoggingNotificationService" as Log
+participant ":ReservationService" as Res
+participant ":EmailNotificationService" as Email
+participant ":LoggingNotificationService" as Log
 participant "SMTP server" as SMTP
 actor Customer
 
@@ -15,22 +15,21 @@ note over Res
   is used is decided once, at startup.
 end note
 
-alt SMTP_HOST is set in backend/.env
+alt SMTP is configured (SMTP_HOST)
   Res -> Email : send_confirmation(r, user)
-  Email -> Email : compose the e-mail\n(reservation no., dates, total price)
-  Email -> SMTP : connect, STARTTLS, log in, send
+  Email -> Email : compose the e-mail\n(reservation no., dates, price)
+  Email -> SMTP : send(e-mail)
   alt e-mail sent
     SMTP -> Customer : confirmation e-mail
-    SMTP --> Email : accepted
     Email --> Res : true
   else sending failed
-    SMTP --> Email : error / no connection
+    SMTP --> Email : error
     Email -> Email : log the error\n(r stays CONFIRMED)
     Email --> Res : false
   end
-else no SMTP configured
+else no SMTP
   Res -> Log : send_confirmation(r, user)
-  Log -> Log : write the notification to the log\n(no e-mail is sent)
+  Log -> Log : write the notification to the log
   Log --> Res : true
 end
 @enduml

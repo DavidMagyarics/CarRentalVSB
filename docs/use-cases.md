@@ -68,66 +68,61 @@ picture of the whole system. A sequence diagram shows *one* flow step by
 step in time (e.g. "the admin confirms a reservation"); the class diagram
 shows *every* class whose objects take part in those flows — what each one
 knows (attributes), what it can do (operations) and how the classes are
-connected. The two are kept in sync: every object in a sequence diagram is
-an instance of a class from this diagram, and every message sent to it is
-one of that class's operations.
+linked. The two are kept in sync: every object in a sequence diagram is an
+instance of a class from this diagram, every message sent to it is one of
+that class's operations, and two objects only exchange messages when their
+classes are linked here.
 
-The model is deliberately kept small — the main classes of the system, not
-every file or function in the code — and it follows the
-**boundary – control – entity** split, which also gives the three rows the
-diagram is read in, top to bottom:
+The model deliberately shows only the main classes of the system, not every
+file or function in the code. It is read in two rows:
 
-1. **Boundary — `WebApp`** is the web application the customer and the
-   admin work with (the React frontend). Its public operations are exactly
-   what a user can do — `register`, `login`, `showCars`, `reserveCar`,
-   `cancelReservation`, `confirmReservation`, `saveCar`, … — and it sends
-   every request to one of the services over HTTP. Two private operations
-   run purely in the browser: the opening-hours check of the booking form
-   and the live price estimate.
-2. **Control — the services** hold the business logic. Each one stands for
-   a FastAPI router together with the functions it calls in the backend:
+1. **The services (top row)** carry out the use cases:
    - `AuthService` — registration, login, password hashing and the JWT
-     token; `get_current_user` / `require_admin` check who is calling
-     (UC1, UC2 and every protected request).
+     token; `get_current_user` finds out who is calling (UC1, UC2, UC6).
    - `ReservationService` — creating, confirming and cancelling
      reservations, listing them, the availability check (UC4a) and the
      price calculation (UC4, UC5, UC6, UC8, UC10).
-   - `FleetService` — listing and filtering cars and branches, and adding,
-     editing and deleting cars (UC3, UC9).
+   - `FleetService` — listing and filtering cars, and adding, editing and
+     deleting them (UC3, UC9).
    - `NotificationService` — an **interface** (UC8a): `ReservationService`
      calls it after a successful confirmation without knowing how the
      message is actually sent. The two dashed arrows with a hollow triangle
      show its two implementations — `LoggingNotificationService` (default,
      writes to the log) and `EmailNotificationService` (real e-mail, used
      once SMTP is configured).
-   - `Database` — the SQLite database every service reads from (`query`)
-     and writes to (`save`, `delete`).
-3. **Entity — the domain model**: the four database tables and how they
-   relate, read along the chain: a `User` **creates** 0..* `Reservation`s,
-   each reservation is **for** exactly one `Car`, and each car is **located
-   at** exactly one `Branch`. The allowed values of the important fields
-   are written right next to them (a reservation is always `DRAFT`,
-   `CONFIRMED` or `CANCELLED`; a user is a `CUSTOMER` or an `ADMIN`). A
-   dashed `«instantiate»` arrow shows which service creates new objects of
-   which entity.
+   - `SupportWidget` — the contact panel (UC7); it works only in the
+     browser.
+2. **The domain classes (bottom row)** are the four database tables and how
+   they relate, read along the chain: a `User` **creates** 0..*
+   `Reservation`s, each reservation is **for** exactly one `Car`, and each
+   car is **located at** exactly one `Branch`. Besides their attributes they
+   have the operations the sequence diagrams send to them — e.g. a
+   reservation can `confirm()`, `cancel()` and tell whether it
+   `overlaps(start, end)` another time slot; a car gives its `get_prices()`
+   for the price calculation; a user answers `is_admin()`.
 
-How the model maps to the code: `WebApp` is the React app in `frontend/`
-(its HTTP calls are in `api.ts`); `AuthService`, `ReservationService` and
-`FleetService` are the routers in `backend/app/routers/` together with the
-functions they call in `crud.py`, `auth.py` and `deps.py`;
-`NotificationService` and its two implementations are real classes in
-`notification.py`; the entities are the SQLAlchemy models in `models.py`.
-Operation names on the services are the real function names from the
-backend.
+The dashed arrows between the rows say which service uses or creates
+(`«instantiate»`) which domain object.
+
+How the model maps to the code: the three services are the FastAPI routers
+in `backend/app/routers/` together with the functions they call in
+`crud.py`, `auth.py` and `deps.py` (their operation names are the real
+function names); `NotificationService` and its two implementations are real
+classes in `notification.py`; the domain classes are the SQLAlchemy models
+in `models.py`. The operations of the domain classes (`confirm()`,
+`overlaps()`, …) are how the design model describes what the services do
+with those objects — in the code the services change the fields directly
+(e.g. `reservation.status = CONFIRMED`) and the overlap check is a single
+database query. The React web app and the database are left out of the
+diagrams: they only pass the requests and the data through.
 
 **Example — following one use case through the diagram (UC8, confirm a
-reservation):** the admin calls `WebApp.confirmReservation(id)` →
-`WebApp` sends `ReservationService.confirm_reservation(token, id)`
-(`POST /reservations/{id}/confirm`) → `ReservationService` asks
-`AuthService.require_admin(token)`, loads the `Reservation` from the
-`Database`, re-checks availability and saves it as `CONFIRMED` → it then
-calls `NotificationService.send_confirmation`. The sequence diagram of UC8
-below shows exactly these objects and calls, step by step in time.
+reservation):** the admin calls `ReservationService.confirm_reservation(id)`
+(`POST /reservations/{id}/confirm`) → the service asks the admin's `User`
+object `is_admin()`, loads the `Reservation`, checks its status, re-checks
+availability (UC4a) and calls `confirm()` on it → finally it calls
+`NotificationService.send_confirmation`. The sequence diagram of UC8 below
+shows exactly these objects and calls, step by step in time.
 
 ### How each use case is documented below
 
@@ -145,17 +140,17 @@ at increasing levels of technical detail:
    branch, including every error outcome, eventually merges back into a
    single final step before that end, so no alternative flow is a dead end.
 3. **A sequence diagram** — the same flow as a message exchange between
-   at most five objects of the classes from the class diagram (the web app,
-   the services, the database and, where an object is created, the new
-   entity). The UML icon of each object shows its role — boundary
-   (`:WebApp`), control (`:ReservationService`, `:AuthService`, …),
-   database (`:Database`) or entity (`r : Reservation`) — and every message
-   is one of the receiving class's operations. The call from the web app to
-   the backend also shows the HTTP method and path, and the replies show
-   the HTTP status codes, so the diagram can be checked against the running
-   API (see also [api-design.md](api-design.md)). `ref` frames point to a
-   flow that is drawn in full in another diagram (e.g. UC4a inside UC4 and
-   UC8).
+   a few objects of the classes from the class diagram: the service that
+   carries out the use case and the domain objects it works with (e.g.
+   `:ReservationService`, `c : Car`, `r : Reservation`). Every message is
+   one of the receiving class's operations; `«create»` / `«destroy»` show
+   an object coming into or going out of existence, and `alt`, `opt`,
+   `loop` and `break` frames show the alternative flows. The first message
+   from the actor also shows the HTTP method and path it is sent with, and
+   the replies show the HTTP status codes, so the diagram can be checked
+   against the running API (see also [api-design.md](api-design.md)).
+   `ref` frames point to a flow that is drawn in full in another diagram
+   (e.g. UC4a inside UC4 and UC8).
 
 The activity diagram is the better starting point for explaining a flow to
 a non-technical audience; the sequence diagram is the one to open when

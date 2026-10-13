@@ -4,23 +4,22 @@ skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — Log in (UC2)
 actor "User\n(Customer or Admin)" as User
-boundary ":WebApp" as Web
-control ":AuthService" as Auth
-database ":Database" as DB
+participant ":AuthService" as Auth
+participant "u : User" as U
 
-User -> Web : login(email, password)
-Web -> Auth : authenticate_user(email, password)\n[POST /auth/login]
-Auth -> DB : query(User, email)
-DB --> Auth : u : User | none
-Auth -> Auth : verify_password(password, u.password_hash)
+User -> Auth : authenticate_user(email, password)\n[POST /auth/login]
+Auth -> Auth : get_user_by_email(email)
 
-alt user found and the password matches
-  Auth -> Auth : create_access_token(u)
-  Auth --> Web : 200 OK {token, u}
-  Web -> Web : store the token,\nshow tabs by u.role (admin tabs for ADMIN)
-else unknown e-mail or wrong password
-  Auth --> Web : 401 "Nesprávný e-mail nebo heslo"
+alt no user with this e-mail
+  Auth --> User : 401 "Nesprávný e-mail nebo heslo"
+else user found
+  Auth -> U : check_password(password)
+  U --> Auth : true / false
+  alt password matches
+    Auth -> Auth : create_access_token(u)
+    Auth --> User : 200 OK {token, u}\n(u.role decides which tabs are shown)
+  else wrong password
+    Auth --> User : 401 "Nesprávný e-mail nebo heslo"
+  end
 end
-
-Web --> User : logged in, or error message
 @enduml

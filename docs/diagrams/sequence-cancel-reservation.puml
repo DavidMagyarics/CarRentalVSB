@@ -4,33 +4,35 @@ skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — Cancel reservation (UC5)
 actor "User\n(Customer or Admin)" as User
-boundary ":WebApp" as Web
-control ":ReservationService" as Res
-control ":AuthService" as Auth
-database ":Database" as DB
-entity "r : Reservation" as R
+participant ":ReservationService" as Res
+participant "u : User" as U
+participant "r : Reservation" as R
 
-User -> Web : cancelReservation(id)
-Web -> Res : cancel_reservation(token, id)\n[POST /reservations/{id}/cancel]
-Res -> Auth : get_current_user(token)
-Auth --> Res : user : User
-Res -> DB : query(Reservation, id)
-DB --> Res : r (404 if none)
-Res -> R : get owner, status, start_date
-R --> Res : values
+User -> Res : cancel_reservation(id)\n[POST /reservations/{id}/cancel]
+Res -> Res : get_reservation(id)
+note right of Res
+  r : Reservation (404 if it does not exist);
+  u is the logged-in user (see UC6)
+end note
+Res -> R : get_user()
+R --> Res : owner
+Res -> U : is_admin()
+U --> Res : true / false
 
-alt r is not the user's and the user is not an admin
-  Res --> Web : 403 "Tato rezervace vám nepatří"
-else r.status = CANCELLED
-  Res --> Web : 409 "Rezervace je již zrušena"
-else r.status = CONFIRMED and r.start_date has passed
-  Res --> Web : 409 "Potvrzenou rezervaci nelze zrušit\npoté, co již začal termín výpůjčky"
-else can be cancelled
-  Res -> R : status = CANCELLED
-  Res -> DB : save(r)
-  Res --> Web : 200 OK r
-  Web -> Web : reload the list (UC6 / UC10)
+alt u is not the owner and not an admin
+  Res --> User : 403 "Tato rezervace vám nepatří"
+else owner or admin
+  Res -> R : cancel()
+  alt already CANCELLED
+    R --> Res : error
+    Res --> User : 409 "Rezervace je již zrušena"
+  else CONFIRMED and the rental has already started
+    R --> Res : error
+    Res --> User : 409 "Potvrzenou rezervaci nelze zrušit\npoté, co již začal termín výpůjčky"
+  else
+    R -> R : status = CANCELLED
+    R --> Res : ok
+    Res --> User : 200 OK r — the slot is free again
+  end
 end
-
-Web --> User : reservation cancelled, or error message
 @enduml

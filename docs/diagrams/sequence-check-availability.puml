@@ -3,27 +3,23 @@ skinparam backgroundColor white
 skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — Check availability (UC4a, included in UC4 and UC8)
-control ":ReservationService" as Res
-database ":Database" as DB
+participant ":ReservationService" as Res
+participant "other : Reservation" as O
 
-note over Res
-  Called from UC4 (while the customer picks dates
-  and again on submit) and from UC8 (before confirming)
-end note
-
-[-> Res : is_car_available(car, start, end)
-Res -> DB : query(Reservation) where\n car = car,\n status = CONFIRMED,\n start_date < end,\n end_date > start
-note right of DB
-  DRAFT and CANCELLED
-  reservations are ignored —
-  only a CONFIRMED one
-  blocks the slot
-end note
-DB --> Res : overlapping : Reservation | none
-
-alt no overlapping reservation
-  [<-- Res : true (car available)
-else an overlapping CONFIRMED reservation exists
-  [<-- Res : false (car not available)
+[-> Res : is_car_available(c, start, end)
+loop for each CONFIRMED reservation of car c
+  Res -> O : overlaps(start, end)
+  O --> Res : true / false
+  break overlaps
+    [<-- Res : false (car not available)
+  end
 end
+[<-- Res : true (car available)
+
+note over Res, O
+  DRAFT and CANCELLED reservations are not checked —
+  only a CONFIRMED one blocks the slot.
+  In the code this is one database query
+  (crud.is_car_available).
+end note
 @enduml

@@ -4,47 +4,42 @@ skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — Confirm reservation (UC8)
 actor Admin
-boundary ":WebApp" as Web
-control ":ReservationService" as Res
-control ":AuthService" as Auth
-database ":Database" as DB
-control ":NotificationService" as NS
+participant ":ReservationService" as Res
+participant "admin : User" as A
+participant "r : Reservation" as R
+participant ":NotificationService" as NS
 
-Admin -> Web : confirmReservation(id)
-Web -> Res : confirm_reservation(token, id)\n[POST /reservations/{id}/confirm]
-Res -> Auth : require_admin(token)
+Admin -> Res : confirm_reservation(id)\n[POST /reservations/{id}/confirm]
+Res -> A : is_admin()
+A --> Res : true / false
 
 alt not an admin
-  Auth --> Res : 403
-  Res --> Web : 403 "Vyžadována jsou práva administrátora"
+  Res --> Admin : 403 "Vyžadována jsou práva administrátora"
 else admin
-  Auth --> Res : admin : User
-  Res -> DB : query(Reservation, id)
-  DB --> Res : r (404 if none)
-
-  alt r.status ≠ DRAFT
-    Res --> Web : 409 "Rezervaci ve stavu ... nelze potvrdit"
-  else r is still DRAFT
+  Res -> Res : get_reservation(id)
+  Res -> R : get_status()
+  R --> Res : status
+  alt status ≠ DRAFT
+    Res --> Admin : 409 "Rezervaci ve stavu ... nelze potvrdit"
+  else DRAFT
     Res -> Res : is_car_available(r.car, r.start_date, r.end_date)
-    ref over Res, DB : UC4a Check availability
+    ref over Res, R : UC4a Check availability
     alt slot taken in the meantime
-      Res --> Web : 409 "Auto je v tomto termínu\nuž jinou rezervací potvrzeno"
+      Res --> Admin : 409 "Auto je v tomto termínu\nuž jinou rezervací potvrzeno"
     else car still available
-      Res -> DB : save(r) with r.status = CONFIRMED
+      Res -> R : confirm()
+      R -> R : status = CONFIRMED
       Res -> NS : send_confirmation(r, r.user)
       ref over NS : UC8a Send notification
-      NS --> Res : true / false\n(a failure is only logged)
-      Res --> Web : 200 OK r
-      Web -> Web : reload all reservations (UC10)
+      NS --> Res : true / false (a failure is only logged)
+      Res --> Admin : 200 OK r
     end
   end
 end
 
-Web --> Admin : reservation confirmed, or error message
-
-note over Res, DB
-  No transactional locking: two confirmations at the
-  same moment could both pass the re-check
+note over Res, R
+  No locking: two confirmations at the same
+  moment could both pass the re-check
   (known risk, see intent-and-change.md).
 end note
 @enduml
