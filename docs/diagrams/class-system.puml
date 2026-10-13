@@ -1,7 +1,7 @@
 @startuml class-system
 skinparam backgroundColor white
 skinparam classAttributeIconSize 0
-skinparam linetype ortho
+skinparam linetype polyline
 skinparam nodesep 60
 skinparam ranksep 80
 skinparam class {
@@ -100,10 +100,11 @@ class Branch {
   + get_name() : str
 }
 
+ReservationService -up-> NotificationService : on confirm
+NotificationService <|.left. EmailNotificationService
+NotificationService <|.right. LoggingNotificationService
 ReservationService -left-> AuthService : token
-ReservationService -right-> NotificationService : on confirm
-NotificationService <|.. EmailNotificationService
-NotificationService <|.. LoggingNotificationService
+ReservationService -[hidden]right- FleetService
 
 AuthService ...> User : <<instantiate>>
 ReservationService ...> Reservation : <<instantiate>>
@@ -112,7 +113,7 @@ FleetService ...> Car : <<instantiate>>
 ' every message in a sequence diagram needs a link between the two classes
 ReservationService ...> Car : get_prices
 ReservationService ...> User : is_admin
-FleetService ...> User : is_admin
+FleetService -[norank].> User : is_admin
 FleetService ...> Branch : get_branch
 
 User "1" -right- "0..*" Reservation : creates >
