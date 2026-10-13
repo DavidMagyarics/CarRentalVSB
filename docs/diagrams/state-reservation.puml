@@ -1,0 +1,50 @@
+@startuml state-reservation
+skinparam backgroundColor white
+skinparam state {
+  BackgroundColor #FAFAFA
+  BorderColor #555555
+}
+title State diagram — Reservation
+
+[*] --> DRAFT : create_reservation(car, start, end, payment)\n[within opening hours and car available]\n(UC4)
+
+state DRAFT {
+}
+DRAFT : entry / total_price = calculate_price(car, start, end)
+DRAFT : do / wait for the admin's approval
+DRAFT : confirm() [slot taken by another\nCONFIRMED reservation] / reject (409)
+
+state CONFIRMED {
+  state "Before pickup" as Before
+  state "Rental started" as Started
+  [*] --> Before
+  Before --> Started : when (now >= start_date)
+  Started : cancel() / reject (409)
+}
+CONFIRMED : entry / send_confirmation(r, user) (UC8a)
+CONFIRMED : do / block the car for [start_date, end_date)
+CONFIRMED : confirm() / reject (409)
+
+state CANCELLED {
+}
+CANCELLED : entry / the time slot is free again
+CANCELLED : confirm() / reject (409)
+CANCELLED : cancel() / reject (409)
+
+DRAFT --> CONFIRMED : confirm()\n[admin and car still available]\n(UC8)
+DRAFT --> CANCELLED : cancel()\n[owner or admin]\n(UC5)
+Before --> CANCELLED : cancel()\n[owner or admin]\n(UC5)
+
+CANCELLED --> [*]
+
+note bottom of CONFIRMED
+  "Before pickup" and "Rental started" are not
+  stored — they follow from the current time.
+  The stored status stays CONFIRMED.
+end note
+
+note bottom of CANCELLED
+  In any state: when the car is deleted (UC9),
+  the reservation is deleted together with it.
+end note
+@enduml

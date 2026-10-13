@@ -30,7 +30,8 @@ themselves are never stored or transmitted, this is a mock payment step).
 **Reservation states:** `DRAFT → CONFIRMED → (terminal)`, `DRAFT → CANCELLED`,
 `CONFIRMED → CANCELLED` (only before `start_date`, see the domain-specific
 rule in [intent-and-change.md](intent-and-change.md)). `DRAFT → CONFIRMED` is
-an **admin-only** transition — see UC8 in [use-cases.md](use-cases.md).
+an **admin-only** transition — see UC8 in [use-cases.md](use-cases.md),
+and the full life cycle in its [state diagram](use-cases.md#state-diagram--reservation).
 
 **Consistency rule (common business rule):** for a given `car_id`, the
 database must never contain two reservations in `CONFIRMED` state with
