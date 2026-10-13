@@ -1,30 +1,50 @@
 @startuml sequence-check-availability
 skinparam backgroundColor white
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 240
+hide footbox
 title Sequence — Check availability (UC4a, included in UC4 and UC8)
 
-actor "Customer / Admin" as User
-participant "Frontend\n(React SPA)" as FE
-participant "REST API\n(FastAPI)" as API
-participant "Availability check\n(crud.is_car_available)" as AV
-database "Database\n(SQLite)" as DB
+box "Caller (UC4 or UC8)" #FFF3E0
+  participant "caller\n(:CarsRouter, :ReservationsRouter\nor :ReservationService)" as Caller
+end box
+box "Services" #E8F5E9
+  participant ":ReservationService" as ResService
+end box
+box "Persistence" #F3E5F5
+  participant "db : Session" as DB
+end box
 
-User -> FE: Pick dates in the booking form or submit it (UC4),\nor click "Confirm" (UC8)
-FE -> API: GET /cars/{id}/availability, POST /reservations/\nor POST /reservations/{id}/confirm
-API -> AV: is_car_available(car_id, start, end)
-AV -> DB: SELECT first reservation of the car\nWHERE status = CONFIRMED\nAND start_date < requested end\nAND end_date > requested start
+note over Caller
+  Called from three places:
+  1. CarsRouter.check_availability — live check while the
+     customer picks dates (UC4)
+  2. ReservationsRouter.create_reservation — right before a
+     reservation is created (UC4)
+  3. ReservationService.confirm_reservation — right before
+     the admin confirms a reservation (UC8)
+end note
+
+Caller -> ResService : is_car_available(car_id, start_date, end_date)
+ResService -> DB : query(Reservation).filter(\n  car_id == car_id,\n  status == CONFIRMED,\n  start_date < requested end_date,\n  end_date > requested start_date\n).first()
 note right of DB
   DRAFT and CANCELLED
-  reservations are ignored
+  reservations are ignored —
+  only a CONFIRMED one
+  blocks the slot
 end note
-DB --> AV: reservation / none
+DB --> ResService : overlapping : Reservation | None
 
-alt no overlapping reservation
-  AV --> API: true (car available)
-else overlapping CONFIRMED reservation found
-  AV --> API: false (car not available)
+alt overlapping is None
+  ResService --> Caller : true (car available)
+else an overlapping CONFIRMED reservation exists
+  ResService --> Caller : false (car not available)
 end
 
-API -> API: Continue the calling use case\n(UC4 / UC8) with the result
-API --> FE: Result — {available: true / false} for the\nform check, 409 "slot taken" on submit / confirm
-FE --> User: See result\n(slot free and the flow continues,\nor "slot already taken" message)
+note over Caller
+  What the caller does with the result:
+  • check_availability → 200 OK {available: true / false}
+  • create_reservation → false means 409 Conflict
+  • confirm_reservation → false raises DomainError → 409 Conflict
+end note
 @enduml

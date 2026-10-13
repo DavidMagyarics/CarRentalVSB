@@ -66,57 +66,78 @@ and filterable in UC3, and required when managing the fleet in UC9) — see
 The class diagram puts all the sequence diagrams below together into one
 picture of the whole system. A sequence diagram shows *one* flow step by
 step in time (e.g. "the admin confirms a reservation"); the class diagram
-shows *every* participant of all those flows at once — what each part is
-responsible for and which part calls which. It is deliberately simplified so
-it stays readable: it shows the main parts and the main calls between them,
-not every function in the code.
+shows *every* object that takes part in any of those flows — what each one
+is responsible for and which one calls which. The two are kept in sync:
+every lifeline in a sequence diagram is a class from this diagram, and
+every message sent to it is one of that class's methods, named exactly as
+in the code.
 
-It is read **top to bottom, in four layers**, and arrows only ever point
-downwards — a layer uses the one below it, never the other way round:
+It is read **top to bottom, in four layers** (the same four coloured boxes
+that group the lifelines in every sequence diagram), and arrows only ever
+point downwards — a layer uses the one below it, never the other way round:
 
-1. **Frontend (React)** — `ApiClient` (`api.ts`) is the single place the web
-   app talks to the backend from. Every screen (car list, booking form, "My
-   reservations", the admin pages) calls one of its methods; nothing else in
-   the frontend sends requests.
-2. **REST API** — three routers receive those HTTP requests, one per area:
-   accounts (`AuthRouter`), reservations (`ReservationsRouter`) and the fleet
-   — cars and branches (`CarsRouter`). Each box lists its real endpoints;
-   `(admin)` marks the ones only an admin may call. A router only checks who
-   is calling and what was sent, then passes the work on.
-3. **Services** — the business logic itself:
-   - `AuthService` — registering, logging in, hashing passwords and issuing
-     the JWT token (UC1, UC2).
-   - `ReservationService` — creating a reservation, the availability check
-     (UC4a), the price calculation (F17), and confirming or cancelling
-     (UC4, UC5, UC8).
+1. **Frontend (React)** — `App` (`App.tsx`) renders every screen component
+   (filled-diamond arrows): `Navbar`, `CarFilters`, `CarGrid` with its
+   `CarCard`s, the `ReservationForm`, `ReservationList`,
+   `AdminReservations`, `AdminCars`, `AuthForms` and the `SupportWidget`.
+   `AuthContext` keeps the logged-in user and the JWT token, `Toast` shows
+   success/error messages and `Pricing` computes the live price estimate.
+   `ApiClient` (`api.ts`) is the single place the web app talks to the
+   backend from — every component that needs data calls one of its
+   methods; nothing else in the frontend sends requests.
+2. **REST API (FastAPI)** — one router per area receives the HTTP requests:
+   accounts (`AuthRouter`), reservations (`ReservationsRouter`), cars
+   (`CarsRouter`), branches (`BranchesRouter`) and users (`UsersRouter`).
+   Every method is listed with its real name and, in brackets, the HTTP
+   method and path it is served on; `«admin»` marks the ones only an admin
+   may call. `Deps` (`deps.py`) is what checks the JWT token
+   (`get_current_user`) and the admin role (`require_admin`) before a
+   protected method runs. The **Schemas** box holds the request/response
+   objects FastAPI builds and validates from the JSON — e.g.
+   `ReservationCreate` re-checks the opening hours on the server.
+3. **Services (business logic)**:
+   - `AuthService` — creating users, logging in, hashing and verifying
+     passwords, issuing and decoding the JWT token (UC1, UC2).
+   - `ReservationService` — loading reservations, the availability check
+     (UC4a), the price calculation (F17), and creating, confirming or
+     cancelling a reservation (UC4, UC5, UC6, UC8, UC10).
    - `FleetService` — listing and filtering cars, and adding, editing and
      deleting cars and branches (UC3, UC9).
+   - `DomainError` — the exception raised when a business rule is broken;
+     the router turns it into `409 Conflict`.
    - `NotificationService` — an **interface** (UC8a): `ReservationsRouter`
      calls it after a successful confirmation without knowing how the
      message is actually sent. The two dashed arrows show its two
      implementations — `LoggingNotificationService` (default, writes to the
-     log) and `EmailNotificationService` (real e-mail, used once SMTP is
-     configured).
-4. **Domain model** — the four database tables and how they relate, read
-   along the chain: a `User` **creates** 0..* `Reservation`s, each
-   reservation is **for** exactly one `Car`, and each car is **located at**
-   exactly one `Branch`. The allowed values of the important fields are
-   written right next to them (a reservation is always `DRAFT`, `CONFIRMED`
-   or `CANCELLED`; a user is a `CUSTOMER` or an `ADMIN`).
+     log) and `EmailNotificationService` (real e-mail through `SMTP`, used
+     once SMTP is configured).
+4. **Persistence (SQLAlchemy + SQLite)** — `Session` is the database
+   session every service method receives (`query`, `add`, `commit`, …), and
+   the four domain classes are the database tables, read along the chain:
+   a `User` **creates** 0..* `Reservation`s, each reservation is **for**
+   exactly one `Car`, and each car is **located at** exactly one `Branch`.
+   The allowed values of the important fields are written right next to
+   them (a reservation is always `DRAFT`, `CONFIRMED` or `CANCELLED`; a user
+   is a `CUSTOMER` or an `ADMIN`).
 
 The small `<<…>>` label above each class name says which source file it
-lives in. The backend is written in Python as modules of functions rather
-than classes, so the three "Service" classes are logical groups of the
-functions in `crud.py` and `auth.py` — e.g. everything about reservations in
-`crud.py` is shown as `ReservationService`.
+lives in. Two simplifications keep the diagram readable: the backend is
+written in Python as modules of functions rather than classes, so the
+three "Service" classes are logical groups of the functions in `crud.py`
+and `auth.py` (e.g. everything about reservations in `crud.py` is shown as
+`ReservationService`); and the `db : Session` parameter every service
+function takes is left out of the method signatures. React components are
+functions too — their "methods" are the event handlers defined inside them.
 
 **Example — following one use case through the diagram (UC8, confirm a
-reservation):** the admin's click goes through `ApiClient.confirmReservation`
-→ `POST /reservations/{id}/confirm` in `ReservationsRouter` →
-`ReservationService.confirm_reservation`, which re-checks availability and
-changes the `Reservation`'s status to `CONFIRMED` → `ReservationsRouter`
-then calls `NotificationService.send_confirmation`. The sequence diagram of
-UC8 below shows exactly this path, step by step in time.
+reservation):** the admin's click in `AdminReservations` calls
+`ApiClient.confirmReservation` → `POST /reservations/{id}/confirm` runs
+`ReservationsRouter.confirm_reservation`, which first asks `Deps.require_admin`
+→ `ReservationService.confirm_reservation` re-checks availability and sets
+the `Reservation`'s status to `CONFIRMED` through the `Session` →
+`ReservationsRouter` then calls `NotificationService.send_confirmation`. The
+sequence diagram of UC8 below shows exactly these objects and calls, step by
+step in time.
 
 ### How each use case is documented below
 
@@ -133,12 +154,18 @@ at increasing levels of technical detail:
    ...). Every diagram has exactly one start node and one end node; every
    branch, including every error outcome, eventually merges back into a
    single final step before that end, so no alternative flow is a dead end.
-3. **A sequence diagram** — the same flow as a left-to-right message
-   exchange between the actor, the frontend (React SPA), the REST API
-   (FastAPI), the database and, where relevant, the Notification Service —
-   with the literal HTTP method, path and status code of every call, so it
-   can be checked directly against the running API (see also
-   [api-design.md](api-design.md)).
+3. **A sequence diagram** — the same flow as a message exchange between
+   the concrete objects that take part in it, grouped into the four layers
+   of the class diagram (Frontend, REST API, Services, Persistence). Every
+   lifeline is an object of a class from the class diagram (e.g.
+   `:ReservationForm`, `:ApiClient`, `:ReservationsRouter`,
+   `:ReservationService`, `db : Session`, `r : Reservation`) and every
+   message is a real method call, named as in the code. The call that
+   crosses from the frontend to the backend also shows the literal HTTP
+   method and path, and the replies show the HTTP status codes, so the
+   diagram can be checked directly against the running API (see also
+   [api-design.md](api-design.md)). `ref` frames point to a flow that is
+   drawn in full in another diagram (e.g. UC4a inside UC4 and UC8).
 
 The activity diagram is the better starting point for explaining a flow to
 a non-technical audience; the sequence diagram is the one to open when

@@ -1,17 +1,57 @@
 @startuml sequence-view-my-reservations
 skinparam backgroundColor white
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+hide footbox
 title Sequence — View my reservations (UC6)
 
 actor Customer
-participant "Frontend\n(React SPA)" as FE
-participant "REST API\n(FastAPI)" as API
-database "Database\n(SQLite)" as DB
+box "Frontend (React)" #E3F2FD
+  participant ":Navbar" as Navbar
+  participant ":App" as App
+  participant ":ReservationList" as List
+  participant ":ApiClient" as ApiClient
+end box
+box "REST API (FastAPI)" #FFF3E0
+  participant ":ReservationsRouter" as ResRouter
+  participant ":Deps" as Deps
+end box
+box "Services" #E8F5E9
+  participant ":AuthService" as AuthService
+  participant ":ReservationService" as ResService
+end box
+box "Persistence" #F3E5F5
+  participant "db : Session" as DB
+end box
 
-Customer -> FE: Open "My reservations"
-FE -> API: GET /reservations/me (JWT)
-API -> API: Identify the user from the JWT
-API -> DB: SELECT reservations\nWHERE user_id = logged-in user\n(newest first)
-DB --> API: reservations (with car)
-API --> FE: 200 OK [reservations]
-FE --> Customer: See list — car thumbnail,\ndates, price, payment method, status
+Customer -> Navbar : click "Moje rezervace"
+Navbar -> App : onTabChange("my-reservations")
+App -> App : loadMyReservations()
+App -> ApiClient : fetchMyReservations(token)
+ApiClient -> ResRouter : list_my_reservations()\n[HTTP GET /reservations/me + JWT]
+
+group JWT check — the same in every protected endpoint
+  ResRouter -> Deps : get_current_user(credentials)
+  Deps -> AuthService : decode_access_token(token)
+  AuthService --> Deps : user_id | None
+  Deps -> AuthService : get_user(user_id)
+  AuthService -> DB : query(User).filter(id).first()
+  DB --> AuthService : u | None
+  AuthService --> Deps : u | None
+  alt no token, invalid / expired token, or user not found
+    Deps --> ResRouter : HTTPException
+    ResRouter --> ApiClient : 401 Unauthorized
+  else valid
+    Deps --> ResRouter : current_user = u
+  end
+end
+
+ResRouter -> ResService : get_reservations_for_user(current_user.id)
+ResService -> DB : query(Reservation)\n.filter(user_id == current_user.id)\n.order_by(id desc).all()
+DB --> ResService : Reservation[] (each with its car)
+ResService --> ResRouter : Reservation[]
+ResRouter --> ApiClient : 200 OK [reservations]
+ApiClient --> App : Reservation[]
+App -> List : render(reservations, onChanged = loadMyReservations)
+List --> Customer : see list — car thumbnail,\ndates, price, payment method, status
 @enduml

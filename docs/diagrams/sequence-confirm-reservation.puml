@@ -1,46 +1,86 @@
 @startuml sequence-confirm-reservation
 skinparam backgroundColor white
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+hide footbox
 title Sequence — Confirm reservation (UC8)
 
 actor Admin
-participant "Frontend\n(React SPA)" as FE
-participant "REST API\n(FastAPI)" as API
-database "Database\n(SQLite)" as DB
-participant "Notification\nService" as NS
+box "Frontend (React)" #E3F2FD
+  participant ":App" as App
+  participant ":AdminReservations" as AdminRes
+  participant ":Toast" as Toast
+  participant ":ApiClient" as ApiClient
+end box
+box "REST API (FastAPI)" #FFF3E0
+  participant ":ReservationsRouter" as ResRouter
+  participant ":Deps" as Deps
+end box
+box "Services" #E8F5E9
+  participant ":ReservationService" as ResService
+  participant "notification_service\n: NotificationService" as NS
+end box
+box "Persistence" #F3E5F5
+  participant "db : Session" as DB
+  participant "r : Reservation" as R
+end box
 
-Admin -> FE: Open "All reservations"
-Admin -> FE: Click "Confirm" on a DRAFT reservation
-FE -> API: POST /reservations/{id}/confirm (JWT)
-note right of API
-  Admin-only endpoint —
-  a non-admin gets 403
-end note
-API -> DB: Load the reservation
-DB --> API: reservation
+Admin -> AdminRes : click "Potvrdit" on a DRAFT reservation
+AdminRes -> AdminRes : act(id, confirmReservation,\n"Rezervace byla potvrzena.")
+AdminRes -> ApiClient : confirmReservation(token, id)
+ApiClient -> ResRouter : confirm_reservation(id)\n[HTTP POST /reservations/{id}/confirm + JWT]
+ResRouter -> Deps : require_admin(get_current_user(token))
 
-alt reservation is not DRAFT anymore
-  API --> FE: 409 Conflict\n"Rezervaci ve stavu ... nelze potvrdit"
-else still DRAFT
-  API -> DB: Check availability again (UC4a) —\nany overlapping CONFIRMED reservation?
-  DB --> API: reservation / none
-  alt slot taken in the meantime
-    API --> FE: 409 Conflict\n"Auto je v tomto termínu už\njinou rezervací potvrzeno"
-  else car still available
-    API -> DB: UPDATE status = CONFIRMED (commit)
-    DB --> API: reservation
-    API -> NS: send_confirmation(reservation, customer)\n(UC8a)
-    NS --> API: sent / failed (a failure is only logged)
-    API --> FE: 200 OK {reservation}
-    FE -> API: Reload the list (GET /reservations/)
-    API --> FE: 200 OK [reservations]
+alt not an admin
+  Deps --> ResRouter : HTTPException
+  ResRouter --> ApiClient : 403 Forbidden\n"Vyžadována jsou práva administrátora"
+  ApiClient --> AdminRes : throw Error(detail)
+  AdminRes -> Toast : show(detail, "error")
+else admin
+  Deps --> ResRouter : admin : User
+  ResRouter -> ResService : get_reservation(id)
+  ResService -> DB : query(Reservation).filter(id).first()
+  DB --> ResService : r
+  ResService --> ResRouter : r (404 if None)
+  ResRouter -> ResService : confirm_reservation(id)
+  ResService -> ResService : get_reservation(id)
+  ResService -> R : read status
+  R --> ResService : status
+
+  alt status != DRAFT
+    ResService --> ResRouter : raise DomainError\n"Rezervaci ve stavu ... nelze potvrdit"
+    ResRouter --> ApiClient : 409 Conflict
+    ApiClient --> AdminRes : throw Error(detail)
+    AdminRes -> Toast : show(detail, "error")
+  else still DRAFT
+    ResService -> ResService : is_car_available(r.car_id,\nr.start_date, r.end_date)
+    ref over ResService, DB : UC4a Check availability
+    alt slot taken in the meantime (false)
+      ResService --> ResRouter : raise DomainError\n"Auto je v tomto termínu už\njinou rezervací potvrzeno"
+      ResRouter --> ApiClient : 409 Conflict
+      ApiClient --> AdminRes : throw Error(detail)
+      AdminRes -> Toast : show(detail, "error")
+    else car still available (true)
+      ResService -> R : status = CONFIRMED
+      ResService -> DB : commit(), refresh(r)
+      ResService --> ResRouter : r
+      ResRouter -> NS : send_confirmation(r, r.user)
+      ref over NS : UC8a Send notification
+      NS --> ResRouter : true / false (a failure is only logged)
+      ResRouter --> ApiClient : 200 OK {reservation}
+      ApiClient --> AdminRes : Reservation
+      AdminRes -> Toast : show("Rezervace byla potvrzena.", "success")
+      AdminRes -> App : onChanged() → loadAllReservations()
+      ref over App, DB : UC10 View all reservations
+    end
   end
 end
 
-FE --> Admin: See result\n(confirmed, or error message)
+AdminRes --> Admin : see result\n(confirmed, or error message)
 
-note over API, DB
-  Without transactional locking, two confirmations
-  running at the same moment could both pass
-  the re-check (known risk, see intent-and-change.md).
+note over ResService, DB
+  No transactional locking: two confirmations running
+  at the same moment could both pass the re-check
+  (known risk, see intent-and-change.md).
 end note
 @enduml

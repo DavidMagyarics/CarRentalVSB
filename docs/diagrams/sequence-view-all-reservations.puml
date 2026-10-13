@@ -1,20 +1,60 @@
 @startuml sequence-view-all-reservations
 skinparam backgroundColor white
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+hide footbox
 title Sequence — View all reservations (UC10)
 
 actor Admin
-participant "Frontend\n(React SPA)" as FE
-participant "REST API\n(FastAPI)" as API
-database "Database\n(SQLite)" as DB
+box "Frontend (React)" #E3F2FD
+  participant ":Navbar" as Navbar
+  participant ":App" as App
+  participant ":AdminReservations" as AdminRes
+  participant ":ApiClient" as ApiClient
+end box
+box "REST API (FastAPI)" #FFF3E0
+  participant ":ReservationsRouter" as ResRouter
+  participant ":Deps" as Deps
+end box
+box "Services" #E8F5E9
+  participant ":AuthService" as AuthService
+  participant ":ReservationService" as ResService
+end box
+box "Persistence" #F3E5F5
+  participant "db : Session" as DB
+  participant "u : User" as U
+end box
 
-Admin -> FE: Open "All reservations"
-FE -> API: GET /reservations/ (JWT)
-note right of API
-  Admin-only endpoint —
-  a non-admin gets 403
-end note
-API -> DB: SELECT all reservations\n(every customer, newest first)
-DB --> API: reservations (with car and customer)
-API --> FE: 200 OK [reservations]
-FE --> Admin: See table — car, customer name & e-mail,\ndates, price, payment method, status
+Admin -> Navbar : click "Všechny rezervace"
+Navbar -> App : onTabChange("admin-reservations")
+App -> App : loadAllReservations()
+App -> ApiClient : fetchAllReservations(token)
+ApiClient -> ResRouter : list_all_reservations()\n[HTTP GET /reservations/ + JWT]
+
+group admin check — the same in every admin-only endpoint
+  ResRouter -> Deps : require_admin(get_current_user(credentials))
+  Deps -> AuthService : decode_access_token(token)
+  AuthService --> Deps : user_id
+  Deps -> AuthService : get_user(user_id)
+  AuthService -> DB : query(User).filter(id).first()
+  DB --> AuthService : u
+  AuthService --> Deps : u (401 if the token or user is invalid)
+  Deps -> U : read role
+  U --> Deps : role
+  alt role != ADMIN
+    Deps --> ResRouter : HTTPException
+    ResRouter --> ApiClient : 403 Forbidden\n"Vyžadována jsou práva administrátora"
+  else role == ADMIN
+    Deps --> ResRouter : admin = u
+  end
+end
+
+ResRouter -> ResService : get_reservations()
+ResService -> DB : query(Reservation).order_by(id desc).all()
+DB --> ResService : Reservation[] (every customer,\neach with its car and user)
+ResService --> ResRouter : Reservation[]
+ResRouter --> ApiClient : 200 OK [reservations]
+ApiClient --> App : Reservation[]
+App -> AdminRes : render(reservations, onChanged = loadAllReservations)
+AdminRes --> Admin : see table — car, customer name & e-mail,\ndates, price, payment method, status,\n"Potvrdit" (UC8) / "Zrušit" (UC5)
 @enduml

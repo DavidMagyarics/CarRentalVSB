@@ -1,26 +1,68 @@
 @startuml sequence-browse-cars
 skinparam backgroundColor white
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+hide footbox
 title Sequence — Browse & filter cars (UC3)
 
 actor Customer
-participant "Frontend\n(React SPA)" as FE
-participant "REST API\n(FastAPI)" as API
-database "Database\n(SQLite)" as DB
+box "Frontend (React)" #E3F2FD
+  participant ":App" as App
+  participant ":CarFilters" as CarFilters
+  participant ":CarGrid" as CarGrid
+  participant ":ApiClient" as ApiClient
+end box
+box "REST API (FastAPI)" #FFF3E0
+  participant ":BranchesRouter" as BranchesRouter
+  participant ":CarsRouter" as CarsRouter
+end box
+box "Services" #E8F5E9
+  participant ":FleetService" as FleetService
+end box
+box "Persistence" #F3E5F5
+  participant "db : Session" as DB
+end box
 
-Customer -> FE: Open the app
-FE -> API: GET /cars/
-API -> DB: SELECT all cars\n(ordered by brand, model)
-DB --> API: cars
-API --> FE: 200 OK [cars]
-FE --> Customer: Car grid\n(photo, branch, price/day, price/hour, specs)
+Customer -> App : open the app
+App -> ApiClient : fetchBranches()
+ApiClient -> BranchesRouter : list_branches()\n[HTTP GET /branches/]
+BranchesRouter -> FleetService : get_branches()
+FleetService -> DB : query(Branch).order_by(name).all()
+DB --> FleetService : Branch[]
+FleetService --> BranchesRouter : Branch[]
+BranchesRouter --> ApiClient : 200 OK [branches]
+ApiClient --> App : Branch[]
+App -> CarFilters : render(filters, branches)
+
+App -> ApiClient : fetchCars({})
+ApiClient -> CarsRouter : list_cars()\n[HTTP GET /cars/]
+CarsRouter -> FleetService : get_cars()
+FleetService -> DB : query(Car).order_by(brand, model).all()
+DB --> FleetService : Car[]
+FleetService --> CarsRouter : Car[]
+CarsRouter --> ApiClient : 200 OK [cars]
+ApiClient --> App : Car[]
+App -> CarGrid : render(cars)
+CarGrid --> Customer : one CarCard per car\n(photo, branch, price/day, price/hour, specs)
 
 opt apply a filter
-  Customer -> FE: Choose category, transmission,\nfuel type, price range or branch (F11)
-  FE -> API: GET /cars/?category=...&transmission=...\n&fuel_type=...&min_price=...&max_price=...&branch_id=...
-  API -> DB: SELECT cars matching the filters\n(price range compares the daily price)
-  DB --> API: matching cars
-  API --> FE: 200 OK [cars]
+  Customer -> CarFilters : choose category, transmission,\nfuel type, price range or branch (F11)
+  CarFilters -> App : onChange(filters) → setFilters(filters)
+  App -> App : wait 250 ms (debounce)
+  App -> ApiClient : fetchCars(filters)
+  ApiClient -> CarsRouter : list_cars(category, transmission, fuel_type,\nmin_price, max_price, branch_id)\n[HTTP GET /cars/?category=...&branch_id=...]
+  CarsRouter -> FleetService : get_cars(filters)
+  FleetService -> DB : query(Car).filter(...)\n(price range compares daily_price)
+  DB --> FleetService : matching Car[]
+  FleetService --> CarsRouter : Car[]
+  CarsRouter --> ApiClient : 200 OK [cars]
+  ApiClient --> App : Car[]
+  App -> CarGrid : render(cars)
 end
 
-FE --> Customer: See (updated) car grid
+alt no car matches
+  CarGrid --> Customer : "Žádná auta neodpovídají zvoleným filtrům."
+else
+  CarGrid --> Customer : see (updated) car grid
+end
 @enduml

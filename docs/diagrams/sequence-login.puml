@@ -1,28 +1,66 @@
 @startuml sequence-login
 skinparam backgroundColor white
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+hide footbox
 title Sequence — Log in (UC2)
 
-actor Customer
-participant "Frontend\n(React SPA)" as FE
-participant "REST API\n(FastAPI)" as API
-database "Database\n(SQLite)" as DB
+actor "User\n(Customer or Admin)" as User
+box "Frontend (React)" #E3F2FD
+  participant ":Navbar" as Navbar
+  participant ":App" as App
+  participant ":AuthForms" as AuthForms
+  participant ":AuthContext" as AuthContext
+  participant ":Toast" as Toast
+  participant ":ApiClient" as ApiClient
+end box
+box "REST API (FastAPI)" #FFF3E0
+  participant ":AuthRouter" as AuthRouter
+end box
+box "Services" #E8F5E9
+  participant ":AuthService" as AuthService
+end box
+box "Persistence" #F3E5F5
+  participant "db : Session" as DB
+  participant "u : User" as U
+end box
 
-Customer -> FE: Open the app
-Customer -> FE: Click "Log in"
-Customer -> FE: Enter e-mail and password
-Customer -> FE: Submit login
-FE -> API: POST /auth/login\n{email, password}
-API -> DB: Find user by e-mail
-DB --> API: user / none
-API -> API: Verify the password against\nthe stored bcrypt hash
-
-alt e-mail and password match
-  API -> API: Issue JWT access token
-  API --> FE: 200 OK\n{access_token, user}
-  FE -> FE: Store the token (localStorage)
-else unknown e-mail or wrong password
-  API --> FE: 401 Unauthorized\n"Nesprávný e-mail nebo heslo"
+User -> Navbar : click "Přihlásit se"
+Navbar -> App : onAuthOpen()
+App -> AuthForms : render in the "Účet" modal
+User -> AuthForms : enter e-mail and password, submit
+AuthForms -> AuthForms : handleSubmit(event)
+AuthForms -> AuthContext : login(email, password)
+AuthContext -> ApiClient : loginUser(email, password)
+ApiClient -> AuthRouter : login(payload : UserLogin)\n[HTTP POST /auth/login]
+AuthRouter -> AuthService : authenticate_user(email, password)
+AuthService -> AuthService : get_user_by_email(email)
+AuthService -> DB : query(User).filter(email).first()
+DB --> AuthService : u | None
+opt user found
+  AuthService -> U : read password_hash
+  U --> AuthService : password_hash
+  AuthService -> AuthService : verify_password(password, password_hash)\n(bcrypt)
 end
 
-FE --> Customer: See result\n(logged in, or error message)
+alt e-mail found and password matches
+  AuthService --> AuthRouter : u
+  AuthRouter -> AuthService : create_access_token(u.id)
+  AuthService --> AuthRouter : JWT
+  AuthRouter --> ApiClient : 200 OK\nToken {access_token, user}
+  ApiClient --> AuthContext : AuthResult
+  AuthContext -> ApiClient : storeToken(access_token)\n(localStorage)
+  AuthContext -> AuthContext : setToken(token), setUser(user)\n(user.role decides which tabs are shown)
+  AuthContext --> AuthForms : done
+  AuthForms -> Toast : show("Přihlášení proběhlo úspěšně.", "success")
+  AuthForms -> App : onSuccess() — closes the modal
+else unknown e-mail or wrong password
+  AuthService --> AuthRouter : None
+  AuthRouter --> ApiClient : 401 Unauthorized\n"Nesprávný e-mail nebo heslo"
+  ApiClient --> AuthContext : throw Error(detail)
+  AuthContext --> AuthForms : throw Error(detail)
+  AuthForms -> AuthForms : setError(detail)
+end
+
+AuthForms --> User : see result\n(logged in, or error message)
 @enduml
