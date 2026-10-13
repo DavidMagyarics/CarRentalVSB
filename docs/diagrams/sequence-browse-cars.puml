@@ -1,68 +1,34 @@
 @startuml sequence-browse-cars
 skinparam backgroundColor white
 skinparam responseMessageBelowArrow true
-skinparam maxMessageSize 220
-hide footbox
+skinparam maxMessageSize 260
 title Sequence — Browse & filter cars (UC3)
-
 actor Customer
-box "Frontend (React)" #E3F2FD
-  participant ":App" as App
-  participant ":CarFilters" as CarFilters
-  participant ":CarGrid" as CarGrid
-  participant ":ApiClient" as ApiClient
-end box
-box "REST API (FastAPI)" #FFF3E0
-  participant ":BranchesRouter" as BranchesRouter
-  participant ":CarsRouter" as CarsRouter
-end box
-box "Services" #E8F5E9
-  participant ":FleetService" as FleetService
-end box
-box "Persistence" #F3E5F5
-  participant "db : Session" as DB
-end box
+boundary ":WebApp" as Web
+control ":FleetService" as Fleet
+database ":Database" as DB
 
-Customer -> App : open the app
-App -> ApiClient : fetchBranches()
-ApiClient -> BranchesRouter : list_branches()\n[HTTP GET /branches/]
-BranchesRouter -> FleetService : get_branches()
-FleetService -> DB : query(Branch).order_by(name).all()
-DB --> FleetService : Branch[]
-FleetService --> BranchesRouter : Branch[]
-BranchesRouter --> ApiClient : 200 OK [branches]
-ApiClient --> App : Branch[]
-App -> CarFilters : render(filters, branches)
+Customer -> Web : showCars()
+Web -> Fleet : get_branches()\n[GET /branches/]
+Fleet -> DB : query(Branch)
+DB --> Fleet : Branch[]
+Fleet --> Web : Branch[] (for the branch filter)
+Web -> Fleet : get_cars()\n[GET /cars/]
+Fleet -> DB : query(Car) ordered by brand, model
+DB --> Fleet : Car[]
+Fleet --> Web : Car[]
+Web --> Customer : car grid (photo, branch,\nprice per day and per hour)
 
-App -> ApiClient : fetchCars({})
-ApiClient -> CarsRouter : list_cars()\n[HTTP GET /cars/]
-CarsRouter -> FleetService : get_cars()
-FleetService -> DB : query(Car).order_by(brand, model).all()
-DB --> FleetService : Car[]
-FleetService --> CarsRouter : Car[]
-CarsRouter --> ApiClient : 200 OK [cars]
-ApiClient --> App : Car[]
-App -> CarGrid : render(cars)
-CarGrid --> Customer : one CarCard per car\n(photo, branch, price/day, price/hour, specs)
-
-opt apply a filter
-  Customer -> CarFilters : choose category, transmission,\nfuel type, price range or branch (F11)
-  CarFilters -> App : onChange(filters) → setFilters(filters)
-  App -> App : wait 250 ms (debounce)
-  App -> ApiClient : fetchCars(filters)
-  ApiClient -> CarsRouter : list_cars(category, transmission, fuel_type,\nmin_price, max_price, branch_id)\n[HTTP GET /cars/?category=...&branch_id=...]
-  CarsRouter -> FleetService : get_cars(filters)
-  FleetService -> DB : query(Car).filter(...)\n(price range compares daily_price)
-  DB --> FleetService : matching Car[]
-  FleetService --> CarsRouter : Car[]
-  CarsRouter --> ApiClient : 200 OK [cars]
-  ApiClient --> App : Car[]
-  App -> CarGrid : render(cars)
-end
-
-alt no car matches
-  CarGrid --> Customer : "Žádná auta neodpovídají zvoleným filtrům."
-else
-  CarGrid --> Customer : see (updated) car grid
+opt choose a filter
+  Customer -> Web : showCars(filters)\n(category, transmission, fuel type,\nprice range, branch)
+  Web -> Fleet : get_cars(filters)\n[GET /cars/?category=...&branch_id=...]
+  Fleet -> DB : query(Car, filters)\n(price range compares the daily price)
+  DB --> Fleet : matching Car[]
+  Fleet --> Web : Car[]
+  alt no car matches
+    Web --> Customer : "Žádná auta neodpovídají zvoleným filtrům."
+  else
+    Web --> Customer : updated car grid
+  end
 end
 @enduml

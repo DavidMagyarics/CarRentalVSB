@@ -2,330 +2,124 @@
 skinparam backgroundColor white
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
-skinparam nodesep 40
-skinparam ranksep 70
+skinparam nodesep 60
+skinparam ranksep 80
 skinparam class {
   BackgroundColor #FAFAFA
   BorderColor #555555
 }
-skinparam package {
-  BackgroundColor<<frontend>> #E3F2FD
-  BackgroundColor<<api>> #FFF3E0
-  BackgroundColor<<services>> #E8F5E9
-  BackgroundColor<<persistence>> #F3E5F5
-}
-hide <<frontend>> stereotype
-hide <<api>> stereotype
-hide <<services>> stereotype
-hide <<persistence>> stereotype
 title Class diagram — CarRentalVSB
 
-package "Frontend (React)" <<frontend>> {
-  class App <<App.tsx>> {
-    - tab : Tab
-    - cars : Car[]
-    - filters : FiltersState
-    + handleReserveClick(car)
-    + handleBookingDone()
-    + loadMyReservations()
-    + loadAllReservations()
-  }
-  class Navbar <<Navbar.tsx>> {
-    + onTabChange(tab)
-    + onAuthOpen()
-  }
-  class AuthForms <<AuthForms.tsx>> {
-    + handleSubmit(event)
-  }
-  class CarFilters <<CarFilters.tsx>> {
-    + onChange(filters)
-  }
-  class CarGrid <<CarGrid.tsx>> {
-    + render(cars)
-  }
-  class CarCard <<CarCard.tsx>> {
-    + onReserve(car)
-  }
-  class ReservationForm <<ReservationForm.tsx>> {
-    - isWithinBusinessHours(value) : bool
-    + handleSubmit(event)
-  }
-  class ReservationList <<ReservationList.tsx>> {
-    + handleCancel(id)
-  }
-  class AdminReservations <<AdminReservations.tsx>> {
-    + act(id, action, message)
-  }
-  class AdminCars <<AdminCars.tsx>> {
-    + load()
-    + openCreate()
-    + openEdit(car)
-    + handleSubmit(event)
-    + handleDelete(car)
-  }
-  class SupportWidget <<SupportWidget.tsx>> {
-    - open : bool
-    + setOpen(open)
-  }
-  class AuthContext <<auth/AuthContext.tsx>> {
-    + user : User
-    + token : string
-    + login(email, password)
-    + register(name, email, password)
-    + logout()
-  }
-  class Toast <<Toast.tsx>> {
-    + show(message, type)
-  }
-  class Pricing <<pricing.ts>> {
-    + calculatePrice(daily, hourly, start, end) : number
-  }
-  class ApiClient <<api.ts>> {
-    + registerUser(name, email, password) : AuthResult
-    + loginUser(email, password) : AuthResult
-    + storeToken(token)
-    + fetchBranches() : Branch[]
-    + fetchCars(filters) : Car[]
-    + checkAvailability(carId, start, end) : Availability
-    + createReservation(token, input) : Reservation
-    + fetchMyReservations(token) : Reservation[]
-    + fetchAllReservations(token) : Reservation[]
-    + confirmReservation(token, id) : Reservation
-    + cancelReservation(token, id) : Reservation
-    + createCar(token, input) : Car
-    + updateCar(token, id, input) : Car
-    + deleteCar(token, id)
-  }
+class WebApp <<boundary>> {
+  token : string
+  user : User
+  + register(name, email, password)
+  + login(email, password)
+  + showCars(filters)
+  + reserveCar(car)
+  + showReservations()
+  + cancelReservation(id)
+  + confirmReservation(id)
+  + saveCar(data)
+  + deleteCar(id)
+  + openSupport()
+  - isWithinOpeningHours(start, end) : bool
+  - estimatePrice(car, start, end) : float
 }
 
-package "REST API (FastAPI)" <<api>> {
-  class AuthRouter <<routers/auth.py>> {
-    + register(payload : UserRegister) : Token  [POST /auth/register]
-    + login(payload : UserLogin) : Token  [POST /auth/login]
-    + me() : User  [GET /auth/me]
-  }
-  class ReservationsRouter <<routers/reservations.py>> {
-    + create_reservation(reservation : ReservationCreate)  [POST /reservations/]
-    + list_my_reservations()  [GET /reservations/me]
-    + cancel_reservation(id)  [POST /reservations/{id}/cancel]
-    + list_all_reservations()  [GET /reservations/] «admin»
-    + confirm_reservation(id)  [POST /reservations/{id}/confirm] «admin»
-    - _ensure_owner_or_admin(reservation, user)
-  }
-  class CarsRouter <<routers/cars.py>> {
-    + list_cars(filters)  [GET /cars/]
-    + get_car(id)  [GET /cars/{id}]
-    + check_availability(car_id, start_date, end_date) : Availability  [GET /cars/{id}/availability]
-    + create_car(car : CarCreate)  [POST /cars/] «admin»
-    + update_car(id, car : CarUpdate)  [PUT /cars/{id}] «admin»
-    + delete_car(id)  [DELETE /cars/{id}] «admin»
-  }
-  class BranchesRouter <<routers/branches.py>> {
-    + list_branches()  [GET /branches/]
-    + get_branch(id)  [GET /branches/{id}]
-    + create_branch / update_branch / delete_branch  «admin»
-  }
-  class UsersRouter <<routers/users.py>> {
-    + list_users()  [GET /users/] «admin»
-    + get_user(id)  [GET /users/{id}] «admin»
-  }
-  class Deps <<deps.py>> {
-    + get_current_user(credentials) : User
-    + require_admin(current_user) : User
-  }
-  package "Schemas (request / response objects)" {
-    class UserRegister <<schemas.py>> {
-      name : str
-      email : EmailStr
-      password : str (min 6)
-    }
-    class UserLogin <<schemas.py>> {
-      email : EmailStr
-      password : str
-    }
-    class Token <<schemas.py>> {
-      access_token : str
-      user : User
-    }
-    class ReservationCreate <<schemas.py>> {
-      car_id : int
-      start_date : datetime
-      end_date : datetime
-      payment_method : CASH | CARD
-      + within_business_hours(value)
-      + end_after_start(end_date)
-    }
-    class Availability <<schemas.py>> {
-      car_id : int
-      start_date, end_date : datetime
-      available : bool
-    }
-  }
+class AuthService <<control>> {
+  + create_user(name, email, password) : Token
+  + authenticate_user(email, password) : Token
+  + get_current_user(token) : User
+  + require_admin(token) : User
+  - hash_password(password) : str
+  - verify_password(password, hash) : bool
+  - create_access_token(user) : JWT
 }
 
-package "Services (business logic)" <<services>> {
-  class AuthService <<auth.py + crud.py>> {
-    + create_user(name, email, password) : User
-    + authenticate_user(email, password) : User
-    + get_user(user_id) : User
-    + get_user_by_email(email) : User
-    + get_users() : User[]
-    - hash_password(password) : str
-    - verify_password(password, password_hash) : bool
-    + create_access_token(user_id) : str
-    + decode_access_token(token) : int
-  }
-  class ReservationService <<crud.py>> {
-    + get_reservations() : Reservation[]
-    + get_reservations_for_user(user_id) : Reservation[]
-    + get_reservation(id) : Reservation
-    + is_car_available(car_id, start, end) : bool
-    + calculate_price(car, start, end) : float
-    + create_reservation(user_id, car, reservation) : Reservation
-    + confirm_reservation(id) : Reservation
-    + cancel_reservation(id) : Reservation
-  }
-  class FleetService <<crud.py>> {
-    + get_cars(filters) : Car[]
-    + get_car(id) : Car
-    + create_car(car) : Car
-    + update_car(id, car) : Car
-    + delete_car(id) : bool
-    + get_branches() : Branch[]
-    + get_branch(id) : Branch
-    + create_branch / update_branch / delete_branch
-  }
-  class DomainError <<exception, crud.py>>
-  interface NotificationService <<notification.py>> {
-    + send_confirmation(reservation, user) : bool
-  }
-  class LoggingNotificationService {
-    + send_confirmation(reservation, user) : bool
-  }
-  class EmailNotificationService {
-    - host, port, username, password
-    + send_confirmation(reservation, user) : bool
-  }
+class ReservationService <<control>> {
+  + create_reservation(token, car_id, start, end, payment) : Reservation
+  + is_car_available(car, start, end) : bool
+  + get_reservations_for_user(token) : Reservation[]
+  + get_reservations(token) : Reservation[]
+  + confirm_reservation(token, id) : Reservation
+  + cancel_reservation(token, id) : Reservation
+  - calculate_price(car, start, end) : float
 }
 
-package "Persistence (SQLAlchemy + SQLite)" <<persistence>> {
-  class Session <<SQLAlchemy>> {
-    + query(Model) : Query
-    + add(obj)
-    + delete(obj)
-    + commit()
-    + refresh(obj)
-  }
-  class User <<models.py>> {
-    id : int
-    name : str
-    email : str
-    password_hash : str
-    role : CUSTOMER | ADMIN
-  }
-  class Reservation <<models.py>> {
-    id : int
-    car_id : int
-    user_id : int
-    start_date : datetime
-    end_date : datetime
-    status : DRAFT | CONFIRMED | CANCELLED
-    total_price : float
-    payment_method : CASH | CARD
-    created_at : datetime
-  }
-  class Car <<models.py>> {
-    id : int
-    brand : str
-    model : str
-    year : int
-    license_plate : str
-    daily_price : float
-    hourly_price : float
-    category, transmission, fuel_type
-    seats : int
-    description, image_url : str
-    branch_id : int
-  }
-  class Branch <<models.py>> {
-    id : int
-    name : str
-    address : str
-  }
+class FleetService <<control>> {
+  + get_cars(filters) : Car[]
+  + get_branches() : Branch[]
+  + create_car(token, data) : Car
+  + update_car(token, id, data) : Car
+  + delete_car(token, id)
 }
 
-class SMTP <<smtplib>> {
-  + starttls()
-  + login(user, password)
-  + send_message(message)
+interface NotificationService {
+  + send_confirmation(reservation, user) : bool
+}
+class EmailNotificationService {
+  + send_confirmation(reservation, user) : bool
+}
+class LoggingNotificationService {
+  + send_confirmation(reservation, user) : bool
 }
 
-' --- frontend: App renders the components
-App *-down- Navbar
-App *-down- CarFilters
-App *-down- CarGrid
-App *-down- ReservationForm
-App *-down- ReservationList
-App *-down- AdminReservations
-App *-down- AdminCars
-App *-down- AuthForms
-App *-down- SupportWidget
-CarGrid *-down- CarCard
+class Database <<SQLite>> {
+  + query(entity, conditions) : list
+  + save(obj)
+  + delete(obj)
+}
 
-' --- frontend: who calls whom
-AuthForms -down-> AuthContext : login / register
-ReservationForm -down-> Pricing
-App -down-> ApiClient
-AuthContext -down-> ApiClient
-ReservationForm -down-> ApiClient
-ReservationList -down-> ApiClient
-AdminReservations -down-> ApiClient
-AdminCars -down-> ApiClient
-ReservationForm -[norank]-> Toast : show()
+class User <<entity>> {
+  id : int
+  name : str
+  email : str
+  password_hash : str
+  role : CUSTOMER | ADMIN
+}
+class Reservation <<entity>> {
+  id : int
+  start_date : datetime
+  end_date : datetime
+  status : DRAFT | CONFIRMED | CANCELLED
+  total_price : float
+  payment_method : CASH | CARD
+}
+class Car <<entity>> {
+  id : int
+  brand : str
+  model : str
+  license_plate : str
+  daily_price : float
+  hourly_price : float
+  category, transmission, fuel_type
+}
+class Branch <<entity>> {
+  id : int
+  name : str
+  address : str
+}
 
-' --- frontend → REST API over HTTP
-ApiClient -down-> AuthRouter : HTTP
-ApiClient -down-> ReservationsRouter : HTTP
-ApiClient -down-> CarsRouter : HTTP
-ApiClient -down-> BranchesRouter : HTTP
+WebApp ..> AuthService : HTTP
+WebApp ..> ReservationService : HTTP
+WebApp ..> FleetService : HTTP
 
-' --- REST API internals
-ReservationsRouter -[norank]-> Deps : Depends
-CarsRouter -[norank]-> Deps : Depends
-AuthRouter ..> UserRegister
-AuthRouter ..> UserLogin
-AuthRouter ..> Token
-ReservationsRouter ..> ReservationCreate
-CarsRouter ..> Availability
+ReservationService -left-> AuthService : auth
+FleetService -[norank]-> AuthService : auth
+ReservationService -right-> NotificationService : on confirm
+NotificationService <|.. EmailNotificationService
+NotificationService <|.. LoggingNotificationService
 
-' --- REST API → services
-AuthRouter -down---> AuthService
-Deps -down---> AuthService
-UsersRouter -down---> AuthService
-ReservationsRouter -down---> ReservationService
-ReservationsRouter -down---> FleetService
-ReservationsRouter -[norank]-> NotificationService : on confirm
-CarsRouter -down---> FleetService
-CarsRouter -down---> ReservationService : is_car_available
-BranchesRouter -down---> FleetService
+AuthService --> Database
+ReservationService --> Database
+FleetService --> Database
 
-NotificationService <|.down. LoggingNotificationService
-NotificationService <|.down. EmailNotificationService
-EmailNotificationService -down-> SMTP
-ReservationService ..> DomainError : raises
-FleetService ..> DomainError : raises
-
-' --- services → persistence (norank: the domain chain below keeps its own left-to-right order)
-AuthService -down---> Session
-ReservationService -down---> Session
-FleetService -down---> Session
-AuthService -[norank]-> User
-ReservationService -[norank]-> Reservation
-FleetService -[norank]-> Car
+AuthService ...> User : <<instantiate>>
+ReservationService ...> Reservation : <<instantiate>>
+FleetService ...> Car : <<instantiate>>
 
 User "1" -right- "0..*" Reservation : creates >
 Reservation "0..*" -right- "1" Car : for >
 Car "0..*" -right- "1" Branch : located at >
-
-note "Toast and AuthContext are used by almost every\ncomponent (useToast(), useAuth()); only one\nToast arrow is drawn to keep the diagram readable.\nEvery service method also receives db : Session." as N1
 @enduml

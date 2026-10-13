@@ -1,60 +1,27 @@
 @startuml sequence-view-all-reservations
 skinparam backgroundColor white
 skinparam responseMessageBelowArrow true
-skinparam maxMessageSize 220
-hide footbox
+skinparam maxMessageSize 260
 title Sequence — View all reservations (UC10)
-
 actor Admin
-box "Frontend (React)" #E3F2FD
-  participant ":Navbar" as Navbar
-  participant ":App" as App
-  participant ":AdminReservations" as AdminRes
-  participant ":ApiClient" as ApiClient
-end box
-box "REST API (FastAPI)" #FFF3E0
-  participant ":ReservationsRouter" as ResRouter
-  participant ":Deps" as Deps
-end box
-box "Services" #E8F5E9
-  participant ":AuthService" as AuthService
-  participant ":ReservationService" as ResService
-end box
-box "Persistence" #F3E5F5
-  participant "db : Session" as DB
-  participant "u : User" as U
-end box
+boundary ":WebApp" as Web
+control ":ReservationService" as Res
+control ":AuthService" as Auth
+database ":Database" as DB
 
-Admin -> Navbar : click "Všechny rezervace"
-Navbar -> App : onTabChange("admin-reservations")
-App -> App : loadAllReservations()
-App -> ApiClient : fetchAllReservations(token)
-ApiClient -> ResRouter : list_all_reservations()\n[HTTP GET /reservations/ + JWT]
+Admin -> Web : showReservations() — "Všechny rezervace"
+Web -> Res : get_reservations(token)\n[GET /reservations/]
+Res -> Auth : require_admin(token)
 
-group admin check — the same in every admin-only endpoint
-  ResRouter -> Deps : require_admin(get_current_user(credentials))
-  Deps -> AuthService : decode_access_token(token)
-  AuthService --> Deps : user_id
-  Deps -> AuthService : get_user(user_id)
-  AuthService -> DB : query(User).filter(id).first()
-  DB --> AuthService : u
-  AuthService --> Deps : u (401 if the token or user is invalid)
-  Deps -> U : read role
-  U --> Deps : role
-  alt role != ADMIN
-    Deps --> ResRouter : HTTPException
-    ResRouter --> ApiClient : 403 Forbidden\n"Vyžadována jsou práva administrátora"
-  else role == ADMIN
-    Deps --> ResRouter : admin = u
-  end
+alt not an admin
+  Auth --> Res : 403
+  Res --> Web : 403 "Vyžadována jsou práva administrátora"
+else admin
+  Auth --> Res : admin : User
+  Res -> DB : query(Reservation), newest first
+  DB --> Res : Reservation[] (every customer,\nwith car and customer)
+  Res --> Web : 200 OK Reservation[]
 end
 
-ResRouter -> ResService : get_reservations()
-ResService -> DB : query(Reservation).order_by(id desc).all()
-DB --> ResService : Reservation[] (every customer,\neach with its car and user)
-ResService --> ResRouter : Reservation[]
-ResRouter --> ApiClient : 200 OK [reservations]
-ApiClient --> App : Reservation[]
-App -> AdminRes : render(reservations, onChanged = loadAllReservations)
-AdminRes --> Admin : see table — car, customer name & e-mail,\ndates, price, payment method, status,\n"Potvrdit" (UC8) / "Zrušit" (UC5)
+Web --> Admin : table — car, customer, dates, price,\npayment, status; buttons "Potvrdit" (UC8)\nand "Zrušit" (UC5)
 @enduml

@@ -1,115 +1,59 @@
 @startuml sequence-manage-fleet
 skinparam backgroundColor white
 skinparam responseMessageBelowArrow true
-skinparam maxMessageSize 220
-hide footbox
+skinparam maxMessageSize 260
 title Sequence — Manage fleet (UC9)
-
 actor Admin
-box "Frontend (React)" #E3F2FD
-  participant ":Navbar" as Navbar
-  participant ":App" as App
-  participant ":AdminCars" as AdminCars
-  participant ":Toast" as Toast
-  participant ":ApiClient" as ApiClient
-end box
-box "REST API (FastAPI)" #FFF3E0
-  participant ":CarsRouter" as CarsRouter
-  participant ":Deps" as Deps
-end box
-box "Services" #E8F5E9
-  participant ":FleetService" as FleetService
-end box
-box "Persistence" #F3E5F5
-  participant "db : Session" as DB
-  participant "newCar : Car" as NewCar
-  participant "c : Car" as C
-end box
+boundary ":WebApp" as Web
+control ":FleetService" as Fleet
+control ":AuthService" as Auth
+database ":Database" as DB
+entity "c : Car" as C
 
-Admin -> Navbar : click "Administrace aut"
-Navbar -> App : onTabChange("admin-cars")
-App -> AdminCars : render(branches)
-AdminCars -> AdminCars : load()
-AdminCars -> ApiClient : fetchCars({})
-ApiClient -> CarsRouter : list_cars()\n[HTTP GET /cars/]
-CarsRouter -> FleetService : get_cars()
-FleetService -> DB : query(Car).order_by(brand, model).all()
-DB --> FleetService : Car[]
-FleetService --> CarsRouter : Car[]
-CarsRouter --> ApiClient : 200 OK [cars]
-ApiClient --> AdminCars : Car[]
-AdminCars --> Admin : fleet table
+Admin -> Web : showCars() — "Administrace aut"
+Web -> Fleet : get_cars()\n[GET /cars/]
+Fleet -> DB : query(Car)
+DB --> Fleet : Car[]
+Fleet --> Web : Car[]
+Web --> Admin : fleet table
 
-note over CarsRouter, Deps
-  POST / PUT / DELETE first call
-  require_admin(get_current_user(token)) —
-  a non-admin gets 403 (detail as in UC10)
+note over Fleet, Auth
+  Add / edit / delete first call require_admin(token);
+  a non-admin gets 403.
 end note
 
 alt Add
-  Admin -> AdminCars : click "Přidat auto" → openCreate()
-  Admin -> AdminCars : fill the form (brand, model, year, plate,\nprices, category, ..., branch), submit
-  AdminCars -> AdminCars : handleSubmit(event)
-  AdminCars -> ApiClient : createCar(token, form)
-  ApiClient -> CarsRouter : create_car(car : CarCreate)\n[HTTP POST /cars/ + JWT]
-  CarsRouter -> Deps : require_admin(get_current_user(token))
-  Deps --> CarsRouter : admin : User
-  CarsRouter -> FleetService : get_branch(car.branch_id)
-  FleetService -> DB : query(Branch).filter(id).first()
-  DB --> FleetService : Branch | None
-  FleetService --> CarsRouter : Branch | None (None → 404 "Pobočka nenalezena")
-  CarsRouter -> FleetService : create_car(car)
-  create NewCar
-  FleetService -> NewCar : <<create>> Car(brand, model, ..., branch_id)
-  FleetService -> DB : add(newCar), commit(), refresh(newCar)
-  DB --> FleetService : newCar (now has its id)
-  FleetService --> CarsRouter : newCar
-  CarsRouter --> ApiClient : 201 Created {car}
-  ApiClient --> AdminCars : Car
-  AdminCars -> Toast : show("Auto bylo přidáno.", "success")
+  Admin -> Web : saveCar(data)\n(brand, model, plate, prices, ..., branch)
+  Web -> Fleet : create_car(token, data)\n[POST /cars/]
+  Fleet -> Auth : require_admin(token)
+  Auth --> Fleet : admin
+  Fleet -> DB : query(Branch, data.branch_id)
+  DB --> Fleet : branch (404 if none)
+  create C
+  Fleet -> C : <<create>> (data, branch)
+  Fleet -> DB : save(c)
+  Fleet --> Web : 201 Created c
 else Edit
-  Admin -> AdminCars : click "Upravit" → openEdit(car)
-  Admin -> AdminCars : change form fields, submit
-  AdminCars -> AdminCars : handleSubmit(event)
-  AdminCars -> ApiClient : updateCar(token, car.id, form)
-  ApiClient -> CarsRouter : update_car(id, car : CarUpdate)\n[HTTP PUT /cars/{id} + JWT]
-  CarsRouter -> Deps : require_admin(get_current_user(token))
-  Deps --> CarsRouter : admin : User
-  opt branch_id is being changed
-    CarsRouter -> FleetService : get_branch(branch_id)
-    FleetService --> CarsRouter : Branch | None (None → 404)
-  end
-  CarsRouter -> FleetService : update_car(id, car)
-  FleetService -> FleetService : get_car(id)
-  FleetService -> C : set every changed field
-  FleetService -> DB : commit(), refresh(c)
-  FleetService --> CarsRouter : c (None → 404 "Auto nenalezeno")
-  CarsRouter --> ApiClient : 200 OK {car}
-  ApiClient --> AdminCars : Car
-  AdminCars -> Toast : show("Auto bylo upraveno.", "success")
+  Admin -> Web : saveCar(id, changed data)
+  Web -> Fleet : update_car(token, id, data)\n[PUT /cars/{id}]
+  Fleet -> Auth : require_admin(token)
+  Auth --> Fleet : admin
+  Fleet -> DB : query(Car, id)
+  DB --> Fleet : car (404 if none)
+  Fleet -> DB : save(car with the changed fields)
+  Fleet --> Web : 200 OK car
 else Delete
-  Admin -> AdminCars : click "Smazat" → handleDelete(car)
-  AdminCars -> Admin : window.confirm("Opravdu smazat ...?")
-  Admin --> AdminCars : OK
-  AdminCars -> ApiClient : deleteCar(token, car.id)
-  ApiClient -> CarsRouter : delete_car(id)\n[HTTP DELETE /cars/{id} + JWT]
-  CarsRouter -> Deps : require_admin(get_current_user(token))
-  Deps --> CarsRouter : admin : User
-  CarsRouter -> FleetService : delete_car(id)
-  FleetService -> FleetService : get_car(id)
-  FleetService -> DB : delete(c), commit()
-  note right of DB
-    cascade="all, delete-orphan":
-    all reservations of the car
-    are deleted with it
-  end note
-  destroy C
-  FleetService --> CarsRouter : true (false → 404)
-  CarsRouter --> ApiClient : 204 No Content
-  ApiClient --> AdminCars : done
-  AdminCars -> Toast : show("Auto bylo smazáno.", "success")
+  Admin -> Web : deleteCar(id)
+  Web --> Admin : "Opravdu smazat ...?"
+  Admin -> Web : confirm
+  Web -> Fleet : delete_car(token, id)\n[DELETE /cars/{id}]
+  Fleet -> Auth : require_admin(token)
+  Auth --> Fleet : admin
+  Fleet -> DB : delete(car)\n(all its reservations are deleted too)
+  Fleet --> Web : 204 No Content
 end
 
-AdminCars -> AdminCars : load() — GET /cars/ again (as above)
-AdminCars --> Admin : see updated fleet list\n(an error is shown in the form / as a toast)
+Web -> Fleet : get_cars() — reload the list
+Fleet --> Web : Car[]
+Web --> Admin : updated fleet list, or error message
 @enduml

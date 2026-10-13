@@ -1,122 +1,54 @@
 @startuml sequence-make-reservation
 skinparam backgroundColor white
 skinparam responseMessageBelowArrow true
-skinparam maxMessageSize 220
-hide footbox
+skinparam maxMessageSize 260
 title Sequence — Create reservation (UC4)
-
 actor Customer
-box "Frontend (React)" #E3F2FD
-  participant ":CarCard" as CarCard
-  participant ":App" as App
-  participant ":ReservationForm" as Form
-  participant ":Pricing" as Pricing
-  participant ":Toast" as Toast
-  participant ":ApiClient" as ApiClient
-end box
-box "REST API (FastAPI)" #FFF3E0
-  participant ":CarsRouter" as CarsRouter
-  participant ":ReservationsRouter" as ResRouter
-  participant ":Deps" as Deps
-  participant "rc : ReservationCreate" as RC
-end box
-box "Services" #E8F5E9
-  participant ":FleetService" as FleetService
-  participant ":ReservationService" as ResService
-end box
-box "Persistence" #F3E5F5
-  participant "db : Session" as DB
-  participant "r : Reservation" as R
-end box
+boundary ":WebApp" as Web
+control ":ReservationService" as Res
+control ":AuthService" as Auth
+database ":Database" as DB
+entity "r : Reservation" as R
 
-Customer -> CarCard : click "Rezervovat"
-CarCard -> App : onReserve(car) → handleReserveClick(car)
-
-opt customer not logged in (user == null)
-  App -> App : setPendingReserveCar(car),\nopen the "Účet" modal
-  ref over Customer, ApiClient : UC2 Log in / UC1 Register
-  App -> App : user is set → setBookingCar(pendingReserveCar)
+Customer -> Web : reserveCar(car)
+opt customer not logged in
+  ref over Customer, Web, Auth : UC2 Log in / UC1 Register
 end
-
-App -> Form : render(car) in the booking modal
-Customer -> Form : enter pickup and return date & time
-Form -> Form : isWithinBusinessHours(startDate),\nisWithinBusinessHours(endDate),\nendDate > startDate
+Customer -> Web : enter pickup and return date & time
+Web -> Web : isWithinOpeningHours(start, end)\n(Mon–Fri 08:00–20:00, return after pickup)
 
 alt date/time invalid
-  Form -> Form : show date/time error,\nsubmit button disabled
+  Web --> Customer : date/time error, submit disabled
 else dates valid
-  Form -> Pricing : calculatePrice(daily_price, hourly_price, start, end)
-  Pricing --> Form : estimatedPrice
-  Form -> ApiClient : checkAvailability(car.id, start, end)\n(300 ms after the last change)
-  ApiClient -> CarsRouter : check_availability(car_id, start_date, end_date)\n[HTTP GET /cars/{id}/availability]
-  CarsRouter -> FleetService : get_car(car_id)
-  FleetService -> DB : query(Car).filter(id).first()
-  DB --> FleetService : car
-  FleetService --> CarsRouter : car
-  CarsRouter -> ResService : is_car_available(car_id, start, end)
-  ref over ResService, DB : UC4a Check availability
-  ResService --> CarsRouter : true / false
-  CarsRouter --> ApiClient : 200 OK Availability {available}
-  ApiClient --> Form : Availability
+  Web -> Res : is_car_available(car, start, end)\n[GET /cars/{id}/availability]
+  ref over Res, DB : UC4a Check availability
+  Res --> Web : true / false
 
   alt car not available
-    Form -> Form : status = "unavailable" —\n"already booked for this time",\nsubmit button disabled
+    Web --> Customer : "already booked for this time",\nsubmit disabled
   else car available
-    Form --> Customer : "Termín je dostupný" + estimatedPrice
-    Customer -> Form : choose payment method (CASH / CARD)
-    opt CARD
-      Customer -> Form : fill mock card details\n(never sent to the server)
-    end
-    Customer -> Form : submit
-    Form -> Form : handleSubmit(event)
-    Form -> ApiClient : createReservation(token,\n{car_id, start_date, end_date, payment_method})
-    ApiClient -> ResRouter : create_reservation(reservation)\n[HTTP POST /reservations/ + JWT]
-    ResRouter -> Deps : get_current_user(token)
-    Deps --> ResRouter : current_user : User (401 if the token is invalid)
-    create RC
-    ResRouter -> RC : <<create>> ReservationCreate(car_id,\nstart_date, end_date, payment_method)
-    RC -> RC : within_business_hours(start_date),\nwithin_business_hours(end_date),\nend_after_start(end_date)
-    note right of RC
-      Defense in depth (N12): the same
-      rule as in the form, re-checked on
-      the server
-    end note
+    Web -> Web : estimatePrice(car, start, end)
+    Web --> Customer : "Termín je dostupný" + price
+    Customer -> Web : choose payment method (CASH / CARD),\nsubmit
+    Web -> Res : create_reservation(token, car_id, start, end, payment)\n[POST /reservations/]
+    Res -> Auth : get_current_user(token)
+    Auth --> Res : user : User (401 if the token is invalid)
+    Res -> Res : check opening hours again\n(422 if outside — the API is protected\neven without the web form)
+    Res -> DB : query(Car, car_id)
+    DB --> Res : car (404 if none)
+    Res -> Res : is_car_available(car, start, end)\n(UC4a again — the slot may have been\nconfirmed in the meantime)
 
-    alt outside opening hours or end <= start
-      RC --> ResRouter : ValidationError
-      ResRouter --> ApiClient : 422 Unprocessable Entity\n"Vyzvednutí i vrácení auta jsou možné jen\nv pracovní dny (Po–Pá) mezi 8:00 a 20:00"
-      ApiClient --> Form : throw Error(detail)
-      Form -> Toast : show(detail, "error")
-    else valid
-      RC --> ResRouter : rc
-      ResRouter -> FleetService : get_car(rc.car_id)
-      FleetService -> DB : query(Car).filter(id).first()
-      DB --> FleetService : car
-      FleetService --> ResRouter : car (404 if None)
-      ResRouter -> ResService : is_car_available(car_id, start, end)
-      ref over ResService, DB : UC4a — the slot may have been\nconfirmed in the meantime
-      ResService --> ResRouter : true / false
-
-      alt slot already taken
-        ResRouter --> ApiClient : 409 Conflict\n"Auto je v požadovaném termínu již\npotvrzenou rezervací obsazeno"
-        ApiClient --> Form : throw Error(detail)
-        Form -> Toast : show(detail, "error")
-      else still available
-        ResRouter -> ResService : create_reservation(current_user.id, car, rc)
-        ResService -> ResService : calculate_price(car, start_date, end_date)\n(daily rate per full 24 h + hourly rate\nfor the rest, capped at one more day)
-        create R
-        ResService -> R : <<create>> Reservation(car_id, user_id,\nstart_date, end_date, total_price,\npayment_method, status = DRAFT)
-        ResService -> DB : add(r), commit(), refresh(r)
-        DB --> ResService : r (now has its id)
-        ResService --> ResRouter : r
-        ResRouter --> ApiClient : 201 Created {reservation}
-        ApiClient --> Form : Reservation
-        Form -> Toast : show("Rezervace byla úspěšně vytvořena.", "success")
-        Form -> App : onDone() → handleBookingDone()\n(closes the booking modal)
-      end
+    alt slot already taken
+      Res --> Web : 409 "Auto je v požadovaném termínu\njiž potvrzenou rezervací obsazeno"
+    else still available
+      Res -> Res : calculate_price(car, start, end)
+      create R
+      Res -> R : <<create>> (car, user, start, end,\ntotal_price, payment, status = DRAFT)
+      Res -> DB : save(r)
+      Res --> Web : 201 Created r
     end
   end
 end
 
-Form --> Customer : see result\n(reservation awaiting admin approval,\nor error message)
+Web --> Customer : reservation awaiting admin approval,\nor error message
 @enduml

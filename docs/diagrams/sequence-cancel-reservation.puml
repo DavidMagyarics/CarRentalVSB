@@ -1,72 +1,36 @@
 @startuml sequence-cancel-reservation
 skinparam backgroundColor white
 skinparam responseMessageBelowArrow true
-skinparam maxMessageSize 220
-hide footbox
+skinparam maxMessageSize 260
 title Sequence — Cancel reservation (UC5)
-
 actor "User\n(Customer or Admin)" as User
-box "Frontend (React)" #E3F2FD
-  participant ":App" as App
-  participant ":ReservationList\n(admin: :AdminReservations)" as List
-  participant ":Toast" as Toast
-  participant ":ApiClient" as ApiClient
-end box
-box "REST API (FastAPI)" #FFF3E0
-  participant ":ReservationsRouter" as ResRouter
-  participant ":Deps" as Deps
-end box
-box "Services" #E8F5E9
-  participant ":ReservationService" as ResService
-end box
-box "Persistence" #F3E5F5
-  participant "db : Session" as DB
-  participant "r : Reservation" as R
-end box
+boundary ":WebApp" as Web
+control ":ReservationService" as Res
+control ":AuthService" as Auth
+database ":Database" as DB
+entity "r : Reservation" as R
 
-User -> List : click "Zrušit" on a reservation
-List -> List : handleCancel(id)\n(admin: act(id, cancelReservation, ...))
-List -> ApiClient : cancelReservation(token, id)
-ApiClient -> ResRouter : cancel_reservation(id)\n[HTTP POST /reservations/{id}/cancel + JWT]
-ResRouter -> Deps : get_current_user(token)
-Deps --> ResRouter : current_user : User (401 if the token is invalid)
-ResRouter -> ResService : get_reservation(id)
-ResService -> DB : query(Reservation).filter(id).first()
-DB --> ResService : r
-ResService --> ResRouter : r (404 if None)
-ResRouter -> ResRouter : _ensure_owner_or_admin(r, current_user)
+User -> Web : cancelReservation(id)
+Web -> Res : cancel_reservation(token, id)\n[POST /reservations/{id}/cancel]
+Res -> Auth : get_current_user(token)
+Auth --> Res : user : User
+Res -> DB : query(Reservation, id)
+DB --> Res : r (404 if none)
+Res -> R : get owner, status, start_date
+R --> Res : values
 
-alt not the owner and not an admin
-  ResRouter --> ApiClient : 403 Forbidden\n"Tato rezervace vám nepatří"
-  ApiClient --> List : throw Error(detail)
-  List -> Toast : show(detail, "error")
-else owner or admin
-  ResRouter -> ResService : cancel_reservation(id)
-  ResService -> ResService : get_reservation(id)
-  ResService -> R : read status, start_date
-  R --> ResService : status, start_date
-
-  alt status == CANCELLED
-    ResService --> ResRouter : raise DomainError\n"Rezervace je již zrušena"
-    ResRouter --> ApiClient : 409 Conflict
-    ApiClient --> List : throw Error(detail)
-    List -> Toast : show(detail, "error")
-  else status == CONFIRMED and start_date <= now
-    ResService --> ResRouter : raise DomainError\n"Potvrzenou rezervaci nelze zrušit poté,\nco již začal termín výpůjčky"
-    ResRouter --> ApiClient : 409 Conflict
-    ApiClient --> List : throw Error(detail)
-    List -> Toast : show(detail, "error")
-  else can be cancelled
-    ResService -> R : status = CANCELLED
-    ResService -> DB : commit(), refresh(r)
-    ResService --> ResRouter : r
-    ResRouter --> ApiClient : 200 OK {reservation}
-    ApiClient --> List : Reservation
-    List -> Toast : show("Rezervace byla zrušena.", "success")
-    List -> App : onChanged() → loadMyReservations()\n(admin: loadAllReservations())
-    ref over App, DB : UC6 View my reservations / UC10 View all reservations
-  end
+alt r is not the user's and the user is not an admin
+  Res --> Web : 403 "Tato rezervace vám nepatří"
+else r.status = CANCELLED
+  Res --> Web : 409 "Rezervace je již zrušena"
+else r.status = CONFIRMED and r.start_date has passed
+  Res --> Web : 409 "Potvrzenou rezervaci nelze zrušit\npoté, co již začal termín výpůjčky"
+else can be cancelled
+  Res -> R : status = CANCELLED
+  Res -> DB : save(r)
+  Res --> Web : 200 OK r
+  Web -> Web : reload the list (UC6 / UC10)
 end
 
-List --> User : see result\n(cancelled, or error message)
+Web --> User : reservation cancelled, or error message
 @enduml

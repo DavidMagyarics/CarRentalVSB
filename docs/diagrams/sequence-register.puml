@@ -1,71 +1,34 @@
 @startuml sequence-register
 skinparam backgroundColor white
 skinparam responseMessageBelowArrow true
-skinparam maxMessageSize 220
-hide footbox
+skinparam maxMessageSize 260
 title Sequence — Register (UC1)
-
 actor Customer
-box "Frontend (React)" #E3F2FD
-  participant ":Navbar" as Navbar
-  participant ":App" as App
-  participant ":AuthForms" as AuthForms
-  participant ":AuthContext" as AuthContext
-  participant ":Toast" as Toast
-  participant ":ApiClient" as ApiClient
-end box
-box "REST API (FastAPI)" #FFF3E0
-  participant ":AuthRouter" as AuthRouter
-end box
-box "Services" #E8F5E9
-  participant ":AuthService" as AuthService
-end box
-box "Persistence" #F3E5F5
-  participant "db : Session" as DB
-  participant "u : User" as U
-end box
+boundary ":WebApp" as Web
+control ":AuthService" as Auth
+database ":Database" as DB
+entity "u : User" as U
 
-Customer -> Navbar : click "Přihlásit se"
-Navbar -> App : onAuthOpen()
-App -> AuthForms : render in the "Účet" modal
-Customer -> AuthForms : switch to "Vytvořit účet",\nenter name, e-mail, password, submit
-AuthForms -> AuthForms : handleSubmit(event)
-AuthForms -> AuthContext : register(name, email, password)
-AuthContext -> ApiClient : registerUser(name, email, password)
-ApiClient -> AuthRouter : register(payload : UserRegister)\n[HTTP POST /auth/register]
-note right of AuthRouter
-  FastAPI first builds payload : UserRegister —
-  invalid e-mail or password shorter
-  than 6 characters → 422
+Customer -> Web : register(name, email, password)
+Web -> Auth : create_user(name, email, password)\n[POST /auth/register]
+note right of Auth
+  Invalid e-mail or password
+  shorter than 6 characters → 422
 end note
-AuthRouter -> AuthService : get_user_by_email(email)
-AuthService -> DB : query(User).filter(email).first()
-DB --> AuthService : User | None
-AuthService --> AuthRouter : User | None
+Auth -> DB : query(User, email)
+DB --> Auth : User | none
 
 alt e-mail already registered
-  AuthRouter --> ApiClient : 409 Conflict\n"Tento e-mail je již zaregistrován"
-  ApiClient --> AuthContext : throw Error(detail)
-  AuthContext --> AuthForms : throw Error(detail)
-  AuthForms -> AuthForms : setError(detail)
+  Auth --> Web : 409 "Tento e-mail je již zaregistrován"
 else e-mail is free
-  AuthRouter -> AuthService : create_user(name, email, password)
-  AuthService -> AuthService : hash_password(password)
+  Auth -> Auth : hash_password(password)
   create U
-  AuthService -> U : <<create>>\nUser(name, email, password_hash,\nrole = CUSTOMER)
-  AuthService -> DB : add(u), commit(), refresh(u)
-  DB --> AuthService : u (now has its id)
-  AuthService --> AuthRouter : u
-  AuthRouter -> AuthService : create_access_token(u.id)
-  AuthService --> AuthRouter : JWT
-  AuthRouter --> ApiClient : 201 Created\nToken {access_token, user}
-  ApiClient --> AuthContext : AuthResult
-  AuthContext -> ApiClient : storeToken(access_token)\n(localStorage)
-  AuthContext -> AuthContext : setToken(token), setUser(user)
-  AuthContext --> AuthForms : done
-  AuthForms -> Toast : show("Účet byl vytvořen.", "success")
-  AuthForms -> App : onSuccess() — closes the modal
+  Auth -> U : <<create>> (name, email, password_hash,\nrole = CUSTOMER)
+  Auth -> DB : save(u)
+  Auth -> Auth : create_access_token(u)
+  Auth --> Web : 201 Created {token, u}
+  Web -> Web : store the token (localStorage)
 end
 
-AuthForms --> Customer : see result\n(logged in, or error message)
+Web --> Customer : logged in, or error message
 @enduml

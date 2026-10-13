@@ -1,30 +1,24 @@
 @startuml sequence-contact-support
 skinparam backgroundColor white
 skinparam responseMessageBelowArrow true
-skinparam maxMessageSize 220
-hide footbox
+skinparam maxMessageSize 260
 title Sequence — Contact support (UC7)
-
 actor Customer
-box "Frontend (React)" #E3F2FD
-  participant ":SupportWidget" as Widget
-end box
+boundary ":WebApp" as Web
 participant "phone / mail app\n(customer's device)" as Device
 
-Customer -> Widget : click the support button\n(bottom-right, any page)
-Widget -> Widget : setOpen(true)
-Widget --> Customer : contact panel — phone, e-mail,\noffice hours (OPENING_HOURS_LABEL)
-note right of Widget
-  Purely client-side —
+Customer -> Web : openSupport()
+Web --> Customer : contact panel — phone, e-mail,\noffice hours
+note right of Web
+  Purely in the browser —
   no call to the backend
 end note
 
 opt click the phone number or the e-mail
-  Customer -> Widget : click "tel:+420800123456"\nor "mailto:podpora@carrentalvsb.cz"
-  Widget -> Device : open the tel: / mailto: link
-  Device --> Customer : native phone / mail app opens
+  Customer -> Web : click tel: / mailto: link
+  Web -> Device : open the link
+  Device --> Customer : phone / mail app opens
 end
 
-Customer -> Widget : click "×"
-Widget -> Widget : setOpen(false)
+Customer -> Web : close the panel
 @enduml

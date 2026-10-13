@@ -1,57 +1,36 @@
 @startuml sequence-send-notification
 skinparam backgroundColor white
 skinparam responseMessageBelowArrow true
-skinparam maxMessageSize 220
-hide footbox
+skinparam maxMessageSize 260
 title Sequence — Send notification (UC8a, included in UC8)
-
-box "REST API (FastAPI)" #FFF3E0
-  participant ":ReservationsRouter" as ResRouter
-end box
-box "Services — implementations of NotificationService" #E8F5E9
-  participant ":EmailNotificationService" as Email
-  participant ":LoggingNotificationService" as Logging
-end box
-participant "smtp : SMTP\n(smtplib)" as SMTP
+control ":ReservationService" as Res
+control ":EmailNotificationService" as Email
+control ":LoggingNotificationService" as Log
+participant "SMTP server" as SMTP
 actor Customer
 
-note over ResRouter
-  The reservation r has just been set
-  to CONFIRMED (UC8). notification_service
-  was chosen once at startup by
-  _build_notification_service():
-  SMTP_HOST set → Email…, otherwise Logging…
+note over Res
+  r has just become CONFIRMED (UC8).
+  Which implementation of NotificationService
+  is used is decided once, at startup.
 end note
 
-alt SMTP_HOST is set → notification_service is an EmailNotificationService
-  ResRouter -> Email : send_confirmation(r, r.user)
-  Email -> Email : build EmailMessage\n(subject "Rezervace #id potvrzena",\nreservation no., dates, total price)
-  create SMTP
-  Email -> SMTP : <<create>> SMTP(host, port, timeout = 10)
-  Email -> SMTP : starttls()
-  opt SMTP_USER and SMTP_PASSWORD set
-    Email -> SMTP : login(username, password)
-  end
-  Email -> SMTP : send_message(message)
+alt SMTP_HOST is set in backend/.env
+  Res -> Email : send_confirmation(r, user)
+  Email -> Email : compose the e-mail\n(reservation no., dates, total price)
+  Email -> SMTP : connect, STARTTLS, log in, send
   alt e-mail sent
-    SMTP --> Email : accepted
     SMTP -> Customer : confirmation e-mail
-    Email -> Email : logger.info("Confirmation e-mail sent ...")
-    Email --> ResRouter : true
-  else sending failed (exception)
-    SMTP --> Email : Exception / no connection
-    Email -> Email : logger.exception("Failed to e-mail ...")\n(the reservation stays CONFIRMED)
-    Email --> ResRouter : false
+    SMTP --> Email : accepted
+    Email --> Res : true
+  else sending failed
+    SMTP --> Email : error / no connection
+    Email -> Email : log the error\n(r stays CONFIRMED)
+    Email --> Res : false
   end
-else no SMTP_HOST → notification_service is a LoggingNotificationService
-  ResRouter -> Logging : send_confirmation(r, r.user)
-  Logging -> Logging : logger.info("Notification: reservation ...\nconfirmed for <name> <email>")\n(no e-mail is sent)
-  Logging --> ResRouter : true
+else no SMTP configured
+  Res -> Log : send_confirmation(r, user)
+  Log -> Log : write the notification to the log\n(no e-mail is sent)
+  Log --> Res : true
 end
-
-note over Customer
-  Sees the reservation as CONFIRMED
-  in "Moje rezervace" (UC6)
-  (+ the e-mail, if one was sent)
-end note
 @enduml
