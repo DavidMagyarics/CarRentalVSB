@@ -74,9 +74,18 @@ that class's operations, and two objects only exchange messages when their
 classes are linked here.
 
 The model deliberately shows only the main classes of the system, not every
-file or function in the code. It is read in two rows:
+file or function in the code. It is read from the top down:
 
-1. **The services (top row)** carry out the use cases:
+1. **The user interface (top)** — the two parts of the web app that have
+   behaviour of their own:
+   - `ReservationForm` — the booking form (UC4). Before anything is sent to
+     the server it checks the dates against the opening hours, shows a
+     price estimate and asks the server whether the car is free (UC4a);
+     submitting is only possible when the slot is available. Its
+     life cycle has its own [state diagram](#state-diagram--reservationform).
+   - `SupportWidget` — the contact panel (UC7); it works only in the
+     browser.
+2. **The services (middle row)** carry out the use cases:
    - `AuthService` — registration, login, password hashing and the JWT
      token; `get_current_user` finds out who is calling (UC1, UC2, UC6).
    - `ReservationService` — creating, confirming and cancelling
@@ -90,9 +99,7 @@ file or function in the code. It is read in two rows:
      show its two implementations — `LoggingNotificationService` (default,
      writes to the log) and `EmailNotificationService` (real e-mail, used
      once SMTP is configured).
-   - `SupportWidget` — the contact panel (UC7); it works only in the
-     browser.
-2. **The domain classes (bottom row)** are the four database tables and how
+3. **The domain classes (bottom row)** are the four database tables and how
    they relate, read along the chain: a `User` **creates** 0..*
    `Reservation`s, each reservation is **for** exactly one `Car`, and each
    car is **located at** exactly one `Branch`. Besides their attributes they
@@ -109,12 +116,14 @@ in `backend/app/routers/` together with the functions they call in
 `crud.py`, `auth.py` and `deps.py` (their operation names are the real
 function names); `NotificationService` and its two implementations are real
 classes in `notification.py`; the domain classes are the SQLAlchemy models
-in `models.py`. The operations of the domain classes (`confirm()`,
+in `models.py`; `ReservationForm` and `SupportWidget` are React components
+in `frontend/src/components/`. The operations of the domain classes (`confirm()`,
 `overlaps()`, …) are how the design model describes what the services do
 with those objects — in the code the services change the fields directly
 (e.g. `reservation.status = CONFIRMED`) and the overlap check is a single
-database query. The React web app and the database are left out of the
-diagrams: they only pass the requests and the data through.
+database query. The rest of the web app (navigation, lists, the admin
+pages, the HTTP client) and the database are left out of the diagrams:
+they only pass the requests and the data through.
 
 **Example — following one use case through the diagram (UC8, confirm a
 reservation):** the admin calls `ReservationService.confirm_reservation(id)`
@@ -515,9 +524,11 @@ that move them from one state to another, and the conditions (guards, in
 whose behaviour really depends on its state — where the same operation
 succeeds in one state and is refused in another.
 
-Going through the classes of the class diagram, that is true for exactly one
-of them, `Reservation`. The others are deliberately left without a state
-diagram, because it would only have one or two trivial states:
+Going through the classes of the class diagram, that is true for two of
+them: `Reservation` (its life cycle on the server) and `ReservationForm`
+(what the customer can do while booking). The others are deliberately left
+without a state diagram, because it would only have one or two trivial
+states:
 
 | Class | Why it has no state diagram |
 |---|---|
@@ -565,3 +576,37 @@ diagrams above:
 
 In any state, deleting the car (UC9) deletes its reservations together with
 it.
+
+### State diagram — ReservationForm
+
+![State diagram — ReservationForm](diagrams/state-reservation-form.svg)
+
+*Diagram source: [diagrams/state-reservation-form.puml](diagrams/state-reservation-form.puml).*
+
+This is the booking form from the customer's side of UC4 — the same steps as
+the `:ReservationForm` lifeline in the UC4 sequence diagram. While the
+customer is filling it in, the form is in the composite state **`Editing`**;
+every time the dates change (`enter_dates`), the diamond (a *choice*)
+decides where it goes next:
+
+1. **No dates** — the form has just opened.
+2. **Invalid dates** — pickup or return is outside the opening hours
+   (Mon–Fri 08:00–20:00) or the return is before the pickup; the error is
+   shown and `submit()` is disabled. The form gets here also when the
+   availability check itself fails.
+3. **Checking availability** — the dates are valid, so the price estimate is
+   computed straight away and, 300 ms after the last change, the form asks
+   the server `is_car_available` (UC4a).
+4. **Available** / **Unavailable** — the answer of the check. Only in
+   *Available* can the customer choose the payment method and submit; in
+   *Unavailable* the submit button is disabled.
+
+**Submitting** sends `create_reservation` to the server. The server checks
+everything again (opening hours, availability), so the request can still be
+refused — then the error is shown and the form goes back to *Available*; on
+`201 Created` the form shows the success message and closes. `cancel()`
+closes the form from any of the editing states.
+
+The two state diagrams fit together: a successful **Submitting** of the form
+is exactly the transition **→ `DRAFT`** in the state diagram of
+`Reservation`.

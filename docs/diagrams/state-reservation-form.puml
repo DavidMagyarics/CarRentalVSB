@@ -1,0 +1,50 @@
+@startuml state-reservation-form
+skinparam backgroundColor white
+skinparam state {
+  BackgroundColor #FAFAFA
+  BorderColor #555555
+}
+title State diagram — ReservationForm
+
+[*] --> Editing : reserveCar(c)\n(the customer is logged in)
+
+state Editing {
+  state "No dates" as Empty
+  state "Invalid dates" as Invalid
+  state "Checking availability" as Checking
+  state "Available" as Available
+  state "Unavailable" as Unavailable
+  state dates <<choice>>
+
+  [*] --> Empty
+  Empty --> dates : enter_dates(start, end)
+  dates --> Invalid : [outside opening hours\nor return before pickup]
+  dates --> Checking : [dates valid]
+
+  Checking --> Available : [car available]
+  Checking --> Unavailable : [car not available]
+  Checking --> Invalid : [check failed]
+
+  Invalid --> dates : enter_dates(start, end)
+  Available --> dates : enter_dates(start, end)
+  Unavailable --> dates : enter_dates(start, end)
+
+  Invalid : entry / show the error
+  Invalid : submit() / disabled
+  Checking : entry / estimate_price()
+  Checking : do / is_car_available() (after 300 ms)
+  Available : entry / show "Termín je dostupný" + price
+  Available : choose_payment(method)
+  Unavailable : entry / show "already booked for this time"
+  Unavailable : submit() / disabled
+}
+
+state "Submitting" as Submitting
+Submitting : entry / create_reservation(c, start, end, payment)
+
+Available --> Submitting : submit()
+Submitting --> Available : [409 or 422] / show the error
+Submitting --> [*] : [201 Created] / show success,\nclose the form
+
+Editing --> [*] : cancel() / close the form
+@enduml

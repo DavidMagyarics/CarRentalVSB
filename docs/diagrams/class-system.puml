@@ -10,6 +10,20 @@ skinparam class {
 }
 title Class diagram — CarRentalVSB
 
+class ReservationForm {
+  car : Car
+  start_date, end_date : datetime
+  payment_method : CASH | CARD
+  availability : idle | checking | available | unavailable | error
+  + enter_dates(start, end)
+  + choose_payment(method)
+  + submit()
+  + cancel()
+  - check_dates() : bool
+  - check_availability()
+  - estimate_price() : float
+}
+
 class AuthService {
   + create_user(name, email, password) : Token
   + authenticate_user(email, password) : Token
@@ -100,7 +114,10 @@ class Branch {
   + get_name() : str
 }
 
+ReservationForm -down-> ReservationService : availability, submit
+ReservationForm ..> Car : get_prices
 ReservationService -up-> NotificationService : on confirm
+LoggingNotificationService -[hidden]right- ReservationForm
 NotificationService <|.left. EmailNotificationService
 NotificationService <|.right. LoggingNotificationService
 ReservationService -left-> AuthService : token

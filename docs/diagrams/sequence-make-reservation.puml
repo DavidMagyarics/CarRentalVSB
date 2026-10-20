@@ -4,6 +4,7 @@ skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 260
 title Sequence — Create reservation (UC4)
 actor Customer
+participant ":ReservationForm" as Form
 participant ":ReservationService" as Res
 participant "c : Car" as C
 participant "r : Reservation" as R
@@ -12,32 +13,51 @@ opt customer not logged in
   ref over Customer, Res : UC2 Log in / UC1 Register
 end
 
-Customer -> Res : is_car_available(c, start, end)\n[GET /cars/{id}/availability]
-ref over Res : UC4a Check availability
-Res --> Customer : true / false — the form shows\n"Termín je dostupný" or disables submitting
+Customer -> Form : enter_dates(start, end)
+Form -> Form : check_dates()\n(Mon–Fri 08:00–20:00, return after pickup)
 
-Customer -> Res : create_reservation(c, start, end, payment)\n[POST /reservations/]
-note right of Res
-  The customer is identified from the
-  JWT token (see UC6); without a valid
-  token → 401.
-end note
-Res -> Res : check opening hours\n(Mon–Fri 08:00–20:00, end after start)
+alt dates invalid
+  Form --> Customer : error message, submit disabled
+else dates valid
+  Form -> C : get_prices()
+  C --> Form : daily_price, hourly_price
+  Form -> Form : estimate_price()
+  Form -> Res : is_car_available(c, start, end)\n[GET /cars/{id}/availability]
+  ref over Res : UC4a Check availability
+  Res --> Form : true / false
 
-alt outside opening hours
-  Res --> Customer : 422 "Vyzvednutí i vrácení auta jsou možné\njen v pracovní dny (Po–Pá) mezi 8:00 a 20:00"
-else within opening hours
-  Res -> Res : is_car_available(c, start, end)
-  ref over Res : UC4a — the slot may have been\nconfirmed in the meantime
-  alt slot already taken
-    Res --> Customer : 409 "Auto je v požadovaném termínu\njiž potvrzenou rezervací obsazeno"
-  else still available
-    Res -> C : get_prices()
-    C --> Res : daily_price, hourly_price
-    Res -> Res : calculate_price(c, start, end)
-    create R
-    Res -> R : <<create>> (c, customer, start, end,\ntotal_price, payment, status = DRAFT)
-    Res --> Customer : 201 Created r — awaiting\nadmin approval (UC8)
+  alt car not available
+    Form --> Customer : "already booked for this time",\nsubmit disabled
+  else car available
+    Form --> Customer : "Termín je dostupný" + price estimate
+    Customer -> Form : choose_payment(CASH / CARD)
+    Customer -> Form : submit()
+    Form -> Res : create_reservation(c, start, end, payment)\n[POST /reservations/]
+    note right of Res
+      The customer is identified from the
+      JWT token (see UC6); the server checks
+      everything again — the request may not
+      come from this form.
+    end note
+    Res -> Res : check opening hours again
+
+    alt outside opening hours
+      Res --> Form : 422 "Vyzvednutí i vrácení auta jsou možné\njen v pracovní dny (Po–Pá) mezi 8:00 a 20:00"
+    else within opening hours
+      Res -> Res : is_car_available(c, start, end)
+      ref over Res : UC4a — the slot may have been\nconfirmed in the meantime
+      alt slot already taken
+        Res --> Form : 409 "Auto je v požadovaném termínu\njiž potvrzenou rezervací obsazeno"
+      else still available
+        Res -> C : get_prices()
+        C --> Res : daily_price, hourly_price
+        Res -> Res : calculate_price(c, start, end)
+        create R
+        Res -> R : <<create>> (c, customer, start, end,\ntotal_price, payment, status = DRAFT)
+        Res --> Form : 201 Created r
+      end
+    end
+    Form --> Customer : "Rezervace byla úspěšně vytvořena"\n(awaiting admin approval, UC8),\nor the error message
   end
 end
 @enduml
