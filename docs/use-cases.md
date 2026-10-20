@@ -55,115 +55,18 @@ not a separate use case: they extend existing ones (a car's branch is shown
 and filterable in UC3, and required when managing the fleet in UC9) — see
 [requirements.md](requirements.md).
 
-## Class Diagram
+## How the system is documented
 
-![Class diagram](diagrams/class-system.svg)
+The use cases are described in this document; the diagrams that illustrate
+them are kept in separate documents, one per kind of diagram:
 
-*Diagram source: [diagrams/class-system.puml](diagrams/class-system.puml) — PlantUML, the image is automatically re-rendered on every source change.*
-
-### What this diagram specifies
-
-The class diagram puts all the sequence diagrams below together into one
-picture of the whole system. A sequence diagram shows *one* flow step by
-step in time (e.g. "the admin confirms a reservation"); the class diagram
-shows *every* class whose objects take part in those flows — what each one
-knows (attributes), what it can do (operations) and how the classes are
-linked. The two are kept in sync: every object in a sequence diagram is an
-instance of a class from this diagram, every message sent to it is one of
-that class's operations, and two objects only exchange messages when their
-classes are linked here.
-
-The model deliberately shows only the main classes of the system, not every
-file or function in the code. It is read from the top down:
-
-1. **The user interface (top)** — the two parts of the web app that have
-   behaviour of their own:
-   - `ReservationForm` — the booking form (UC4). Before anything is sent to
-     the server it checks the dates against the opening hours, shows a
-     price estimate and asks the server whether the car is free (UC4a);
-     submitting is only possible when the slot is available. Its
-     life cycle has its own [state diagram](#state-diagram--reservationform).
-   - `SupportWidget` — the contact panel (UC7); it works only in the
-     browser.
-2. **The services (middle row)** carry out the use cases:
-   - `AuthService` — registration, login, password hashing and the JWT
-     token; `get_current_user` finds out who is calling (UC1, UC2, UC6).
-   - `ReservationService` — creating, confirming and cancelling
-     reservations, listing them, the availability check (UC4a) and the
-     price calculation (UC4, UC5, UC6, UC8, UC10).
-   - `FleetService` — listing and filtering cars, and adding, editing and
-     deleting them (UC3, UC9).
-   - `NotificationService` — an **interface** (UC8a): `ReservationService`
-     calls it after a successful confirmation without knowing how the
-     message is actually sent. The two dashed arrows with a hollow triangle
-     show its two implementations — `LoggingNotificationService` (default,
-     writes to the log) and `EmailNotificationService` (real e-mail, used
-     once SMTP is configured).
-3. **The domain classes (bottom row)** are the four database tables and how
-   they relate, read along the chain: a `User` **creates** 0..*
-   `Reservation`s, each reservation is **for** exactly one `Car`, and each
-   car is **located at** exactly one `Branch`. Besides their attributes they
-   have the operations the sequence diagrams send to them — e.g. a
-   reservation can `confirm()`, `cancel()` and tell whether it
-   `overlaps(start, end)` another time slot; a car gives its `get_prices()`
-   for the price calculation; a user answers `is_admin()`.
-
-The dashed arrows between the rows say which service uses or creates
-(`«instantiate»`) which domain object.
-
-How the model maps to the code: the three services are the FastAPI routers
-in `backend/app/routers/` together with the functions they call in
-`crud.py`, `auth.py` and `deps.py` (their operation names are the real
-function names); `NotificationService` and its two implementations are real
-classes in `notification.py`; the domain classes are the SQLAlchemy models
-in `models.py`; `ReservationForm` and `SupportWidget` are React components
-in `frontend/src/components/`. The operations of the domain classes (`confirm()`,
-`overlaps()`, …) are how the design model describes what the services do
-with those objects — in the code the services change the fields directly
-(e.g. `reservation.status = CONFIRMED`) and the overlap check is a single
-database query. The rest of the web app (navigation, lists, the admin
-pages, the HTTP client) and the database are left out of the diagrams:
-they only pass the requests and the data through.
-
-**Example — following one use case through the diagram (UC8, confirm a
-reservation):** the admin calls `ReservationService.confirm_reservation(id)`
-(`POST /reservations/{id}/confirm`) → the service asks the admin's `User`
-object `is_admin()`, loads the `Reservation`, checks its status, re-checks
-availability (UC4a) and calls `confirm()` on it → finally it calls
-`NotificationService.send_confirmation`. The sequence diagram of UC8 below
-shows exactly these objects and calls, step by step in time.
-
-### How each use case is documented below
-
-For every use case, this document gives three views of the same behaviour,
-at increasing levels of technical detail:
-
-1. **A table** — actor(s), precondition, the numbered main flow (with the
-   real API endpoint each step calls), every alternative/error flow with
-   its HTTP status code, and the result once the use case succeeds. This is
-   the authoritative description; the two diagrams that follow are
-   illustrations of it, not additional requirements.
-2. **An activity diagram** — the same flow as a flowchart, with one
-   swimlane per actor/component involved (`Customer`, `Admin`, `System`,
-   ...). Every diagram has exactly one start node and one end node; every
-   branch, including every error outcome, eventually merges back into a
-   single final step before that end, so no alternative flow is a dead end.
-3. **A sequence diagram** — the same flow as a message exchange between
-   a few objects of the classes from the class diagram: the service that
-   carries out the use case and the domain objects it works with (e.g.
-   `:ReservationService`, `c : Car`, `r : Reservation`). Every message is
-   one of the receiving class's operations; `«create»` / `«destroy»` show
-   an object coming into or going out of existence, and `alt`, `opt`,
-   `loop` and `break` frames show the alternative flows. The first message
-   from the actor also shows the HTTP method and path it is sent with, and
-   the replies show the HTTP status codes, so the diagram can be checked
-   against the running API (see also [api-design.md](api-design.md)).
-   `ref` frames point to a flow that is drawn in full in another diagram
-   (e.g. UC4a inside UC4 and UC8).
-
-The activity diagram is the better starting point for explaining a flow to
-a non-technical audience; the sequence diagram is the one to open when
-discussing the actual implementation or writing a test for it.
+| Document | What it contains |
+|---|---|
+| **use-cases.md** (this document) | The use case diagram and, for every use case, a table — actor(s), precondition, the numbered main flow (with the real API endpoint each step calls), every alternative/error flow with its HTTP status code, and the result once the use case succeeds. This is the authoritative description; the diagrams in the other documents are illustrations of it, not additional requirements. |
+| [activity-diagrams.md](activity-diagrams.md) | One activity diagram per use case — the same flow as a flowchart. |
+| [sequence-diagrams.md](sequence-diagrams.md) | One sequence diagram per use case — the same flow as messages between objects. |
+| [class-diagram.md](class-diagram.md) | The class diagram — every class whose objects appear in the sequence diagrams. |
+| [state-diagrams.md](state-diagrams.md) | State diagrams of the classes whose behaviour depends on their state. |
 
 ## UC1 — Register ✅
 
@@ -175,25 +78,7 @@ discussing the actual implementation or writing a test for it.
 | Alternative flow A1 | The e-mail is already registered → error 409. |
 | Result | A new `User` exists; the customer is logged in. |
 
-### Activity diagram — Register
-
-The diagram reduces the whole use case to one decision the System makes
-right after the form is submitted: is the e-mail already taken? The `no`
-branch is the common path — hashing the password, creating the account and
-issuing a token all happen before control returns to the customer; the
-`yes` branch only ever produces an error. Both branches converge on the
-same final "see result" step, so the customer always gets one unambiguous
-outcome regardless of which path was taken.
-
-![Activity diagram — Register](diagrams/activity-register.svg)
-
-*Diagram source: [diagrams/activity-register.puml](diagrams/activity-register.puml).*
-
-### Sequence diagram — Register
-
-![Sequence diagram — Register](diagrams/sequence-register.svg)
-
-*Diagram source: [diagrams/sequence-register.puml](diagrams/sequence-register.puml).*
+Diagrams: [activity diagram](activity-diagrams.md#uc1--register) · [sequence diagram](sequence-diagrams.md#uc1--register)
 
 ## UC2 — Log in ✅
 
@@ -205,24 +90,7 @@ outcome regardless of which path was taken.
 | Alternative flow A1 | Wrong e-mail or password → error 401. |
 | Result | The user is logged in; the frontend stores the token and shows role-appropriate tabs (Admin sees the administration tabs). |
 
-### Activity diagram — Log in
-
-Structurally this mirrors registration, but with a single check instead of
-two possible causes of failure: does the submitted e-mail/password pair
-match an existing account? Only the System swimlane branches — the
-customer's own steps (enter credentials, submit) are identical regardless
-of the outcome — and both branches converge on the same final step before
-the diagram ends.
-
-![Activity diagram — Log in](diagrams/activity-login.svg)
-
-*Diagram source: [diagrams/activity-login.puml](diagrams/activity-login.puml).*
-
-### Sequence diagram — Log in
-
-![Sequence diagram — Log in](diagrams/sequence-login.svg)
-
-*Diagram source: [diagrams/sequence-login.puml](diagrams/sequence-login.puml).*
+Diagrams: [activity diagram](activity-diagrams.md#uc2--log-in) · [sequence diagram](sequence-diagrams.md#uc2--log-in)
 
 ## UC3 — Browse & filter cars ✅
 
@@ -234,23 +102,7 @@ the diagram ends.
 | Alternative flow | The fleet (or the filtered result) is empty → the system shows an informational message. |
 | Result | The customer sees a grid of cars matching the current filters, each with a photo (or category illustration), specs, branch, and both the hourly and daily price. |
 
-### Activity diagram — Browse & filter cars
-
-The System always returns the complete, unfiltered fleet first, so the
-customer never faces an empty screen while deciding whether to filter at
-all; the single `if` in the System swimlane only runs once a filter is
-actively chosen, and its result simply replaces the car grid already on
-screen rather than starting a new flow.
-
-![Activity diagram — Browse & filter cars](diagrams/activity-browse-cars.svg)
-
-*Diagram source: [diagrams/activity-browse-cars.puml](diagrams/activity-browse-cars.puml).*
-
-### Sequence diagram — Browse & filter cars
-
-![Sequence diagram — Browse & filter cars](diagrams/sequence-browse-cars.svg)
-
-*Diagram source: [diagrams/sequence-browse-cars.puml](diagrams/sequence-browse-cars.puml).*
+Diagrams: [activity diagram](activity-diagrams.md#uc3--browse--filter-cars) · [sequence diagram](sequence-diagrams.md#uc3--browse--filter-cars)
 
 ## UC4 — Create reservation ✅
 
@@ -264,27 +116,7 @@ screen rather than starting a new flow.
 | Alternative flow A3 | `end_date` <= `start_date` → blocked in the form; the API returns validation error 422. |
 | Result | A new reservation exists in `DRAFT` state, linked to the car, the logged-in customer, the chosen dates, the computed price and the payment method — awaiting UC8 (admin approval). |
 
-### Activity diagram — Create reservation
-
-This is the most involved flow in the system: it nests three independent
-decisions — is the customer logged in, do the chosen dates satisfy the
-opening-hours/return-after-pickup rule, and is the car available — and the
-availability check (UC4a) deliberately runs *twice*: once live while the
-dates are being picked, purely to inform the customer, and once more,
-authoritatively, the instant the reservation is submitted, because the
-first result can go stale while the customer is still choosing a payment
-method. Every branch, including both distinct "slot taken" outcomes, still
-merges into the same single final "see result" step.
-
-![Activity diagram — Create reservation](diagrams/activity-make-reservation.svg)
-
-*Diagram source: [diagrams/activity-make-reservation.puml](diagrams/activity-make-reservation.puml).*
-
-### Sequence diagram — Create reservation
-
-![Sequence diagram — Create reservation](diagrams/sequence-make-reservation.svg)
-
-*Diagram source: [diagrams/sequence-make-reservation.puml](diagrams/sequence-make-reservation.puml).*
+Diagrams: [activity diagram](activity-diagrams.md#uc4--create-reservation) · [sequence diagram](sequence-diagrams.md#uc4--create-reservation)
 
 ## UC4a — Check availability ✅ (include, part of UC4 and UC8)
 
@@ -293,24 +125,7 @@ merges into the same single final "see result" step.
 | Actor | System |
 | Main flow | The system compares the requested date range against all `CONFIRMED` reservations for that car; if no interval overlaps, the car is available. Enforced in `crud.is_car_available`. |
 
-### Activity diagram — Check availability
-
-Because this use case is only ever triggered by another one (UC4 or UC8),
-its first swimlane belongs to the *caller* ("Customer / Admin") rather than
-to an actor acting on its own — and the System lane reduces to a single
-comparison: does any `CONFIRMED` reservation for this car overlap the
-requested date range? `DRAFT` and `CANCELLED` reservations are deliberately
-excluded from the check, since neither of them actually blocks the slot.
-
-![Activity diagram — Check availability](diagrams/activity-check-availability.svg)
-
-*Diagram source: [diagrams/activity-check-availability.puml](diagrams/activity-check-availability.puml).*
-
-### Sequence diagram — Check availability
-
-![Sequence diagram — Check availability](diagrams/sequence-check-availability.svg)
-
-*Diagram source: [diagrams/sequence-check-availability.puml](diagrams/sequence-check-availability.puml).*
+Diagrams: [activity diagram](activity-diagrams.md#uc4a--check-availability) · [sequence diagram](sequence-diagrams.md#uc4a--check-availability)
 
 ## UC5 — Cancel reservation ✅
 
@@ -324,24 +139,7 @@ excluded from the check, since neither of them actually blocks the slot.
 | Alternative flow A3 | A customer tries to cancel someone else's reservation → error 403 (owner-or-admin check). |
 | Result | The reservation is `CANCELLED`; the slot is free again for another confirmation. |
 
-### Activity diagram — Cancel reservation
-
-Three independent guard clauses have to pass, in a fixed order, before a
-cancellation succeeds — ownership (or admin), not already `CANCELLED`, and
-not a `CONFIRMED` rental whose period has already started — so the diagram
-reads top to bottom as exactly the sequence `crud.cancel_reservation`
-evaluates them in. Any single failing check produces its own distinct error
-and short-circuits the rest.
-
-![Activity diagram — Cancel reservation](diagrams/activity-cancel-reservation.svg)
-
-*Diagram source: [diagrams/activity-cancel-reservation.puml](diagrams/activity-cancel-reservation.puml).*
-
-### Sequence diagram — Cancel reservation
-
-![Sequence diagram — Cancel reservation](diagrams/sequence-cancel-reservation.svg)
-
-*Diagram source: [diagrams/sequence-cancel-reservation.puml](diagrams/sequence-cancel-reservation.puml).*
+Diagrams: [activity diagram](activity-diagrams.md#uc5--cancel-reservation) · [sequence diagram](sequence-diagrams.md#uc5--cancel-reservation)
 
 ## UC6 — View my reservations ✅
 
@@ -352,23 +150,7 @@ and short-circuits the rest.
 | Main flow | 1. The customer opens "My reservations" (`GET /reservations/me`). 2. The system returns only that customer's reservations. 3. The customer sees each one with a car thumbnail, dates, price, payment method and status. |
 | Result | The customer has an overview of their own reservations and can cancel any of them (UC5). |
 
-### Activity diagram — View my reservations
-
-The simplest flow in the system: one request, one response, no branching —
-the System always returns exactly the logged-in customer's own
-reservations and nothing else. That single difference (whose reservations
-are returned) is also what distinguishes this use case from its
-admin-only counterpart, UC10.
-
-![Activity diagram — View my reservations](diagrams/activity-view-my-reservations.svg)
-
-*Diagram source: [diagrams/activity-view-my-reservations.puml](diagrams/activity-view-my-reservations.puml).*
-
-### Sequence diagram — View my reservations
-
-![Sequence diagram — View my reservations](diagrams/sequence-view-my-reservations.svg)
-
-*Diagram source: [diagrams/sequence-view-my-reservations.puml](diagrams/sequence-view-my-reservations.puml).*
+Diagrams: [activity diagram](activity-diagrams.md#uc6--view-my-reservations) · [sequence diagram](sequence-diagrams.md#uc6--view-my-reservations)
 
 ## UC7 — Contact support ✅
 
@@ -379,23 +161,7 @@ admin-only counterpart, UC10.
 | Main flow | 1. The customer clicks the floating support button (visible on every page). 2. The system shows a panel with a dummy phone number, e-mail and office hours. 3. Clicking either opens the device's phone/mail app. |
 | Result | The customer has a way to reach support, purely client-side (no backend call). |
 
-### Activity diagram — Contact support
-
-Everything here happens in the browser; the System swimlane exists only to
-show that showing the contact panel and opening the phone/mail app are
-handled by the frontend itself — there is no call to the backend anywhere
-in this flow. The single `if` is optional: closing the panel without
-clicking a contact method is just as valid an ending as using one.
-
-![Activity diagram — Contact support](diagrams/activity-contact-support.svg)
-
-*Diagram source: [diagrams/activity-contact-support.puml](diagrams/activity-contact-support.puml).*
-
-### Sequence diagram — Contact support
-
-![Sequence diagram — Contact support](diagrams/sequence-contact-support.svg)
-
-*Diagram source: [diagrams/sequence-contact-support.puml](diagrams/sequence-contact-support.puml).*
+Diagrams: [activity diagram](activity-diagrams.md#uc7--contact-support) · [sequence diagram](sequence-diagrams.md#uc7--contact-support)
 
 ## UC8 — Confirm reservation ✅ (admin-only)
 
@@ -409,25 +175,7 @@ clicking a contact method is just as valid an ending as using one.
 | Alternative flow A3 | A non-admin tries to confirm → error 403. |
 | Result | The reservation is `CONFIRMED`; the customer has received a notification. |
 
-### Activity diagram — Confirm reservation
-
-Confirmation uses the same guard-clause style as cancellation: is the
-reservation still `DRAFT`, then is the car still available. What makes this
-flow different is that its success branch doesn't end once the status
-flips to `CONFIRMED` — it continues straight into UC8a (send the
-notification) before control returns to the admin, because notifying the
-customer is part of what "confirming" means in this system, not a
-side effect bolted on afterwards.
-
-![Activity diagram — Confirm reservation](diagrams/activity-confirm-reservation.svg)
-
-*Diagram source: [diagrams/activity-confirm-reservation.puml](diagrams/activity-confirm-reservation.puml).*
-
-### Sequence diagram — Confirm reservation
-
-![Sequence diagram — Confirm reservation](diagrams/sequence-confirm-reservation.svg)
-
-*Diagram source: [diagrams/sequence-confirm-reservation.puml](diagrams/sequence-confirm-reservation.puml).*
+Diagrams: [activity diagram](activity-diagrams.md#uc8--confirm-reservation) · [sequence diagram](sequence-diagrams.md#uc8--confirm-reservation)
 
 ## UC8a — Send notification ✅ (include, part of UC8, external boundary)
 
@@ -436,26 +184,7 @@ side effect bolted on afterwards.
 | Actor | Notification Service (external boundary) |
 | Main flow | After confirming a reservation, the system calls `NotificationService.send_confirmation`. By default `LoggingNotificationService` logs it; if SMTP environment variables are set, `EmailNotificationService` sends a real e-mail instead — same interface, no domain code changes. If sending the e-mail fails, the error is only logged and the reservation stays `CONFIRMED`. |
 
-### Activity diagram — Send notification
-
-This is the only diagram in the system with three swimlanes instead of two,
-because there are genuinely three independent parties involved: the System
-that decides *whether* to attempt an e-mail at all, the Notification
-Service that attempts it and decides whether it *succeeded*, and the
-Customer who only materially benefits from the one branch where it did.
-A failed send is deliberately swallowed — logged, not surfaced — so the
-reservation the admin just confirmed is never rolled back because of an
-e-mail problem.
-
-![Activity diagram — Send notification](diagrams/activity-send-notification.svg)
-
-*Diagram source: [diagrams/activity-send-notification.puml](diagrams/activity-send-notification.puml).*
-
-### Sequence diagram — Send notification
-
-![Sequence diagram — Send notification](diagrams/sequence-send-notification.svg)
-
-*Diagram source: [diagrams/sequence-send-notification.puml](diagrams/sequence-send-notification.puml).*
+Diagrams: [activity diagram](activity-diagrams.md#uc8a--send-notification) · [sequence diagram](sequence-diagrams.md#uc8a--send-notification)
 
 ## UC9 — Manage fleet ✅ (admin-only)
 
@@ -468,25 +197,7 @@ e-mail problem.
 | Alternative flow A2 | `branch_id` doesn't reference an existing branch → error 404. |
 | Result | The fleet list reflects the change immediately for all customers. |
 
-### Activity diagram — Manage fleet
-
-A single three-way `switch` replaces three separate flows for add / edit /
-delete, since all three share the same shape in both swimlanes: the admin
-fills in or confirms something, the System persists it, and the fleet list
-is refreshed. Deleting is the only branch with a consequence that reaches
-outside the fleet itself — every reservation for that car is removed along
-with it — which is why that step is called out explicitly rather than left
-as a plain "Delete Car".
-
-![Activity diagram — Manage fleet](diagrams/activity-manage-fleet.svg)
-
-*Diagram source: [diagrams/activity-manage-fleet.puml](diagrams/activity-manage-fleet.puml).*
-
-### Sequence diagram — Manage fleet
-
-![Sequence diagram — Manage fleet](diagrams/sequence-manage-fleet.svg)
-
-*Diagram source: [diagrams/sequence-manage-fleet.puml](diagrams/sequence-manage-fleet.puml).*
+Diagrams: [activity diagram](activity-diagrams.md#uc9--manage-fleet) · [sequence diagram](sequence-diagrams.md#uc9--manage-fleet)
 
 ## UC10 — View all reservations ✅ (admin-only)
 
@@ -498,115 +209,4 @@ as a plain "Delete Car".
 | Alternative flow A1 | A non-admin calls this endpoint → error 403. |
 | Result | The admin has a full overview of demand across the fleet. |
 
-### Activity diagram — View all reservations
-
-Like UC6, this is a single request/response with no branching at all — the
-difference is scope, not shape: every customer's reservations instead of
-just the logged-in user's own. It is the admin-only entry point that feeds
-both UC8 (confirm a pending one) and UC5 (cancel any one of them).
-
-![Activity diagram — View all reservations](diagrams/activity-view-all-reservations.svg)
-
-*Diagram source: [diagrams/activity-view-all-reservations.puml](diagrams/activity-view-all-reservations.puml).*
-
-### Sequence diagram — View all reservations
-
-![Sequence diagram — View all reservations](diagrams/sequence-view-all-reservations.svg)
-
-*Diagram source: [diagrams/sequence-view-all-reservations.puml](diagrams/sequence-view-all-reservations.puml).*
-
-## State Diagrams
-
-A state diagram describes the life cycle of **one class**: the states its
-objects go through, the events (operations from the sequence diagrams above)
-that move them from one state to another, and the conditions (guards, in
-`[...]`) under which a transition is allowed. It only makes sense for a class
-whose behaviour really depends on its state — where the same operation
-succeeds in one state and is refused in another.
-
-Going through the classes of the class diagram, that is true for two of
-them: `Reservation` (its life cycle on the server) and `ReservationForm`
-(what the customer can do while booking). The others are deliberately left
-without a state diagram, because it would only have one or two trivial
-states:
-
-| Class | Why it has no state diagram |
-|---|---|
-| `AuthService`, `ReservationService`, `FleetService`, `NotificationService` | Stateless — they carry out operations on other objects but keep nothing of their own between two requests. |
-| `User` | Its `role` (`CUSTOMER` / `ADMIN`) is fixed when the account is created and never changes in the system. |
-| `Car`, `Branch` | They are only created, edited and deleted (UC9); every operation behaves the same for their whole lifetime. |
-| `SupportWidget` | Only open / closed, with no rules attached. |
-
-### State diagram — Reservation
-
-![State diagram — Reservation](diagrams/state-reservation.svg)
-
-*Diagram source: [diagrams/state-reservation.puml](diagrams/state-reservation.puml).*
-
-**How to read it.** Each rounded box is a state of a reservation (the value
-of its `status` field). An arrow is a transition, labelled
-`event [guard]` and the use case it happens in; `entry / ...` is what
-happens on entering the state, `do / ...` what holds while the reservation is
-in it, and a line like `confirm() / reject (409)` inside a state is an event
-that is **refused** in that state — the reservation stays where it is and the
-API answers `409 Conflict`.
-
-**The states and transitions** — each one is a step in one of the sequence
-diagrams above:
-
-1. **→ `DRAFT`** — `create_reservation(...)` creates the reservation (UC4),
-   but only within opening hours and only if no `CONFIRMED` reservation
-   overlaps the slot (UC4a). The price is computed once, on entry, and never
-   recomputed. A `DRAFT` reservation is only a request: it does **not** block
-   the car, so several customers can hold a `DRAFT` for the same slot.
-2. **`DRAFT` → `CONFIRMED`** — `confirm()` by an admin (UC8), only if the car
-   is still free; otherwise the confirmation is refused with 409 and the
-   reservation stays `DRAFT`. On entry the customer is notified (UC8a), and
-   from now on the reservation blocks the car for its time slot.
-3. **`DRAFT` → `CANCELLED`** and **`CONFIRMED` (before pickup) →
-   `CANCELLED`** — `cancel()` by the owner or an admin (UC5). The time slot
-   becomes free again.
-4. **Inside `CONFIRMED`** the reservation moves on its own from *Before
-   pickup* to *Rental started* when `start_date` passes. These two sub-states
-   are not stored in the database — they follow from the current time — but
-   they matter, because once the rental has started, `cancel()` is refused
-   (the domain-specific rule of UC5).
-5. **`CANCELLED`** is the final state: both `confirm()` and `cancel()` are
-   refused there.
-
-In any state, deleting the car (UC9) deletes its reservations together with
-it.
-
-### State diagram — ReservationForm
-
-![State diagram — ReservationForm](diagrams/state-reservation-form.svg)
-
-*Diagram source: [diagrams/state-reservation-form.puml](diagrams/state-reservation-form.puml).*
-
-This is the booking form from the customer's side of UC4 — the same steps as
-the `:ReservationForm` lifeline in the UC4 sequence diagram. While the
-customer is filling it in, the form is in the composite state **`Editing`**;
-every time the dates change (`enter_dates`), the diamond (a *choice*)
-decides where it goes next:
-
-1. **No dates** — the form has just opened.
-2. **Invalid dates** — pickup or return is outside the opening hours
-   (Mon–Fri 08:00–20:00) or the return is before the pickup; the error is
-   shown and `submit()` is disabled. The form gets here also when the
-   availability check itself fails.
-3. **Checking availability** — the dates are valid, so the price estimate is
-   computed straight away and, 300 ms after the last change, the form asks
-   the server `is_car_available` (UC4a).
-4. **Available** / **Unavailable** — the answer of the check. Only in
-   *Available* can the customer choose the payment method and submit; in
-   *Unavailable* the submit button is disabled.
-
-**Submitting** sends `create_reservation` to the server. The server checks
-everything again (opening hours, availability), so the request can still be
-refused — then the error is shown and the form goes back to *Available*; on
-`201 Created` the form shows the success message and closes. `cancel()`
-closes the form from any of the editing states.
-
-The two state diagrams fit together: a successful **Submitting** of the form
-is exactly the transition **→ `DRAFT`** in the state diagram of
-`Reservation`.
+Diagrams: [activity diagram](activity-diagrams.md#uc10--view-all-reservations) · [sequence diagram](sequence-diagrams.md#uc10--view-all-reservations)

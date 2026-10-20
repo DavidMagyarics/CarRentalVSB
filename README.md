@@ -44,7 +44,11 @@ docs/       SWI documentation (requirements, use cases, architecture, ...)
 | [docs/architecture-and-decisions.md](docs/architecture-and-decisions.md) | Architecture (C4), decision log, boundary, future pressure (SWI C01) |
 | [docs/evidence-and-evolution.md](docs/evidence-and-evolution.md) | **C01 Engineering Spike** — evidence and decision |
 | [docs/requirements.md](docs/requirements.md) | Requirements specification (SRS) |
-| [docs/use-cases.md](docs/use-cases.md) | Use case specification — diagram + table, activity diagram and sequence diagram for every use case |
+| [docs/use-cases.md](docs/use-cases.md) | Use case specification — use case diagram + a table for every use case |
+| [docs/activity-diagrams.md](docs/activity-diagrams.md) | Activity diagram of every use case |
+| [docs/sequence-diagrams.md](docs/sequence-diagrams.md) | Sequence diagram of every use case |
+| [docs/class-diagram.md](docs/class-diagram.md) | Class diagram |
+| [docs/state-diagrams.md](docs/state-diagrams.md) | State diagrams (Reservation, ReservationForm) |
 | [docs/architecture.md](docs/architecture.md) | Detailed architecture, repository structure, technology choices |
 | [docs/domain-model.md](docs/domain-model.md) | ER / domain model |
 | [docs/api-design.md](docs/api-design.md) | REST API design |
@@ -141,7 +145,7 @@ method → POST /reservations (price computed server-side, state DRAFT)
 
 See [docs/evidence-and-evolution.md](docs/evidence-and-evolution.md) for the
 original persistence spike (data survives a process restart) and
-[docs/use-cases.md](docs/use-cases.md) for the activity diagram of every step
+[docs/activity-diagrams.md](docs/activity-diagrams.md) for the activity diagram of every step
 above.
 
 ## Submission note
