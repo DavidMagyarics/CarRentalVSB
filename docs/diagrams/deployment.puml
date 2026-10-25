@@ -1,0 +1,61 @@
+@startuml deployment
+skinparam backgroundColor white
+skinparam linetype ortho
+skinparam node {
+  BackgroundColor #FAFAFA
+  BorderColor #555555
+}
+skinparam artifact {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+}
+skinparam database {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+}
+title Deployment diagram — CarRentalVSB
+
+node "<<workstation>>\nCustomer" as customer {
+  artifact "React SPA\n(web browser)" as spa1
+}
+node "<<workstation>>\nAdmin" as admin {
+  artifact "React SPA\n(web browser)" as spa2
+}
+
+node "<<network>>\nInternet" as internet
+
+node "<<application server>>\nCarRentalVSB Server (Docker Compose)" as server {
+  node "<<container>>\nfrontend — nginx:alpine" as fe {
+    artifact "dist/\n(index.html, JS, CSS)" as dist
+  }
+  node "<<container>>\nbackend — python:3.12-slim + uvicorn" as be {
+    artifact "app/ (FastAPI)" as app
+    component "AuthService" as auth
+    component "ReservationService" as res
+    component "FleetService" as fleet
+    component "NotificationService" as notif
+    database "<<SQLite>>\ncarrental.db" as db
+  }
+}
+
+cloud "<<external system>>\nSMTP server (e.g. Gmail)" as smtp
+
+customer -- internet
+admin -- internet
+internet --- dist : HTTP :5173\n(download SPA)
+internet -- app : HTTP/JSON + JWT :8000\n(REST API)
+
+app -- auth
+app -- res
+app -- fleet
+app -- notif
+
+auth -- db : SQLAlchemy
+res -- db : SQLAlchemy
+fleet -- db : SQLAlchemy
+notif -- smtp : SMTP :587\n(optional)
+@enduml

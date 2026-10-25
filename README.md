@@ -49,6 +49,8 @@ docs/       SWI documentation (requirements, use cases, architecture, ...)
 | [docs/sequence-diagrams.md](docs/sequence-diagrams.md) | Sequence diagram of every use case |
 | [docs/class-diagram.md](docs/class-diagram.md) | Class diagram |
 | [docs/state-diagrams.md](docs/state-diagrams.md) | State diagrams (Reservation, ReservationForm) |
+| [docs/design-patterns.md](docs/design-patterns.md) | Design pattern State applied to Reservation |
+| [docs/deployment-diagram.md](docs/deployment-diagram.md) | Deployment diagram (nodes, containers, protocols) |
 | [docs/architecture.md](docs/architecture.md) | Detailed architecture, repository structure, technology choices |
 | [docs/domain-model.md](docs/domain-model.md) | ER / domain model |
 | [docs/api-design.md](docs/api-design.md) | REST API design |

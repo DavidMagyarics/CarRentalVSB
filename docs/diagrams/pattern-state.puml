@@ -1,0 +1,95 @@
+@startuml pattern-state
+skinparam backgroundColor white
+skinparam classAttributeIconSize 0
+skinparam nodesep 90
+skinparam class {
+  BackgroundColor #FAFAFA
+  BorderColor #555555
+}
+skinparam note {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+}
+title State pattern — Reservation
+
+class Reservation {
+  id : int
+  start_date, end_date : datetime
+  status : DRAFT | CONFIRMED | CANCELLED
+  + set_state(state : ReservationState)
+  + confirm()
+  + cancel()
+  + blocks_car() : bool
+}
+
+abstract class ReservationState {
+  + {abstract} confirm()
+  + {abstract} cancel()
+  + {abstract} blocks_car() : bool
+}
+
+class DraftState {
+  + confirm()
+  + cancel()
+  + blocks_car() : bool
+}
+
+class ConfirmedState {
+  + confirm()
+  + cancel()
+  + blocks_car() : bool
+}
+
+class CancelledState {
+  + confirm()
+  + cancel()
+  + blocks_car() : bool
+}
+
+Reservation "context" *-right--> "state" ReservationState
+ReservationState <|-- DraftState
+ReservationState <|-- ConfirmedState
+ReservationState <|-- CancelledState
+
+note left of Reservation::confirm
+  state.confirm();
+end note
+note left of Reservation::cancel
+  state.cancel();
+end note
+note left of Reservation::blocks_car
+  return state.blocks_car();
+end note
+
+note bottom of DraftState
+  <b>confirm()</b> [car still free]
+    context.set_state(new ConfirmedState(context));
+    send_confirmation(...)  // UC8a
+  <b>confirm()</b> [slot taken] → reject (409)
+  <b>cancel()</b>
+    context.set_state(new CancelledState(context));
+  <b>blocks_car()</b> → false  // only a request
+end note
+
+note bottom of ConfirmedState
+  <b>confirm()</b> → reject (409), already confirmed
+  <b>cancel()</b> [before pickup]
+    context.set_state(new CancelledState(context));
+  <b>cancel()</b> [rental started] → reject (409)
+  <b>blocks_car()</b> → true
+end note
+
+note bottom of CancelledState
+  <b>confirm()</b> → reject (409)
+  <b>cancel()</b> → reject (409), already cancelled
+  <b>blocks_car()</b> → false  // slot is free again
+end note
+
+note right of ReservationState #LightBlue
+  <b>ReservationService uses the state pattern</b>
+  r = Reservation(car, user, start, end)  # starts in DraftState
+  r.confirm()   # UC8: Draft → Confirmed
+  r.cancel()    # UC5: Confirmed → Cancelled
+  r.confirm()   # Cancelled: rejected (409)
+end note
+@enduml
