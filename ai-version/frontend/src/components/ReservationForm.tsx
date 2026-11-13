@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useState, type FormEvent } from 'react';
 import { api, ApiError, type Car, type PaymentMethod } from '../api/client';
-import { initialFormState, reservationFormReducer } from '../state/reservationForm';
+import { initialFormState, isCardExpiryValid, reservationFormReducer } from '../state/reservationForm';
 import { CarImage, formatPrice, Message } from './common';
 
 interface Props {
@@ -63,7 +63,7 @@ export function ReservationForm({ car, onClose, onCreated }: Props) {
   // Mock card details - validated in the browser only, never sent to the server.
   const cardValid =
     /^\d{16}$/.test(card.number.replace(/\s/g, '')) &&
-    /^(0[1-9]|1[0-2])\/\d{2}$/.test(card.expiry) &&
+    isCardExpiryValid(card.expiry, new Date()) &&
     /^\d{3}$/.test(card.cvc);
   const canSubmit = state.phase === 'available' && (state.payment === 'CASH' || cardValid);
 
