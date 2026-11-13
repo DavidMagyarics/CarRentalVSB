@@ -39,6 +39,7 @@ MSG_INVALID_CREDENTIALS = "Nesprávný e-mail nebo heslo"
 MSG_EMAIL_TAKEN = "Tento e-mail je již zaregistrován"
 MSG_ADMIN_REQUIRED = "Vyžadována jsou práva administrátora"
 MSG_NOT_YOUR_RESERVATION = "Tato rezervace vám nepatří"
+MSG_CUSTOMER_ONLY = "Rezervaci může vytvořit jen zákazník"
 MSG_ALREADY_CANCELLED = "Rezervace je již zrušena"
 MSG_RENTAL_STARTED = (
     "Potvrzenou rezervaci nelze zrušit poté, co již začal termín výpůjčky"

@@ -37,6 +37,13 @@ def test_create_reservation_requires_login(client, car):
     assert client.post("/reservations/", json=reservation_body(car.id)).status_code == 401
 
 
+def test_admin_cannot_create_reservation(client, admin_headers, car, db):
+    response = _create(client, admin_headers, car.id)
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Rezervaci může vytvořit jen zákazník"
+    assert db.query(Reservation).count() == 0
+
+
 def test_create_reservation_unknown_car_is_404(client, customer_headers, cars):
     assert _create(client, customer_headers, 999).status_code == 404
 
