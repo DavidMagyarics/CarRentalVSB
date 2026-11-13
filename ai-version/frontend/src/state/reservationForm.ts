@@ -67,6 +67,15 @@ export function checkDates(start: string, end: string, now: Date): string | null
   return null;
 }
 
+/** Mock card expiry "MM/RR": a valid month and not before the current month. */
+export function isCardExpiryValid(expiry: string, now: Date): boolean {
+  const match = /^(0[1-9]|1[0-2])\/(\d{2})$/.exec(expiry);
+  if (!match) return false;
+  const month = Number(match[1]);
+  const year = 2000 + Number(match[2]);
+  return year > now.getFullYear() || (year === now.getFullYear() && month >= now.getMonth() + 1);
+}
+
 /** estimate_price(): daily rate per full 24 h + started hours, the rest capped at one day. */
 export function estimatePrice(start: string, end: string, daily: number, hourly: number): number {
   const ms = new Date(end).getTime() - new Date(start).getTime();
