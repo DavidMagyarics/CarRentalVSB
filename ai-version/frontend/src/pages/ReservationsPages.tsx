@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, type Reservation } from '../api/client';
 import { CarImage, formatDate, formatPrice, Message, paymentLabel, StatusBadge } from '../components/common';
 
-const canCancel = (r: Reservation) => r.status !== 'CANCELLED' && !(r.status === 'CONFIRMED' && r.rental_started);
+const canCancel = (r: Reservation) =>
+  r.status === 'DRAFT' || (r.status === 'CONFIRMED' && !r.rental_started);
+const canComplete = (r: Reservation) => r.status === 'CONFIRMED' && r.rental_started;
 
 function useReservations(load: () => Promise<Reservation[]>) {
   const [items, setItems] = useState<Reservation[] | null>(null);
@@ -90,6 +92,8 @@ export function AllReservationsPage() {
     if (window.confirm(`Opravdu zrušit rezervaci č. ${r.id}?`))
       void run(() => api.cancelReservation(r.id), `Rezervace č. ${r.id} byla zrušena.`);
   };
+  const complete = (r: Reservation) =>
+    void run(() => api.completeReservation(r.id), `Auto z rezervace č. ${r.id} bylo vráceno.`);
 
   return (
     <section>
@@ -136,6 +140,7 @@ export function AllReservationsPage() {
                   </td>
                   <td className="actions">
                     {r.status === 'DRAFT' && <button onClick={() => confirm(r)}>Potvrdit</button>}
+                    {canComplete(r) && <button onClick={() => complete(r)}>Auto vráceno</button>}
                     {canCancel(r) && (
                       <button className="danger" onClick={() => cancel(r)}>
                         Zrušit

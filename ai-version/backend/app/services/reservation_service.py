@@ -149,6 +149,16 @@ class ReservationService:
         self.db.refresh(reservation)
         return reservation
 
+    # --- Return the car (version 2.0) ---------------------------------------
+    def complete_reservation(self, user: User, reservation_id: int) -> Reservation:
+        if not user.is_admin():
+            raise Forbidden(MSG_ADMIN_REQUIRED)
+        reservation = self.get_reservation(reservation_id)
+        reservation.complete(now=self.clock())
+        self.db.commit()
+        self.db.refresh(reservation)
+        return reservation
+
     # --- UC6 / UC10 -----------------------------------------------------------
     def get_reservations_for_user(self, user: User) -> list[Reservation]:
         return user.get_reservations()

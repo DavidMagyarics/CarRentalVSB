@@ -60,7 +60,13 @@ MSG_RESERVATION_NOT_FOUND = "Rezervace nenalezena"
 MSG_CAR_NOT_FOUND = "Auto nenalezeno"
 MSG_BRANCH_NOT_FOUND = "Pobočka nenalezena"
 MSG_PLATE_TAKEN = "Auto s touto SPZ již existuje"
+MSG_NOT_PICKED_UP = "Auto ještě nebylo vyzvednuto, rezervaci nelze ukončit"
+MSG_ALREADY_COMPLETED = "Auto už bylo vráceno"
 
 
 def msg_cannot_confirm(status: str) -> str:
     return f"Rezervaci ve stavu {status} nelze potvrdit"
+
+
+def msg_cannot_complete(status: str) -> str:
+    return f"Rezervaci ve stavu {status} nelze ukončit"

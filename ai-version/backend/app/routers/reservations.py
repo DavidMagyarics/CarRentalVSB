@@ -70,3 +70,11 @@ def cancel_reservation(
 ):
     """UC5 - 200; 403 not yours; 404; 409 already cancelled / rental started."""
     return to_out(service.cancel_reservation(user, reservation_id), clock())
+
+
+@router.post("/{reservation_id}/complete", response_model=ReservationOut)
+def complete_reservation(
+    reservation_id: int, user: CurrentUser, service: ReservationServiceDep, clock: ClockDep
+):
+    """Return the car - 200; 403 non-admin; 404; 409 not a started CONFIRMED rental."""
+    return to_out(service.complete_reservation(user, reservation_id), clock())

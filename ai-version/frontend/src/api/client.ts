@@ -5,7 +5,7 @@ export const API_URL: string =
 
 export type Role = 'CUSTOMER' | 'ADMIN';
 export type PaymentMethod = 'CASH' | 'CARD';
-export type ReservationStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
+export type ReservationStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 
 export interface User {
   id: number;
@@ -179,4 +179,5 @@ export const api = {
   allReservations: () => request<Reservation[]>('GET', '/reservations/'),
   confirmReservation: (id: number) => request<Reservation>('POST', `/reservations/${id}/confirm`),
   cancelReservation: (id: number) => request<Reservation>('POST', `/reservations/${id}/cancel`),
+  completeReservation: (id: number) => request<Reservation>('POST', `/reservations/${id}/complete`),
 };

@@ -157,6 +157,9 @@ class Reservation(Base):
     def cancel(self, now: datetime | None = None) -> None:
         self.state.cancel(now)
 
+    def complete(self, now: datetime | None = None) -> None:
+        self.state.complete(now)
+
     def blocks_car(self) -> bool:
         return self.state.blocks_car()
 
