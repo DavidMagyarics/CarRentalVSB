@@ -8,6 +8,10 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 PaymentMethodLiteral = Literal["CASH", "CARD"]
+# The only values a car may have - anything else is rejected with 422.
+CategoryLiteral = Literal["Sedan", "SUV", "Hatchback", "Combi", "Van"]
+TransmissionLiteral = Literal["Manual", "Automatic"]
+FuelTypeLiteral = Literal["Petrol", "Diesel", "Hybrid", "Electric"]
 
 
 # --- auth --------------------------------------------------------------------
@@ -61,9 +65,9 @@ class CarBase(BaseModel):
     license_plate: str = Field(min_length=1, max_length=20)
     daily_price: float = Field(gt=0)
     hourly_price: float = Field(gt=0)
-    category: str = Field(min_length=1, max_length=40)
-    transmission: str = Field(min_length=1, max_length=40)
-    fuel_type: str = Field(min_length=1, max_length=40)
+    category: CategoryLiteral
+    transmission: TransmissionLiteral
+    fuel_type: FuelTypeLiteral
     seats: int = Field(default=5, ge=1, le=60)
     description: str = ""
     image_url: str = ""
@@ -81,9 +85,9 @@ class CarUpdate(BaseModel):
     license_plate: str | None = Field(default=None, min_length=1, max_length=20)
     daily_price: float | None = Field(default=None, gt=0)
     hourly_price: float | None = Field(default=None, gt=0)
-    category: str | None = Field(default=None, min_length=1, max_length=40)
-    transmission: str | None = Field(default=None, min_length=1, max_length=40)
-    fuel_type: str | None = Field(default=None, min_length=1, max_length=40)
+    category: CategoryLiteral | None = None
+    transmission: TransmissionLiteral | None = None
+    fuel_type: FuelTypeLiteral | None = None
     seats: int | None = Field(default=None, ge=1, le=60)
     description: str | None = None
     image_url: str | None = None

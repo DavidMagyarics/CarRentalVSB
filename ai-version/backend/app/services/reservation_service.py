@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 from ..errors import (
     MSG_ADMIN_REQUIRED,
     MSG_CAR_NOT_FOUND,
+    MSG_CUSTOMER_ONLY,
     MSG_NOT_YOUR_RESERVATION,
     MSG_OPENING_HOURS,
     MSG_PICKUP_IN_PAST,
@@ -80,6 +81,10 @@ class ReservationService:
     def create_reservation(
         self, user: User, car_id: int, start: datetime, end: datetime, payment_method: str
     ) -> Reservation:
+        # UC4 actor is the Customer only - an admin must not create (and then
+        # confirm) a reservation of their own.
+        if user.is_admin():
+            raise Forbidden(MSG_CUSTOMER_ONLY)
         start, end = normalize(start), normalize(end)
         car = self.db.get(Car, car_id)
         if car is None:
