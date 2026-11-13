@@ -8,8 +8,6 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
-from ..errors import MSG_HOURLY_ABOVE_DAILY, Unprocessable
-
 from ..errors import (
     MSG_ADMIN_REQUIRED,
     MSG_BRANCH_NOT_FOUND,
@@ -17,6 +15,7 @@ from ..errors import (
     MSG_CATEGORY_IN_USE,
     MSG_CATEGORY_NOT_FOUND,
     MSG_CATEGORY_TAKEN,
+    MSG_HOURLY_ABOVE_DAILY,
     MSG_PLATE_TAKEN,
     MSG_UNKNOWN_CATEGORY,
     Conflict,
