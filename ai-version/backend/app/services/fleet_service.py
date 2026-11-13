@@ -8,6 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
+from ..errors import MSG_HOURLY_ABOVE_DAILY, Unprocessable
+
 from ..errors import (
     MSG_ADMIN_REQUIRED,
     MSG_BRANCH_NOT_FOUND,
@@ -71,6 +73,7 @@ class FleetService:
         data["category"] = self._check_category(data["category"])
         branch = self.get_branch(data["branch_id"])
         car = Car(**{k: v for k, v in data.items() if k != "branch_id"}, branch=branch)
+        self._check_prices(car.daily_price, car.hourly_price)
         self.db.add(car)
         self._commit()
         self.db.refresh(car)
@@ -83,6 +86,9 @@ class FleetService:
             data["category"] = self._check_category(data["category"])
         if data.get("branch_id") is not None:
             self.get_branch(data["branch_id"])
+        self._check_prices(
+            data.get("daily_price") or car.daily_price, data.get("hourly_price") or car.hourly_price
+        )
         car.update({k: v for k, v in data.items() if v is not None})
         self._commit()
         self.db.refresh(car)
@@ -122,6 +128,12 @@ class FleetService:
     def _require_admin(user: User) -> None:
         if not user.is_admin():
             raise Forbidden(MSG_ADMIN_REQUIRED)
+
+    @staticmethod
+    def _check_prices(daily_price: float, hourly_price: float) -> None:
+        """An hour may never cost more than a whole day."""
+        if hourly_price > daily_price:
+            raise Unprocessable(MSG_HOURLY_ABOVE_DAILY)
 
     def _commit(self) -> None:
         try:
