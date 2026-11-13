@@ -72,6 +72,7 @@ export interface Reservation {
   payment_method: PaymentMethod;
   created_at: string;
   rental_started: boolean;
+  paid_at: string | null; // version 2.0 - null until the admin records the payment
   car: { id: number; brand: string; model: string; license_plate: string; image_url: string; branch_id: number };
   user: User;
 }
@@ -188,4 +189,5 @@ export const api = {
   confirmReservation: (id: number) => request<Reservation>('POST', `/reservations/${id}/confirm`),
   cancelReservation: (id: number) => request<Reservation>('POST', `/reservations/${id}/cancel`),
   completeReservation: (id: number) => request<Reservation>('POST', `/reservations/${id}/complete`),
+  payReservation: (id: number) => request<Reservation>('POST', `/reservations/${id}/pay`),
 };

@@ -280,6 +280,52 @@ def test_customer_cannot_complete(client, customer_headers, admin_headers, car, 
                        headers=customer_headers).status_code == 403
 
 
+# --- Record a payment (version 2.0) --------------------------------------------
+def test_admin_records_payment_of_confirmed_reservation(client, customer_headers, admin_headers,
+                                                        car, clock, db):
+    rid = _create_and_confirm(client, customer_headers, admin_headers, car.id)
+    response = client.post(f"/reservations/{rid}/pay", headers=admin_headers)
+    assert response.status_code == 200
+    assert response.json()["paid_at"] == clock.now.isoformat()
+    payment = db.get(Reservation, rid).payment
+    assert (payment.amount, payment.method) == (1700, "CASH")
+    mine = client.get("/reservations/me", headers=customer_headers).json()
+    assert mine[0]["paid_at"] is not None
+
+
+def test_draft_cannot_be_paid_and_payment_only_once(client, customer_headers, admin_headers, car):
+    rid = _create(client, customer_headers, car.id).json()["id"]
+    draft = client.post(f"/reservations/{rid}/pay", headers=admin_headers)
+    assert draft.status_code == 409
+    assert draft.json()["detail"] == "Zaplatit lze jen potvrzenou rezervaci"
+    client.post(f"/reservations/{rid}/confirm", headers=admin_headers)
+    assert client.post(f"/reservations/{rid}/pay", headers=admin_headers).status_code == 200
+    again = client.post(f"/reservations/{rid}/pay", headers=admin_headers)
+    assert again.status_code == 409
+    assert again.json()["detail"] == "Rezervace je již zaplacena"
+
+
+def test_customer_cannot_record_payment(client, customer_headers, admin_headers, car):
+    rid = _create_and_confirm(client, customer_headers, admin_headers, car.id)
+    assert client.post(f"/reservations/{rid}/pay", headers=customer_headers).status_code == 403
+
+
+def test_unpaid_reservation_has_no_paid_at(client, customer_headers, car):
+    _create(client, customer_headers, car.id)
+    assert client.get("/reservations/me", headers=customer_headers).json()[0]["paid_at"] is None
+
+
+def test_deleting_a_car_deletes_its_paid_reservations(client, customer_headers, admin_headers,
+                                                     car, db):
+    from app.models import Payment
+
+    rid = _create_and_confirm(client, customer_headers, admin_headers, car.id)
+    client.post(f"/reservations/{rid}/pay", headers=admin_headers)
+    assert client.delete(f"/cars/{car.id}", headers=admin_headers).status_code == 204
+    db.expire_all()
+    assert db.query(Payment).count() == 0
+
+
 # --- UC6 / UC10 --------------------------------------------------------------
 def test_my_reservations_only_own_newest_first(client, customer_headers, other_headers,
                                                car, cars, clock):

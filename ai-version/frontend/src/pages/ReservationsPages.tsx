@@ -5,6 +5,7 @@ import { CarImage, formatDate, formatPrice, Message, paymentLabel, StatusBadge }
 const canCancel = (r: Reservation) =>
   r.status === 'DRAFT' || (r.status === 'CONFIRMED' && !r.rental_started);
 const canComplete = (r: Reservation) => r.status === 'CONFIRMED' && r.rental_started;
+const canPay = (r: Reservation) => (r.status === 'CONFIRMED' || r.status === 'COMPLETED') && !r.paid_at;
 
 function useReservations(load: () => Promise<Reservation[]>) {
   const [items, setItems] = useState<Reservation[] | null>(null);
@@ -65,6 +66,7 @@ export function MyReservationsPage() {
               </div>
               <div className="small">
                 {formatPrice(r.total_price)} · {paymentLabel(r.payment_method)}
+                {r.paid_at && ' · zaplaceno'}
               </div>
             </div>
             <div className="actions">
@@ -94,6 +96,8 @@ export function AllReservationsPage() {
   };
   const complete = (r: Reservation) =>
     void run(() => api.completeReservation(r.id), `Auto z rezervace č. ${r.id} bylo vráceno.`);
+  const pay = (r: Reservation) =>
+    void run(() => api.payReservation(r.id), `Platba rezervace č. ${r.id} byla zaznamenána.`);
 
   return (
     <section>
@@ -134,13 +138,21 @@ export function AllReservationsPage() {
                     {formatDate(r.end_date)}
                   </td>
                   <td>{formatPrice(r.total_price)}</td>
-                  <td>{paymentLabel(r.payment_method)}</td>
+                  <td>
+                    {paymentLabel(r.payment_method)}
+                    {r.paid_at && <div className="muted small">zaplaceno {formatDate(r.paid_at)}</div>}
+                  </td>
                   <td>
                     <StatusBadge status={r.status} started={r.rental_started} />
                   </td>
                   <td className="actions">
                     {r.status === 'DRAFT' && <button onClick={() => confirm(r)}>Potvrdit</button>}
                     {canComplete(r) && <button onClick={() => complete(r)}>Auto vráceno</button>}
+                    {canPay(r) && (
+                      <button className="secondary" onClick={() => pay(r)}>
+                        Zaplaceno
+                      </button>
+                    )}
                     {canCancel(r) && (
                       <button className="danger" onClick={() => cancel(r)}>
                         Zrušit

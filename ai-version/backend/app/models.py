@@ -150,6 +150,9 @@ class Reservation(Base):
 
     car: Mapped[Car] = relationship(back_populates="reservations")
     user: Mapped[User] = relationship(back_populates="reservations")
+    payment: Mapped["Payment | None"] = relationship(
+        back_populates="reservation", cascade="all, delete-orphan", passive_deletes=True
+    )
 
     def __init__(self, **kwargs: Any):
         # A new reservation always starts in DraftState.
@@ -194,3 +197,20 @@ class Reservation(Base):
         """True in the "Rental started" sub-state of CONFIRMED."""
         now = now or datetime.now()
         return self.status == ReservationStatus.CONFIRMED and now >= self.start_date
+
+
+class Payment(Base):
+    """A received payment for a reservation (version 2.0, PAYMENT in the target ER model).
+    A reservation has at most one; no row means it has not been paid yet."""
+
+    __tablename__ = "payment"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    reservation_id: Mapped[int] = mapped_column(
+        ForeignKey("reservation.id", ondelete="CASCADE"), unique=True
+    )
+    amount: Mapped[float] = mapped_column(Float)
+    method: Mapped[str] = mapped_column(String(10))
+    paid_at: Mapped[datetime] = mapped_column(DateTime)
+
+    reservation: Mapped[Reservation] = relationship(back_populates="payment")

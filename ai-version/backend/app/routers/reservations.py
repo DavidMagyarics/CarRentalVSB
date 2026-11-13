@@ -26,6 +26,7 @@ def to_out(reservation: Reservation, now: datetime) -> ReservationOut:
         payment_method=reservation.payment_method,
         created_at=reservation.created_at,
         rental_started=reservation.rental_started(now),
+        paid_at=reservation.payment.paid_at if reservation.payment else None,
         car=CarSummary.model_validate(reservation.car),
         user=UserOut.model_validate(reservation.user),
     )
@@ -78,3 +79,11 @@ def complete_reservation(
 ):
     """Return the car - 200; 403 non-admin; 404; 409 not a started CONFIRMED rental."""
     return to_out(service.complete_reservation(user, reservation_id), clock())
+
+
+@router.post("/{reservation_id}/pay", response_model=ReservationOut)
+def record_payment(
+    reservation_id: int, user: CurrentUser, service: ReservationServiceDep, clock: ClockDep
+):
+    """Version 2.0 - 200; 403 non-admin; 404; 409 not confirmed / already paid."""
+    return to_out(service.record_payment(user, reservation_id), clock())

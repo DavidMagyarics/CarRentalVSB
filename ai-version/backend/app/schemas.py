@@ -157,5 +157,6 @@ class ReservationOut(BaseModel):
     payment_method: str
     created_at: datetime
     rental_started: bool
+    paid_at: datetime | None = None  # version 2.0 - when the admin recorded the payment
     car: CarSummary
     user: UserOut

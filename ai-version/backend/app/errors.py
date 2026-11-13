@@ -65,7 +65,9 @@ MSG_UNKNOWN_CATEGORY = "Neznámá kategorie auta"
 MSG_CATEGORY_NOT_FOUND = "Kategorie nenalezena"
 MSG_CATEGORY_TAKEN = "Kategorie s tímto názvem již existuje"
 MSG_CATEGORY_IN_USE = "Kategorii nelze smazat, používají ji auta ve vozovém parku"
-MSG_NOT_PICKED_UP ="Auto ještě nebylo vyzvednuto, rezervaci nelze ukončit"
+MSG_PAY_ONLY_CONFIRMED = "Zaplatit lze jen potvrzenou rezervaci"
+MSG_ALREADY_PAID = "Rezervace je již zaplacena"
+MSG_NOT_PICKED_UP = "Auto ještě nebylo vyzvednuto, rezervaci nelze ukončit"
 MSG_ALREADY_COMPLETED = "Auto už bylo vráceno"
 
 
