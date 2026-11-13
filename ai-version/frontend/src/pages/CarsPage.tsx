@@ -4,6 +4,7 @@ import { api, type Branch, type Car, type CarFilters } from '../api/client';
 import { CarImage, formatPrice, Message } from '../components/common';
 import { ReservationForm } from '../components/ReservationForm';
 import { useAuth } from '../state/auth';
+import { carLabel } from '../labels';
 
 const EMPTY_FILTERS: CarFilters = {
   category: '',
@@ -97,7 +98,7 @@ export function CarsPage() {
         <option value="">Vše</option>
         {options[key].map((value) => (
           <option key={value} value={value}>
-            {value}
+            {carLabel(value)}
           </option>
         ))}
       </select>
@@ -149,9 +150,9 @@ export function CarsPage() {
               </h3>
               <div className="muted small">{car.branch.name}</div>
               <div className="specs">
-                <span>{car.category}</span>
-                <span>{car.transmission}</span>
-                <span>{car.fuel_type}</span>
+                <span>{carLabel(car.category)}</span>
+                <span>{carLabel(car.transmission)}</span>
+                <span>{carLabel(car.fuel_type)}</span>
                 <span>{car.seats} míst</span>
               </div>
               {car.description && <p className="small">{car.description}</p>}

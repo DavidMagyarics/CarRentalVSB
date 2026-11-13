@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type Branch, type Car, type CarData } from '../api/client';
 import { formatPrice, Message } from '../components/common';
 import { CAR_OPTIONS } from '../carOptions';
+import { carLabel } from '../labels';
 
 const emptyCar = (branchId: number): CarData => ({
   brand: '',
@@ -102,7 +103,7 @@ export function FleetPage() {
       >
         {CAR_OPTIONS[key].map((value) => (
           <option key={value} value={value}>
-            {value}
+            {carLabel(value)}
           </option>
         ))}
       </select>
@@ -146,9 +147,9 @@ export function FleetPage() {
                   {car.brand} {car.model} <span className="muted">({car.year})</span>
                 </td>
                 <td>{car.license_plate}</td>
-                <td>{car.category}</td>
+                <td>{carLabel(car.category)}</td>
                 <td>
-                  {car.transmission} / {car.fuel_type}
+                  {carLabel(car.transmission)} / {carLabel(car.fuel_type)}
                 </td>
                 <td className="small">
                   {formatPrice(car.daily_price)} / den
