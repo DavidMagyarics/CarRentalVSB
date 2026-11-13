@@ -11,10 +11,12 @@ from sqlalchemy.orm import Session, selectinload
 
 from ..errors import (
     MSG_ADMIN_REQUIRED,
+    MSG_ALREADY_PAID,
     MSG_CAR_NOT_FOUND,
     MSG_CUSTOMER_ONLY,
     MSG_NOT_YOUR_RESERVATION,
     MSG_OPENING_HOURS,
+    MSG_PAY_ONLY_CONFIRMED,
     MSG_PICKUP_IN_PAST,
     MSG_RESERVATION_NOT_FOUND,
     MSG_RETURN_BEFORE_PICKUP,
@@ -24,7 +26,7 @@ from ..errors import (
     NotFound,
     Unprocessable,
 )
-from ..models import Car, Reservation, User
+from ..models import Car, Payment, Reservation, User
 from ..states import BLOCKING_STATUSES, ReservationStatus
 from .notification import NotificationService
 
@@ -145,6 +147,35 @@ class ReservationService:
         if reservation.get_user().id != user.id and not user.is_admin():
             raise Forbidden(MSG_NOT_YOUR_RESERVATION)
         reservation.cancel(now=self.clock())
+        self.db.commit()
+        self.db.refresh(reservation)
+        return reservation
+
+    # --- Return the car (version 2.0) ---------------------------------------
+    def complete_reservation(self, user: User, reservation_id: int) -> Reservation:
+        if not user.is_admin():
+            raise Forbidden(MSG_ADMIN_REQUIRED)
+        reservation = self.get_reservation(reservation_id)
+        reservation.complete(now=self.clock())
+        self.db.commit()
+        self.db.refresh(reservation)
+        return reservation
+
+    # --- Record a payment (version 2.0) -------------------------------------
+    def record_payment(self, user: User, reservation_id: int) -> Reservation:
+        """The admin records that the customer paid the reservation's price."""
+        if not user.is_admin():
+            raise Forbidden(MSG_ADMIN_REQUIRED)
+        reservation = self.get_reservation(reservation_id)
+        if reservation.get_status() not in (ReservationStatus.CONFIRMED, ReservationStatus.COMPLETED):
+            raise Conflict(MSG_PAY_ONLY_CONFIRMED)
+        if reservation.payment is not None:
+            raise Conflict(MSG_ALREADY_PAID)
+        reservation.payment = Payment(
+            amount=reservation.total_price,
+            method=reservation.payment_method,
+            paid_at=self.clock(),
+        )
         self.db.commit()
         self.db.refresh(reservation)
         return reservation

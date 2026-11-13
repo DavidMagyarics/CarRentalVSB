@@ -5,7 +5,7 @@ export const API_URL: string =
 
 export type Role = 'CUSTOMER' | 'ADMIN';
 export type PaymentMethod = 'CASH' | 'CARD';
-export type ReservationStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
+export type ReservationStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 
 export interface User {
   id: number;
@@ -24,6 +24,11 @@ export interface Branch {
   id: number;
   name: string;
   address: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
 }
 
 export interface CarData {
@@ -67,6 +72,7 @@ export interface Reservation {
   payment_method: PaymentMethod;
   created_at: string;
   rental_started: boolean;
+  paid_at: string | null; // version 2.0 - null until the admin records the payment
   car: { id: number; brand: string; model: string; license_plate: string; image_url: string; branch_id: number };
   user: User;
 }
@@ -157,6 +163,9 @@ export const api = {
 
   // FleetService
   branches: () => request<Branch[]>('GET', '/branches/'),
+  categories: () => request<Category[]>('GET', '/categories/'),
+  createCategory: (name: string) => request<Category>('POST', '/categories/', { name }),
+  deleteCategory: (id: number) => request<void>('DELETE', `/categories/${id}`),
   cars: (filters: CarFilters = {}) => request<Car[]>('GET', `/cars/${query({ ...filters })}`),
   createCar: (data: CarData) => request<Car>('POST', '/cars/', data),
   updateCar: (id: number, data: Partial<CarData>) => request<Car>('PUT', `/cars/${id}`, data),
@@ -179,4 +188,6 @@ export const api = {
   allReservations: () => request<Reservation[]>('GET', '/reservations/'),
   confirmReservation: (id: number) => request<Reservation>('POST', `/reservations/${id}/confirm`),
   cancelReservation: (id: number) => request<Reservation>('POST', `/reservations/${id}/cancel`),
+  completeReservation: (id: number) => request<Reservation>('POST', `/reservations/${id}/complete`),
+  payReservation: (id: number) => request<Reservation>('POST', `/reservations/${id}/pay`),
 };

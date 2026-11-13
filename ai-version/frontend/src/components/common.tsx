@@ -35,6 +35,7 @@ const STATUS_LABEL: Record<ReservationStatus, string> = {
   DRAFT: 'Čeká na schválení',
   CONFIRMED: 'Potvrzena',
   CANCELLED: 'Zrušena',
+  COMPLETED: 'Auto vráceno',
 };
 
 export function StatusBadge({ status, started }: { status: ReservationStatus; started?: boolean }) {

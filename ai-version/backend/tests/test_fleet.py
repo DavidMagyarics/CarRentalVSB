@@ -125,3 +125,41 @@ def test_delete_car_deletes_its_reservations(client, admin_headers, customer_hea
     db.expire_all()
     assert db.query(Reservation).count() == 0
     assert client.get("/reservations/me", headers=customer_headers).json() == []
+
+
+# --- Car categories (version 2.0) ----------------------------------------------
+def test_default_categories_exist(client):
+    names = [c["name"] for c in client.get("/categories/").json()]
+    assert names == ["Combi", "Hatchback", "SUV", "Sedan", "Van"]
+
+
+def test_admin_adds_category_and_uses_it_for_a_car(client, admin_headers, branches):
+    created = client.post("/categories/", json={"name": "Kabriolet"}, headers=admin_headers)
+    assert created.status_code == 201
+    body = {**NEW_CAR, "branch_id": branches[0].id, "category": "kabriolet"}
+    car = client.post("/cars/", json=body, headers=admin_headers)
+    assert car.status_code == 201
+    assert car.json()["category"] == "Kabriolet"  # stored with the category's spelling
+
+
+def test_duplicate_category_is_409(client, admin_headers):
+    response = client.post("/categories/", json={"name": "suv"}, headers=admin_headers)
+    assert response.status_code == 409
+
+
+def test_category_used_by_a_car_cannot_be_deleted(client, admin_headers, car):
+    category = next(c for c in client.get("/categories/").json() if c["name"] == car.category)
+    response = client.delete(f"/categories/{category['id']}", headers=admin_headers)
+    assert response.status_code == 409
+
+
+def test_admin_deletes_unused_category(client, admin_headers):
+    category = next(c for c in client.get("/categories/").json() if c["name"] == "Van")
+    assert client.delete(f"/categories/{category['id']}", headers=admin_headers).status_code == 204
+    assert "Van" not in [c["name"] for c in client.get("/categories/").json()]
+    assert client.delete(f"/categories/{category['id']}", headers=admin_headers).status_code == 404
+
+
+def test_customer_cannot_manage_categories(client, customer_headers):
+    assert client.post("/categories/", json={"name": "X"}, headers=customer_headers).status_code == 403
+    assert client.delete("/categories/1", headers=customer_headers).status_code == 403

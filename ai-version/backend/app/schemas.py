@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 PaymentMethodLiteral = Literal["CASH", "CARD"]
 # The only values a car may have - anything else is rejected with 422.
-CategoryLiteral = Literal["Sedan", "SUV", "Hatchback", "Combi", "Van"]
+# (Categories are a table the admin manages, checked by FleetService.)
 TransmissionLiteral = Literal["Manual", "Automatic"]
 FuelTypeLiteral = Literal["Petrol", "Diesel", "Hybrid", "Electric"]
 
@@ -49,7 +49,26 @@ class TokenOut(BaseModel):
     user: UserOut
 
 
-# --- branches / cars ---------------------------------------------------------
+# --- branches / categories / cars --------------------------------------------
+class CategoryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
+class CategoryCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Název kategorie nesmí být prázdný")
+        return value
+
+
 class BranchOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -65,7 +84,7 @@ class CarBase(BaseModel):
     license_plate: str = Field(min_length=1, max_length=20)
     daily_price: float = Field(gt=0)
     hourly_price: float = Field(gt=0)
-    category: CategoryLiteral
+    category: str = Field(min_length=1, max_length=40)
     transmission: TransmissionLiteral
     fuel_type: FuelTypeLiteral
     seats: int = Field(default=5, ge=1, le=60)
@@ -85,7 +104,7 @@ class CarUpdate(BaseModel):
     license_plate: str | None = Field(default=None, min_length=1, max_length=20)
     daily_price: float | None = Field(default=None, gt=0)
     hourly_price: float | None = Field(default=None, gt=0)
-    category: CategoryLiteral | None = None
+    category: str | None = Field(default=None, min_length=1, max_length=40)
     transmission: TransmissionLiteral | None = None
     fuel_type: FuelTypeLiteral | None = None
     seats: int | None = Field(default=None, ge=1, le=60)
@@ -138,5 +157,6 @@ class ReservationOut(BaseModel):
     payment_method: str
     created_at: datetime
     rental_started: bool
+    paid_at: datetime | None = None  # version 2.0 - when the admin recorded the payment
     car: CarSummary
     user: UserOut

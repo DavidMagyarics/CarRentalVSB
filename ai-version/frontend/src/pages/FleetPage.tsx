@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { api, type Branch, type Car, type CarData } from '../api/client';
+import { api, type Branch, type Car, type CarData, type Category } from '../api/client';
 import { formatPrice, Message } from '../components/common';
 import { CAR_OPTIONS } from '../carOptions';
 import { carLabel } from '../labels';
@@ -29,15 +29,18 @@ const toData = (car: Car): CarData => {
 export function FleetPage() {
   const [cars, setCars] = useState<Car[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [newCategory, setNewCategory] = useState('');
   const [editing, setEditing] = useState<{ id: number | null; data: CarData } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const reload = useCallback(() => {
-    Promise.all([api.cars(), api.branches()])
-      .then(([carList, branchList]) => {
+    Promise.all([api.cars(), api.branches(), api.categories()])
+      .then(([carList, branchList, categoryList]) => {
         setCars(carList);
         setBranches(branchList);
+        setCategories(categoryList);
       })
       .catch((e: Error) => setError(e.message));
   }, []);
@@ -74,6 +77,32 @@ export function FleetPage() {
     }
   };
 
+  const addCategory = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+    try {
+      await api.createCategory(newCategory);
+      setNotice(`Kategorie ${newCategory.trim()} byla přidána.`);
+      setNewCategory('');
+      reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Přidání kategorie selhalo');
+    }
+  };
+
+  const removeCategory = async (category: Category) => {
+    setError(null);
+    setNotice(null);
+    try {
+      await api.deleteCategory(category.id);
+      setNotice(`Kategorie ${category.name} byla smazána.`);
+      reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Smazání kategorie selhalo');
+    }
+  };
+
   const field = <K extends keyof CarData>(key: K, label: string, type: 'text' | 'number' = 'text') => (
     <label>
       {label}
@@ -93,7 +122,7 @@ export function FleetPage() {
     </label>
   );
 
-  const selectField = (key: keyof typeof CAR_OPTIONS, label: string) => (
+  const selectField = (key: 'category' | keyof typeof CAR_OPTIONS, label: string, values: readonly string[]) => (
     <label>
       {label}
       <select
@@ -101,7 +130,7 @@ export function FleetPage() {
         required
         onChange={(e) => editing && setEditing({ ...editing, data: { ...editing.data, [key]: e.target.value } })}
       >
-        {CAR_OPTIONS[key].map((value) => (
+        {values.map((value) => (
           <option key={value} value={value}>
             {carLabel(value)}
           </option>
@@ -177,6 +206,28 @@ export function FleetPage() {
         </table>
       </div>
 
+      <h2>Kategorie aut</h2>
+      <div className="category-list">
+        {categories.map((c) => (
+          <span key={c.id} className="chip">
+            {c.name}
+            <button className="icon-button" onClick={() => void removeCategory(c)} aria-label={`Smazat ${c.name}`}>
+              ×
+            </button>
+          </span>
+        ))}
+      </div>
+      <form className="inline-form" onSubmit={addCategory}>
+        <input
+          placeholder="Nová kategorie"
+          value={newCategory}
+          maxLength={40}
+          required
+          onChange={(e) => setNewCategory(e.target.value)}
+        />
+        <button type="submit">Přidat kategorii</button>
+      </form>
+
       {editing && (
         <div className="modal-backdrop" onClick={() => setEditing(null)}>
           <form className="modal wide" onClick={(e) => e.stopPropagation()} onSubmit={save}>
@@ -194,9 +245,9 @@ export function FleetPage() {
               {field('license_plate', 'SPZ')}
               {field('daily_price', 'Cena za den (Kč)', 'number')}
               {field('hourly_price', 'Cena za hodinu (Kč)', 'number')}
-              {selectField('category', 'Kategorie')}
-              {selectField('transmission', 'Převodovka')}
-              {selectField('fuel_type', 'Palivo')}
+              {selectField('category', 'Kategorie', categories.map((c) => c.name))}
+              {selectField('transmission', 'Převodovka', CAR_OPTIONS.transmission)}
+              {selectField('fuel_type', 'Palivo', CAR_OPTIONS.fuel_type)}
               {field('seats', 'Počet míst', 'number')}
               <label>
                 Pobočka

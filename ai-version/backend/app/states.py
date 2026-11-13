@@ -23,9 +23,12 @@ from typing import TYPE_CHECKING
 
 from .errors import (
     MSG_ALREADY_CANCELLED,
+    MSG_ALREADY_COMPLETED,
+    MSG_NOT_PICKED_UP,
     MSG_RENTAL_STARTED,
     MSG_SLOT_TAKEN_ON_CONFIRM,
     Conflict,
+    msg_cannot_complete,
     msg_cannot_confirm,
 )
 
@@ -37,8 +40,9 @@ class ReservationStatus:
     DRAFT = "DRAFT"
     CONFIRMED = "CONFIRMED"
     CANCELLED = "CANCELLED"
+    COMPLETED = "COMPLETED"
 
-    ALL = (DRAFT, CONFIRMED, CANCELLED)
+    ALL = (DRAFT, CONFIRMED, CANCELLED, COMPLETED)
 
 
 class ReservationState(ABC):
@@ -54,6 +58,10 @@ class ReservationState(ABC):
 
     @abstractmethod
     def cancel(self, now: datetime | None = None) -> None: ...
+
+    def complete(self, now: datetime | None = None) -> None:
+        """The car was returned. Only a CONFIRMED rental that has started can end."""
+        raise Conflict(msg_cannot_complete(self.status))
 
     @classmethod
     @abstractmethod
@@ -95,6 +103,11 @@ class ConfirmedState(ReservationState):
             raise Conflict(MSG_RENTAL_STARTED)
         self.context.set_state(CancelledState(self.context))
 
+    def complete(self, now: datetime | None = None) -> None:
+        if not self.rental_started(now):
+            raise Conflict(MSG_NOT_PICKED_UP)
+        self.context.set_state(CompletedState(self.context))
+
     def rental_started(self, now: datetime | None = None) -> bool:
         """Sub-state of CONFIRMED: "Before pickup" (False) vs "Rental started" (True)."""
         now = now or datetime.now()
@@ -121,8 +134,27 @@ class CancelledState(ReservationState):
         return False  # slot is free again
 
 
+class CompletedState(ReservationState):
+    """COMPLETED - final state, the car was returned (version 2.0)."""
+
+    status = ReservationStatus.COMPLETED
+
+    def confirm(self, car_available: bool = True) -> None:
+        raise Conflict(msg_cannot_confirm(self.status))
+
+    def cancel(self, now: datetime | None = None) -> None:
+        raise Conflict(MSG_ALREADY_COMPLETED)
+
+    def complete(self, now: datetime | None = None) -> None:
+        raise Conflict(MSG_ALREADY_COMPLETED)
+
+    @classmethod
+    def blocks_car(cls) -> bool:
+        return False  # the car is back, the rest of the slot is free again
+
+
 STATE_BY_STATUS: dict[str, type[ReservationState]] = {
-    cls.status: cls for cls in (DraftState, ConfirmedState, CancelledState)
+    cls.status: cls for cls in (DraftState, ConfirmedState, CancelledState, CompletedState)
 }
 
 # Statuses whose state blocks the car - used by the single availability query (UC4a).

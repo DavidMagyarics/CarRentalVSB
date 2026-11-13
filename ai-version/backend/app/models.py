@@ -36,6 +36,19 @@ class Branch(Base):
         return self.name
 
 
+class CarCategory(Base):
+    """Car categories managed by the admin (version 2.0, CAR_CATEGORY in the target ER model).
+    A car's ``category`` must be the name of one of these."""
+
+    __tablename__ = "car_category"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(40), unique=True)
+
+
+DEFAULT_CATEGORIES = ("Sedan", "SUV", "Hatchback", "Combi", "Van")
+
+
 class Car(Base):
     __tablename__ = "car"
 
@@ -137,6 +150,9 @@ class Reservation(Base):
 
     car: Mapped[Car] = relationship(back_populates="reservations")
     user: Mapped[User] = relationship(back_populates="reservations")
+    payment: Mapped["Payment | None"] = relationship(
+        back_populates="reservation", cascade="all, delete-orphan", passive_deletes=True
+    )
 
     def __init__(self, **kwargs: Any):
         # A new reservation always starts in DraftState.
@@ -156,6 +172,9 @@ class Reservation(Base):
 
     def cancel(self, now: datetime | None = None) -> None:
         self.state.cancel(now)
+
+    def complete(self, now: datetime | None = None) -> None:
+        self.state.complete(now)
 
     def blocks_car(self) -> bool:
         return self.state.blocks_car()
@@ -178,3 +197,20 @@ class Reservation(Base):
         """True in the "Rental started" sub-state of CONFIRMED."""
         now = now or datetime.now()
         return self.status == ReservationStatus.CONFIRMED and now >= self.start_date
+
+
+class Payment(Base):
+    """A received payment for a reservation (version 2.0, PAYMENT in the target ER model).
+    A reservation has at most one; no row means it has not been paid yet."""
+
+    __tablename__ = "payment"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    reservation_id: Mapped[int] = mapped_column(
+        ForeignKey("reservation.id", ondelete="CASCADE"), unique=True
+    )
+    amount: Mapped[float] = mapped_column(Float)
+    method: Mapped[str] = mapped_column(String(10))
+    paid_at: Mapped[datetime] = mapped_column(DateTime)
+
+    reservation: Mapped[Reservation] = relationship(back_populates="payment")

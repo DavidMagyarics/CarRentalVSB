@@ -14,7 +14,7 @@ from .config import Settings
 from .database import Base, make_engine, make_session_factory
 from .errors import DomainError
 from .routers import auth, cars, reservations
-from .seed import seed_demo_data
+from .seed import ensure_default_categories, seed_demo_data
 from .services.notification import NotificationService, create_notification_service
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -30,6 +30,8 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         Base.metadata.create_all(engine)
+        with session_factory() as db:
+            ensure_default_categories(db)
         if settings.seed_demo_data:
             with session_factory() as db:
                 seed_demo_data(db)
