@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type Branch, type Car, type CarData } from '../api/client';
 import { formatPrice, Message } from '../components/common';
+import { CAR_OPTIONS } from '../carOptions';
 
 const emptyCar = (branchId: number): CarData => ({
   brand: '',
@@ -91,6 +92,23 @@ export function FleetPage() {
     </label>
   );
 
+  const selectField = (key: keyof typeof CAR_OPTIONS, label: string) => (
+    <label>
+      {label}
+      <select
+        value={editing?.data[key] ?? ''}
+        required
+        onChange={(e) => editing && setEditing({ ...editing, data: { ...editing.data, [key]: e.target.value } })}
+      >
+        {CAR_OPTIONS[key].map((value) => (
+          <option key={value} value={value}>
+            {value}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
   return (
     <section>
       <div className="section-head">
@@ -175,9 +193,9 @@ export function FleetPage() {
               {field('license_plate', 'SPZ')}
               {field('daily_price', 'Cena za den (Kč)', 'number')}
               {field('hourly_price', 'Cena za hodinu (Kč)', 'number')}
-              {field('category', 'Kategorie')}
-              {field('transmission', 'Převodovka')}
-              {field('fuel_type', 'Palivo')}
+              {selectField('category', 'Kategorie')}
+              {selectField('transmission', 'Převodovka')}
+              {selectField('fuel_type', 'Palivo')}
               {field('seats', 'Počet míst', 'number')}
               <label>
                 Pobočka

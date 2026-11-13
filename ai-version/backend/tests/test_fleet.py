@@ -52,6 +52,19 @@ def test_admin_creates_car(client, admin_headers, branches):
     assert len(client.get("/cars/").json()) == 1
 
 
+def test_create_car_with_unknown_category_transmission_or_fuel_is_422(client, admin_headers,
+                                                                     branches):
+    for field, value in (("category", "blabla"), ("transmission", "xyz"), ("fuel_type", "water")):
+        body = {**NEW_CAR, "branch_id": branches[0].id, field: value}
+        assert client.post("/cars/", json=body, headers=admin_headers).status_code == 422
+    assert client.get("/cars/").json() == []
+
+
+def test_update_car_with_unknown_category_is_422(client, admin_headers, car):
+    response = client.put(f"/cars/{car.id}", json={"category": "blabla"}, headers=admin_headers)
+    assert response.status_code == 422
+
+
 def test_create_car_with_unknown_branch_is_404(client, admin_headers, branches):
     response = client.post("/cars/", json={**NEW_CAR, "branch_id": 999}, headers=admin_headers)
     assert response.status_code == 404
