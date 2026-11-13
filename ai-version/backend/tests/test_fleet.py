@@ -65,6 +65,18 @@ def test_update_car_with_unknown_category_is_422(client, admin_headers, car):
     assert response.status_code == 422
 
 
+def test_hourly_price_above_daily_price_is_422(client, admin_headers, branches, car):
+    body = {**NEW_CAR, "branch_id": branches[0].id, "daily_price": 100, "hourly_price": 5000}
+    response = client.post("/cars/", json=body, headers=admin_headers)
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Cena za hodinu nesmí být vyšší než cena za den"
+    # editing only one of the prices is checked against the other stored one
+    too_cheap_day = client.put(f"/cars/{car.id}", json={"daily_price": 50}, headers=admin_headers)
+    assert too_cheap_day.status_code == 422
+    same = client.put(f"/cars/{car.id}", json={"hourly_price": car.daily_price}, headers=admin_headers)
+    assert same.status_code == 200
+
+
 def test_create_car_with_unknown_branch_is_404(client, admin_headers, branches):
     response = client.post("/cars/", json={**NEW_CAR, "branch_id": 999}, headers=admin_headers)
     assert response.status_code == 404
