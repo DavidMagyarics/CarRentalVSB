@@ -60,7 +60,11 @@ MSG_RESERVATION_NOT_FOUND = "Rezervace nenalezena"
 MSG_CAR_NOT_FOUND = "Auto nenalezeno"
 MSG_BRANCH_NOT_FOUND = "Pobočka nenalezena"
 MSG_PLATE_TAKEN = "Auto s touto SPZ již existuje"
-MSG_NOT_PICKED_UP = "Auto ještě nebylo vyzvednuto, rezervaci nelze ukončit"
+MSG_UNKNOWN_CATEGORY = "Neznámá kategorie auta"
+MSG_CATEGORY_NOT_FOUND = "Kategorie nenalezena"
+MSG_CATEGORY_TAKEN = "Kategorie s tímto názvem již existuje"
+MSG_CATEGORY_IN_USE = "Kategorii nelze smazat, používají ji auta ve vozovém parku"
+MSG_NOT_PICKED_UP ="Auto ještě nebylo vyzvednuto, rezervaci nelze ukončit"
 MSG_ALREADY_COMPLETED = "Auto už bylo vráceno"
 
 

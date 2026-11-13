@@ -7,7 +7,7 @@ import logging
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .models import Branch, Car, User, UserRole
+from .models import DEFAULT_CATEGORIES, Branch, Car, CarCategory, User, UserRole
 from .security import hash_password
 
 logger = logging.getLogger("carrental.seed")
@@ -41,6 +41,13 @@ CARS = [
          category="Hatchback", transmission="Automatic", fuel_type="Hybrid", seats=5,
          description="Malý hybrid s automatem.", branch=1),
 ]
+
+
+def ensure_default_categories(db: Session) -> None:
+    """Car categories are reference data, not demo data - an empty table gets the defaults."""
+    if db.scalar(select(func.count()).select_from(CarCategory)) == 0:
+        db.add_all(CarCategory(name=name) for name in DEFAULT_CATEGORIES)
+        db.commit()
 
 
 def seed_demo_data(db: Session) -> None:

@@ -26,6 +26,11 @@ export interface Branch {
   address: string;
 }
 
+export interface Category {
+  id: number;
+  name: string;
+}
+
 export interface CarData {
   brand: string;
   model: string;
@@ -157,6 +162,9 @@ export const api = {
 
   // FleetService
   branches: () => request<Branch[]>('GET', '/branches/'),
+  categories: () => request<Category[]>('GET', '/categories/'),
+  createCategory: (name: string) => request<Category>('POST', '/categories/', { name }),
+  deleteCategory: (id: number) => request<void>('DELETE', `/categories/${id}`),
   cars: (filters: CarFilters = {}) => request<Car[]>('GET', `/cars/${query({ ...filters })}`),
   createCar: (data: CarData) => request<Car>('POST', '/cars/', data),
   updateCar: (id: number, data: Partial<CarData>) => request<Car>('PUT', `/cars/${id}`, data),

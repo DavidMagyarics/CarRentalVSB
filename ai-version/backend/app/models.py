@@ -36,6 +36,19 @@ class Branch(Base):
         return self.name
 
 
+class CarCategory(Base):
+    """Car categories managed by the admin (version 2.0, CAR_CATEGORY in the target ER model).
+    A car's ``category`` must be the name of one of these."""
+
+    __tablename__ = "car_category"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(40), unique=True)
+
+
+DEFAULT_CATEGORIES = ("Sedan", "SUV", "Hatchback", "Combi", "Van")
+
+
 class Car(Base):
     __tablename__ = "car"
 

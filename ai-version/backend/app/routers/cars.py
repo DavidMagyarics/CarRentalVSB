@@ -6,7 +6,15 @@ from fastapi import APIRouter, Query, Response, status
 
 from ..deps import CurrentUser, FleetServiceDep, ReservationServiceDep
 from ..errors import MSG_RETURN_BEFORE_PICKUP, Unprocessable
-from ..schemas import AvailabilityOut, BranchOut, CarCreate, CarOut, CarUpdate
+from ..schemas import (
+    AvailabilityOut,
+    BranchOut,
+    CarCreate,
+    CarOut,
+    CarUpdate,
+    CategoryCreate,
+    CategoryOut,
+)
 from ..services.reservation_service import normalize
 
 router = APIRouter(tags=["cars"])
@@ -15,6 +23,24 @@ router = APIRouter(tags=["cars"])
 @router.get("/branches/", response_model=list[BranchOut])
 def list_branches(fleet: FleetServiceDep):
     return fleet.get_branches()
+
+
+@router.get("/categories/", response_model=list[CategoryOut])
+def list_categories(fleet: FleetServiceDep):
+    return fleet.get_categories()
+
+
+@router.post("/categories/", response_model=CategoryOut, status_code=status.HTTP_201_CREATED)
+def create_category(body: CategoryCreate, user: CurrentUser, fleet: FleetServiceDep):
+    """Version 2.0 - 201; 403 non-admin; 409 name already exists."""
+    return fleet.create_category(user, body.name)
+
+
+@router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_category(category_id: int, user: CurrentUser, fleet: FleetServiceDep):
+    """Version 2.0 - 204; 403 non-admin; 404; 409 still used by a car."""
+    fleet.delete_category(user, category_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/cars/", response_model=list[CarOut])
