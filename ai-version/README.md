@@ -1,0 +1,158 @@
+# CarRentalVSB – car rental reservation system
+
+Generated purely from the UML/PlantUML models in `..\diagrams\` (use case, activity,
+sequence, class, state, State pattern, ER, C4 context/container, deployment).
+
+Customers browse and filter cars, create reservation requests (DRAFT), and cancel them.
+An admin manages the fleet, sees all reservations and confirms them (CONFIRMED), which
+sends a confirmation notification (log or e-mail).
+
+| Part     | Technology                                                        |
+|----------|-------------------------------------------------------------------|
+| Backend  | Python, FastAPI, SQLAlchemy 2, SQLite, JWT (PyJWT), bcrypt, pytest |
+| Frontend | React 18 + TypeScript + Vite (SPA), talks to the API over HTTP/JSON |
+| Deploy   | Docker Compose: `frontend` (nginx:alpine, :5173), `backend` (python:3.12-slim + uvicorn, :8000) |
+
+## Demo accounts (seeded on first start)
+
+| Role     | E-mail                  | Password      |
+|----------|-------------------------|---------------|
+| Admin    | `admin@carrental.cz`    | `admin123`    |
+| Customer | `customer@carrental.cz` | `customer123` |
+
+Also seeded: 3 branches (Ostrava – centrum, Ostrava – Poruba (VŠB), Praha – Letiště) and 6 cars.
+Seeding only happens into an empty database (`SEED_DEMO_DATA=true`, the default).
+
+## Run locally (Windows `cmd`)
+
+Backend (Python 3.12+; tested with 3.14):
+
+```bat
+cd app\backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
+uvicorn app.main:app --reload --port 8000
+```
+
+API: <http://localhost:8000>, interactive docs: <http://localhost:8000/docs>.
+The SQLite file `carrental.db` is created in `app\backend`.
+
+Tests:
+
+```bat
+cd app\backend
+.venv\Scripts\activate
+pytest
+```
+
+Frontend (Node 18+):
+
+```bat
+cd app\frontend
+npm install
+npm run dev
+```
+
+SPA: <http://localhost:5173>. If the API is not on `http://localhost:8000`, set
+`VITE_API_URL` (e.g. `set VITE_API_URL=http://localhost:8001` before `npm run dev`, or a
+`frontend\.env` file – see `.env.example`). Production build: `npm run build` (output in `dist\`).
+
+## Run with Docker
+
+```bat
+cd app
+docker compose up --build
+```
+
+* SPA: <http://localhost:5173> (nginx serving the Vite build)
+* REST API: <http://localhost:8000>
+* The SQLite database lives in the named volume `backend-data` (`/data/carrental.db`).
+
+Optional SMTP for confirmation e-mails (UC8a) – set environment variables before
+`docker compose up` (or put them into an `app\.env` file read by Compose):
+
+```bat
+set SMTP_HOST=smtp.gmail.com
+set SMTP_PORT=587
+set SMTP_USER=you@gmail.com
+set SMTP_PASSWORD=app-password
+set SMTP_FROM=you@gmail.com
+docker compose up --build
+```
+
+Without `SMTP_HOST`, `LoggingNotificationService` is used and the notification is only
+written to the backend log. For a local (non-Docker) backend the same variables go into
+`app\backend\.env`.
+
+## REST API
+
+| Method | Path | Use case | Responses |
+|--------|------|----------|-----------|
+| POST | `/auth/register` | UC1 | 201 `{access_token, user}`, 409 e-mail taken, 422 invalid e-mail / password < 6 |
+| POST | `/auth/login` | UC2 | 200 `{access_token, user}`, 401 invalid credentials |
+| GET | `/auth/me` | – | 200 user, 401 |
+| GET | `/cars/?category=&transmission=&fuel_type=&min_price=&max_price=&branch_id=` | UC3 | 200 `Car[]` (`[]` when nothing matches) |
+| GET | `/cars/{id}` | – | 200, 404 |
+| GET | `/cars/{id}/availability?start_date=&end_date=` | UC4a | 200 `{available}`, 404, 422 |
+| POST | `/cars/` | UC9 add | 201, 401, 403, 404 branch, 409 duplicate plate, 422 |
+| PUT | `/cars/{id}` | UC9 edit | 200, 401, 403, 404 |
+| DELETE | `/cars/{id}` | UC9 delete | 204 (reservations deleted with the car), 401, 403, 404 |
+| GET | `/branches/` | – | 200 `Branch[]` |
+| POST | `/reservations/` | UC4 | 201 DRAFT, 401, 404 car, 409 slot taken, 422 dates / opening hours |
+| GET | `/reservations/me` | UC6 | 200 newest first, 401 |
+| GET | `/reservations/` | UC10 | 200 newest first, 401, 403 |
+| POST | `/reservations/{id}/confirm` | UC8 (+UC8a) | 200, 401, 403, 404, 409 not DRAFT / slot taken |
+| POST | `/reservations/{id}/cancel` | UC5 | 200, 401, 403 not yours, 404, 409 already cancelled / rental started |
+
+Errors are returned as `{"detail": "<message>"}`; the Czech messages are taken verbatim
+from the sequence diagrams.
+
+## Diagram → code
+
+| Diagram | Code |
+|---------|------|
+| `use-case.puml` | Routers in `backend/app/routers/` + pages in `frontend/src/pages/`; tabs per role in `frontend/src/App.tsx` |
+| `class-system.puml` | `AuthService` → `backend/app/services/auth_service.py`; `ReservationService` → `services/reservation_service.py`; `FleetService` → `services/fleet_service.py`; `NotificationService` / `EmailNotificationService` / `LoggingNotificationService` → `services/notification.py`; `User`, `Reservation`, `Car`, `Branch` → `backend/app/models.py`; `ReservationForm` → `frontend/src/components/ReservationForm.tsx`; `SupportWidget` → `frontend/src/components/SupportWidget.tsx` |
+| `er-current.puml` | SQLAlchemy tables `branch`, `car`, `user`, `reservation` in `models.py` (FKs, `ON DELETE CASCADE` car → reservation) |
+| `pattern-state.puml` | `backend/app/states.py`: abstract `ReservationState`, `DraftState`, `ConfirmedState`, `CancelledState`; `Reservation.set_state/confirm/cancel/blocks_car` in `models.py` delegate to the state. `BLOCKING_STATUSES` (derived from `blocks_car()`) drives the availability query |
+| `state-reservation.puml` | Same state classes; "Before pickup / Rental started" sub-states computed from the current time (`rental_started`), not stored |
+| `state-reservation-form.puml` | `frontend/src/state/reservationForm.ts` – pure reducer with phases `empty / invalid / checking / available / unavailable / submitting / done`, 300 ms delayed availability check in `ReservationForm.tsx` |
+| `activity-*/sequence-*` | One service method per use case; every alt/error branch maps to an HTTP status (see table above) and is covered by tests in `backend/tests/` |
+| `activity/sequence-check-availability` | `ReservationService.is_car_available` – one query: CONFIRMED reservations of the car with `start < requested end AND end > requested start` |
+| `activity/sequence-send-notification` | `create_notification_service()` picks the implementation once at startup (`SMTP_HOST`); SMTP failure is logged and returns `False`, the reservation stays CONFIRMED |
+| `activity/sequence-contact-support` | `SupportWidget` – bottom-right button, `tel:` / `mailto:` links, no backend call |
+| `context.puml`, `container.puml` | SPA → REST API (fetch, `frontend/src/api/client.ts`) → SQLAlchemy → SQLite; NotificationService as boundary |
+| `deployment.puml` | `docker-compose.yml`, `backend/Dockerfile` (python:3.12-slim + uvicorn :8000), `frontend/Dockerfile` + `nginx.conf` (nginx:alpine :5173), optional SMTP :587 via env |
+
+## Business rules implemented
+
+* Opening hours: pickup **and** return Mon–Fri between 08:00 and 20:00 (inclusive), return strictly after pickup – checked in the form and again on the server (422).
+* Only CONFIRMED reservations block a car; DRAFT and CANCELLED never do. Intervals are half-open (`[start, end)`), so back-to-back bookings are allowed.
+* Availability is checked when dates are picked (form), on submit (server, 409) and again on confirm (409 "slot taken in the meantime").
+* Price: daily rate × full 24 h blocks + hourly rate × remaining started hours, the remainder capped at one more day's rate.
+* New reservation = DRAFT. Confirm: admin only, DRAFT only. Cancel: owner or admin; not when already CANCELLED; not when CONFIRMED and the rental has started (now ≥ start). A DRAFT can always be cancelled.
+* Deleting a car deletes all its reservations.
+* Passwords hashed with bcrypt; JWT (HS256) bearer token, 8 h by default.
+
+## Assumptions (where the diagrams were not specific)
+
+1. **Time zone** – all dates are naive local server time; timezone-aware input is converted to local time. The SPA sends `datetime-local` values unchanged.
+2. **Opening-hour boundaries** – 08:00 and 20:00 themselves are allowed.
+3. **Pickup in the past** is rejected with 422 (not in the diagrams, but a sensible rule).
+4. **Started hours** are charged as full hours (e.g. 30 min = 1 h).
+5. **Price range filter** applies to the daily price; text filters are case-insensitive exact matches. The filter loop calls `Car.matches(filters)` in Python as in the sequence diagram.
+6. **Who can create reservations** – any logged-in user via the API; the SPA hides the "Reserve" button for admins (only Customers have UC4).
+7. **Availability endpoint** `GET /cars/{id}/availability` is public and only checks overlap (+ end after start); opening hours are validated by the form and by `POST /reservations/`.
+8. **Confirming a DRAFT whose start is already in the past** is allowed (the diagrams do not forbid it).
+9. **Licence plates are unique** (409 on duplicates).
+10. **Login** takes a JSON body `{email, password}`; e-mails are stored lower-case.
+11. **Error messages** not given in the diagrams (401, 404, past pickup, …) were written in Czech in the same style; the UI is in Czech.
+12. **Card payment** – card number / expiry / CVC are validated only in the browser (16 digits, MM/RR, 3 digits) and never sent; only `payment_method` is stored.
+13. **Submit after a 409** – as in the form state diagram, the form returns to "Available" and shows the error; the user picks new dates.
+14. **Car photos** – the seed data has no image URLs; the SPA draws a coloured placeholder car when `image_url` is empty or fails to load. Admins can set a photo URL.
+15. **Support contact** – phone `+420 597 000 000`, e-mail `podpora@carrentalvsb.cz`, office hours Mon–Fri 8:00–20:00 (placeholders).
+16. **Database** – SQLite by default (`DATABASE_URL`); tables are created on start (`create_all`), no migrations. PostgreSQL from the container diagram would only need a different URL and driver (not tested).
+17. **Docker** – the browser calls the API directly on `http://localhost:8000` (as in the deployment diagram: SPA on :5173, REST API on :8000), so the SPA is built with `VITE_API_URL=http://localhost:8000` and the API allows CORS from `http://localhost:5173`.
+18. **No locking** on confirm – as stated in the sequence diagram note, two simultaneous confirmations could both pass the re-check (known risk, not addressed).

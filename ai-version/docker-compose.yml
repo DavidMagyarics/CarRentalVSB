@@ -1,0 +1,38 @@
+# Deployment diagram: CarRentalVSB Server (Docker Compose)
+#   frontend - nginx:alpine, SPA on http://localhost:5173
+#   backend  - python:3.12-slim + uvicorn, REST API on http://localhost:8000
+#   SMTP     - optional external system, configured through environment variables
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:////data/carrental.db
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-please-0123456789}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      # Optional SMTP (UC8a). Leave SMTP_HOST empty to only log notifications.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@carrental.local}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+    volumes:
+      - backend-data:/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend-data:
