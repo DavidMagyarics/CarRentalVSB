@@ -20,6 +20,7 @@ by hand through pull requests (see the repository's network graph and tags):
 | 1.0.2 | The hourly price may not exceed the daily price (#11) |
 | 1.1 | Czech labels for car category, transmission and fuel (#12) |
 | 2.0 | New features: returning a car (COMPLETED state), car categories managed by the admin, recording payments |
+| 2.1 | New look (light green and black) and real car photos taken over from the hand-written version |
 
 ### New in 2.0
 
