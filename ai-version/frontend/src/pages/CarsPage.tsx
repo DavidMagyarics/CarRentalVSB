@@ -107,7 +107,23 @@ export function CarsPage() {
 
   return (
     <section>
-      <h1>Nabídka aut</h1>
+      <div className="hero">
+        <h1>
+          Půjčte si auto <em>na míru</em>
+        </h1>
+        <p>Vyberte auto podle kategorie, převodovky, paliva nebo ceny a zarezervujte si ho na přesný termín.</p>
+        <div className="hero-stats">
+          <span>
+            <strong>{allCars.length}</strong> aut ve vozovém parku
+          </span>
+          <span>
+            <strong>{branches.length}</strong> pobočky
+          </span>
+          <span>
+            Vyzvednutí <strong>Po–Pá 8–20</strong>
+          </span>
+        </div>
+      </div>
       <div className="filters">
         {selectFilter('category', 'Kategorie')}
         {selectFilter('transmission', 'Převodovka')}
@@ -157,8 +173,8 @@ export function CarsPage() {
               </div>
               {car.description && <p className="small">{car.description}</p>}
               <div className="prices">
-                <strong>{formatPrice(car.daily_price)}</strong> / den ·{' '}
-                <strong>{formatPrice(car.hourly_price)}</strong> / hod
+                <span className="price-main">{formatPrice(car.daily_price)}</span>
+                <span className="price-sub">/ den · {formatPrice(car.hourly_price)} / hod</span>
               </div>
               {user?.role !== 'ADMIN' && <button onClick={() => reserve(car)}>Rezervovat</button>}
             </div>

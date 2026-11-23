@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import type { PaymentMethod, ReservationStatus } from '../api/client';
 
-const PALETTE = ['#2563eb', '#16a34a', '#db2777', '#ea580c', '#7c3aed', '#0891b2', '#ca8a04'];
+const PALETTE = ['#4fa82f', '#2c6b1d', '#0f1110', '#6fbf4a', '#3a4540'];
 
 function colorFor(text: string): string {
   let hash = 0;

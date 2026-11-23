@@ -24,7 +24,14 @@ function Header() {
   return (
     <header className="topbar">
       <NavLink to="/" className="brand">
-        CarRental<span>VSB</span>
+        <span className="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M5 11l1.6-4.2A2 2 0 0 1 8.5 5.5h7a2 2 0 0 1 1.9 1.3L19 11h.5A1.5 1.5 0 0 1 21 12.5V17h-2a2 2 0 0 1-4 0H9a2 2 0 0 1-4 0H3v-4.5A1.5 1.5 0 0 1 4.5 11H5zm2.2 0h9.6l-1.2-3.3a.5.5 0 0 0-.5-.2H8.9a.5.5 0 0 0-.5.2L7.2 11z" />
+          </svg>
+        </span>
+        <span className="brand-name">
+          CarRental<span>VSB</span>
+        </span>
       </NavLink>
       <nav>
         <NavLink to="/" end className={link}>

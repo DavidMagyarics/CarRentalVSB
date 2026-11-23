@@ -206,7 +206,7 @@ export function FleetPage() {
         </table>
       </div>
 
-      <h2>Kategorie aut</h2>
+      <h2 className="fleet-section-title">Kategorie aut</h2>
       <div className="category-list">
         {categories.map((c) => (
           <span key={c.id} className="chip">
