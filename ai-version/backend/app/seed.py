@@ -24,22 +24,22 @@ BRANCHES = [
 CARS = [
     dict(brand="Škoda", model="Fabia", year=2022, license_plate="8T1 2345", daily_price=790, hourly_price=90,
          category="Hatchback", transmission="Manual", fuel_type="Petrol", seats=5,
-         description="Úsporné auto do města.", branch=0),
+         description="Úsporné auto do města.", image_url="/cars/skoda-fabia.jpg", branch=0),
     dict(brand="Škoda", model="Octavia Combi", year=2023, license_plate="8T2 1111", daily_price=1190, hourly_price=140,
          category="Combi", transmission="Automatic", fuel_type="Diesel", seats=5,
-         description="Prostorné kombi na dovolenou.", branch=0),
-    dict(brand="Hyundai", model="Tucson", year=2023, license_plate="8T3 4567", daily_price=1490, hourly_price=170,
-         category="SUV", transmission="Automatic", fuel_type="Hybrid", seats=5,
-         description="Pohodlné SUV s hybridním pohonem.", branch=1),
+         description="Prostorné kombi na dovolenou.", image_url="/cars/skoda-octavia.jpg", branch=0),
+    dict(brand="Škoda", model="Kodiaq", year=2024, license_plate="8T3 4567", daily_price=1490, hourly_price=170,
+         category="SUV", transmission="Automatic", fuel_type="Hybrid", seats=7,
+         description="Prostorné SUV s hybridním pohonem až pro 7 osob.", image_url="/cars/skoda-kodiaq.jpg", branch=1),
     dict(brand="Tesla", model="Model 3", year=2024, license_plate="8T4 0001", daily_price=1990, hourly_price=230,
          category="Sedan", transmission="Automatic", fuel_type="Electric", seats=5,
-         description="Elektromobil s dojezdem přes 500 km.", branch=2),
+         description="Elektromobil s dojezdem přes 500 km.", image_url="/cars/tesla-model-3.jpg", branch=2),
     dict(brand="Ford", model="Transit Custom", year=2021, license_plate="8T5 7890", daily_price=1690, hourly_price=190,
          category="Van", transmission="Manual", fuel_type="Diesel", seats=9,
-         description="Dodávka pro 9 osob nebo stěhování.", branch=2),
-    dict(brand="Toyota", model="Yaris", year=2022, license_plate="8T6 2468", daily_price=850, hourly_price=95,
+         description="Dodávka pro 9 osob nebo stěhování.", image_url="/cars/ford-transit.jpg", branch=2),
+    dict(brand="Toyota", model="Corolla", year=2023, license_plate="8T6 2468", daily_price=850, hourly_price=95,
          category="Hatchback", transmission="Automatic", fuel_type="Hybrid", seats=5,
-         description="Malý hybrid s automatem.", branch=1),
+         description="Úsporný hybrid s automatem.", image_url="/cars/toyota-corolla.jpg", branch=1),
 ]
 
 
@@ -65,7 +65,7 @@ def seed_demo_data(db: Session) -> None:
             for car in CARS:
                 data = dict(car)
                 branch = branches[data.pop("branch")]
-                db.add(Car(**data, image_url="", branch=branch))
+                db.add(Car(**data, branch=branch))
         logger.info("Seeded demo branches and cars")
 
     db.commit()
